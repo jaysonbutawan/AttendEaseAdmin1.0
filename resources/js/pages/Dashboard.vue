@@ -24,7 +24,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                 <div
                     class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
                 >
-                    <PlaceholderPattern />
+                    <PlaceholderPattern /> aaaaa
                 </div>
                 <div
                     class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
