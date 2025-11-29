@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { dashboard, login, register } from '@/routes';
+import { about, dashboard, login, register } from '@/routes';
 import { Head, Link } from '@inertiajs/vue3';
 
 withDefaults(
@@ -40,21 +40,14 @@ withDefaults(
                     Go to Dashboard
                 </Link>
                 <template v-else>
-                    <!-- Login Button -->
+                    <!-- This would be an about Button -->
                     <Link
-                        :href="login()"
+                        :href="about()" 
                         class="rounded-lg px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition duration-150"
                     >
-                        Log in
+                        About
                     </Link>
-                    <!-- Register Button (Primary CTA) -->
-                    <Link
-                        v-if="canRegister"
-                        :href="register()"
-                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-indigo-700 transition duration-150"
-                    >
-                        Register
-                    </Link>
+                   
                 </template>
             </nav>
         </header>
