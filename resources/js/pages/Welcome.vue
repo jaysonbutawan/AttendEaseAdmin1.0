@@ -53,7 +53,7 @@ withDefaults(
         </header>
 
         <!-- MAIN HERO CONTENT (The center design) -->
-        <main class="flex flex-col items-center justify-center flex-grow text-center max-w-4xl pt-20 pb-40">
+        <main class="flex flex-col flex-grow w-full justify-center items-center text-center">
             <h1 class="text-6xl md:text-8xl font-extrabold leading-tight tracking-tighter">
                 Attendance <span class="text-indigo-600">Simplified</span>.
             </h1>

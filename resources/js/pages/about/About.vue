@@ -38,9 +38,8 @@ const features = [
     <div
         class="flex min-h-screen flex-col items-center bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 font-inter p-6"
     >
-        <!-- NAVIGATION BAR (Consistent with Welcome.vue) -->
         <header
-            class="w-full max-w-7xl px-4 py-4 flex justify-between items-center sticky top-0 bg-gray-50 dark:bg-gray-900 z-10"
+            class="w-full px-30 py-4 flex justify-between items-center sticky top-0 bg-gray-50 dark:bg-gray-900 z-10"
         >
             <!-- Logo/App Name -->
             <div class="flex items-center space-x-2 text-xl font-bold text-gray-800 dark:text-white">
@@ -71,7 +70,7 @@ const features = [
         <main class="flex flex-col items-center flex-grow text-center max-w-6xl pt-16 pb-24 px-4 sm:px-6">
             
             <!-- Mission Section -->
-            <section class="max-w-3xl">
+            <section class="w-full bg-gray-50 dark:bg-gray-900 px-4 sm:px-2 py-8 text-center">
                 <h2 class="text-4xl md:text-8xl font-extrabold leading-tight tracking-tighter text-gray-900 dark:text-white">
                     Our Mission: 
                     <span class="text-indigo-600">Attendance Simplified.</span>
