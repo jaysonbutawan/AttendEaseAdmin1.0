@@ -34,7 +34,7 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { dashboard, students, teachers } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { InertiaLinkProps, Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, Menu, Search, User } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -69,12 +69,12 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Students',
         href: students(),
-        icon: LayoutGrid,
+        icon: User,
     },
     {
         title: 'Teachers',
         href: teachers(),
-        icon: LayoutGrid,
+        icon: '/assets/icons/teacher.svg' as string,
     },
 ];
 
@@ -129,10 +129,18 @@ const rightNavItems: NavItem[] = [
                                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                                         :class="activeItemStyles(item.href)"
                                     >
-                                        <component
-                                            v-if="item.icon"
-                                            :is="item.icon"
+                                      <!-- Vue component icon -->
+                                    <component
+                                    v-if="item.icon && typeof item.icon !== 'string'"
+                                    :is="item.icon"
+                                    class="h-5 w-5"
+                                    />
+
+                                    <img
+                                            v-else-if="typeof item.icon === 'string'"
+                                            :src="item.icon"
                                             class="h-5 w-5"
+                                            alt="icon"
                                         />
                                         {{ item.title }}
                                     </Link>
@@ -147,9 +155,15 @@ const rightNavItems: NavItem[] = [
                                         class="flex items-center space-x-2 text-sm font-medium"
                                     >
                                         <component
-                                            v-if="item.icon"
+                                            v-if="item.icon && typeof item.icon !== 'string'"
                                             :is="item.icon"
                                             class="h-5 w-5"
+                                        />
+                                          <img
+                                            v-else-if="typeof item.icon === 'string'"
+                                            :src="item.icon"
+                                            class="h-5 w-5"
+                                            alt="icon"
                                         />
                                         <span>{{ item.title }}</span>
                                     </a>
@@ -183,9 +197,15 @@ const rightNavItems: NavItem[] = [
                                     :href="item.href"
                                 >
                                     <component
-                                        v-if="item.icon"
+                                        v-if="item.icon && typeof item.icon !== 'string'"
                                         :is="item.icon"
                                         class="mr-2 h-4 w-4"
+                                    />
+                                    <img
+                                        v-else-if="typeof item.icon === 'string'"
+                                        :src="item.icon"
+                                        class="mr-2 h-4 w-4"
+                                        alt="icon"
                                     />
                                     {{ item.title }}
                                 </Link>
@@ -218,23 +238,19 @@ const rightNavItems: NavItem[] = [
                                 <TooltipProvider :delay-duration="0">
                                     <Tooltip>
                                         <TooltipTrigger>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                as-child
-                                                class="group h-9 w-9 cursor-pointer"
-                                            >
-                                                <a
-                                                    :href="toUrl(item.href)"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <span class="sr-only">{{
-                                                        item.title
-                                                    }}</span>
+                                        <Button variant="ghost" size="icon" as-child class="group h-9 w-9 cursor-pointer">
+                                                <a :href="toUrl(item.href)" target="_blank" rel="noopener noreferrer">
+                                                    <span class="sr-only">{{ item.title }}</span>
                                                     <component
+                                                        v-if="item.icon && typeof item.icon !== 'string'"
                                                         :is="item.icon"
                                                         class="size-5 opacity-80 group-hover:opacity-100"
+                                                    />
+                                                    <img
+                                                        v-else-if="typeof item.icon === 'string'"
+                                                        :src="item.icon"
+                                                        class="size-5 opacity-80 group-hover:opacity-100"
+                                                        alt="icon"
                                                     />
                                                 </a>
                                             </Button>

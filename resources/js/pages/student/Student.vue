@@ -2,7 +2,6 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import SubjectAssignment from './SubjectAssignment.vue';
 import StudentsTable from './StudentsTable.vue';
-// ... other imports
 </script>
 
 <template>

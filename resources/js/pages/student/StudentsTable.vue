@@ -115,7 +115,6 @@ const editStudent = (id: number) => {
 const deleteStudent = (id: number) => {
     console.log(`Deleting student with ID: ${id}`);
     if (confirm(`Are you sure you want to delete student ID ${id}?`)) {
-        // Logic to delete student from the list in a real app
     }
 };
 </script>
