@@ -42,7 +42,7 @@ const features = [
             class="w-full px-30 py-4 flex justify-between items-center sticky top-0 bg-gray-50 dark:bg-gray-900 z-10"
         >
             <!-- Logo/App Name -->
-            <div class="flex items-center space-x-2 text-xl font-bold text-gray-800 dark:text-white">
+            <div class="flex items-center space-x-2 text-2xl font-bold text-gray-800 dark:text-white">
                 AttendEase
             </div>
 
@@ -51,7 +51,7 @@ const features = [
                     <!-- Login Button -->
                     <Link
                         :href="login()"
-                        class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 transition duration-150 dark:text-gray-300 dark:hover:bg-gray-700"
+                        class="rounded-lg px-4 py-2 text-lg font-medium text-gray-600 hover:bg-gray-100 transition duration-150 dark:text-gray-300 dark:hover:bg-gray-700"
                     >
                         Log in
                     </Link>
@@ -59,7 +59,7 @@ const features = [
                     <Link
                         v-if="canRegister"
                         :href="register()"
-                        class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-indigo-700 transition duration-150"
+                        class="rounded-lg bg-indigo-600 px-4 py-2 text-lg font-medium text-white shadow-md hover:bg-indigo-700 transition duration-150"
                     >
                         Register
                     </Link>

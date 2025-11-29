@@ -37,3 +37,18 @@ export interface User {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface AssignedSubject {
+    id: number;
+    name: string;
+}
+
+export interface Teacher {
+    id: number;
+    name: string;
+    email: string;
+    initials: string;
+    status: 'Active' | 'On Leave' | string;
+    department: string;
+    assignedSubjects: AssignedSubject[];
+}

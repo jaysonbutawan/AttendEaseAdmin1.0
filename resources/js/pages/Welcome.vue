@@ -24,31 +24,22 @@ withDefaults(
             class="w-full max-w-7xl px-4 py-4 flex justify-between items-center"
         >
             <!-- Logo/App Name (Adjust this to match your logo component) -->
-            <div class="flex items-center space-x-2 text-xl font-bold text-gray-800 dark:text-white">
-                <!-- If using an icon component, uncomment and replace -->
-                <!-- <AppLogoIcon class="w-8 h-8 fill-current text-indigo-600" /> -->
+            <div class="flex items-center space-x-2 text-2xl font-bold text-gray-800 dark:text-white">
                 AttendEase
             </div>
 
             <!-- Auth Links -->
             <nav class="flex items-center justify-end space-x-3">
-                <Link
-                    v-if="$page.props.auth.user"
-                    :href="dashboard()"
-                    class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-indigo-700 transition duration-150"
-                >
-                    Go to Dashboard
-                </Link>
-                <template v-else>
+              
+                
                     <!-- This would be an about Button -->
                     <Link
                         :href="about()" 
-                        class="rounded-lg px-4 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition duration-150"
+                        class="rounded-lg px-4 py-2 text-lg font-medium text-indigo-600 hover:bg-indigo-50 transition duration-150"
                     >
                         About
                     </Link>
                    
-                </template>
             </nav>
         </header>
 
