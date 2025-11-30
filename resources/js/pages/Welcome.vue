@@ -19,7 +19,6 @@ withDefaults(
     <div
         class="flex min-h-screen flex-col items-center bg-gray-50 p-6 text-gray-800 dark:bg-gray-900 dark:text-gray-200 font-inter"
     >
-        <!-- NAVIGATION BAR (Top Header) -->
         <header
             class="w-full max-w-7xl px-4 py-4 flex justify-between items-center"
         >

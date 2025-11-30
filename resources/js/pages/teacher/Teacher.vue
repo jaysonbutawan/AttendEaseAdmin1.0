@@ -3,8 +3,9 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import {  type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { LayoutGrid, Users, Plus,Search, Filter } from 'lucide-vue-next';
+import { Users, Plus,Search, Filter } from 'lucide-vue-next';
 const PRIMARY_COLOR_RGB = '79, 57, 246'; // rgba(79, 57, 246)
+const PRIMARY_COLOR_HEX = '#4F39F6';
 
 // Dummy data structure for the table
 const teachersData: Teacher[] = [
@@ -61,7 +62,46 @@ const teachersData: Teacher[] = [
     },
 ];
 
-// Dummy data for form selections
+const pendingApprovals = ref([
+    { id: 1, name: 'Jane Doe', requestedOn: '2024-07-28', initials: 'JD' },
+    { id: 2, name: 'Mike Ross', requestedOn: '2024-07-27', initials: 'MR' },
+    { id: 3, name: 'Harvey Specter', requestedOn: '2024-07-26', initials: 'HS' },
+]);
+
+const pendingApprovalsStudents = ref([
+    { id: 1, name: 'John Doe', requestedTime: '2 hours ago', initials: 'JD' },
+    { id: 2, name: 'Jane Smith', requestedTime: '5 hours ago', initials: 'JS' },
+    { id: 3, name: 'Mike...', requestedTime: '1 day ago', initials: 'M' },
+]);
+
+const pendingApprovalsTeachers = ref([
+    { id: 10, name: 'Jane Doe', requestedTime: '2024-07-28', initials: 'JD' },
+    { id: 20, name: 'Alex Johnson', requestedTime: '2024-07-27', initials: 'AJ' },
+]);
+
+const activeApprovalTab = ref<'Students' | 'Teachers'>('Students');
+
+// Data for Manage Student Selection (matching image_584f63.png)
+const studentsData = ref([
+    { id: '12345', name: 'Alex Johnson', department: 'Computer Science', initials: 'AJ', selected: true },
+    { id: '12346', name: 'Maria Garcia', department: 'Business Admin', initials: 'MG', selected: false },
+    { id: '12347', name: 'David Smith', department: 'Engineering', initials: 'DS', selected: false },
+]);
+
+
+const studentDepartments = ['All', 'Computer Science', 'Business Admin', 'Engineering'];
+const studentYearLevels = ['All', '1st Year', '2nd Year', '3rd Year', '4th Year'];
+
+const availableSubjects = ref([
+    { id: 101, name: 'Introduction to Algorithms', code: 'CS101', credits: 3 },
+    { id: 102, name: 'Data Structures', code: 'CS202', credits: 4 },
+    { id: 201, name: 'Calculus II', code: 'MATH150', credits: 3 },
+    { id: 301, name: 'Marketing Principles', code: 'BUS210', credits: 3 },
+]);
+
+const subjectCategory = ['All', 'CS', 'Math', 'Business'];
+const creditValue = ['All', '3 Credits', '4 Credits'];
+
 const departments = ['Mathematics', 'Science', 'English', 'History'];
 const availableTeachers = ['Select Teacher', 'Dr. Helena Vance', 'Lia Torres', 'Sarah Johnson'];
 const rooms = ['Room 101', 'Room 102', 'Room 201', 'Room 202'];
@@ -84,64 +124,260 @@ const handleAssignTeacher = () => {
         teacher: '',
     };
 };
+
+const handleApprove = (id: number) => {
+    console.log('Approving teacher ID:', id);
+    alert(`Teacher ${id} approved (mock action)!`);
+    pendingApprovals.value = pendingApprovals.value.filter(item => item.id !== id);
+};
+
+const handleReject = (id: number) => {
+    console.log('Rejecting teacher ID:', id);
+    alert(`Teacher ${id} rejected (mock action)!`);
+    pendingApprovals.value = pendingApprovals.value.filter(item => item.id !== id);
+};
+
+const toggleStudentSelection = (studentId: string) => {
+    const student = studentsData.value.find(s => s.id === studentId);
+    if (student) {
+        student.selected = !student.selected;
+    }
+};
+
+const handleAssignSubjects = () => {
+    alert('Subjects assigned (mock action)!');
+};
 </script>
 
 <template>
     <Head title="Teacher Management" />
 
     <AppLayout >
-        <div class="flex h-full flex-1 flex-col gap-6 p-6 md:p-8">
-            <!-- Header Section -->
-            <header>
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Teacher Management</h1>
-                <p class="text-gray-500 dark:text-gray-400 mt-1">
-                    Manage teacher assignments and view teacher details.
-                </p>
+       <div class="flex h-full flex-1 flex-col gap-6 p-6 md:p-8">
+            <header class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Subject Assignment</h1>
+                    <p class="text-gray-500 dark:text-gray-400 mt-1">
+                        Assign subjects to one or more students using the panels below.
+                    </p>
+                </div>
+                <button 
+                    @click="handleAssignSubjects"
+                    class="flex items-center space-x-2 px-6 py-3 text-base font-semibold rounded-xl text-white shadow-md transition duration-150 ease-in-out"
+                    :style="{ backgroundColor: PRIMARY_COLOR_HEX }"
+                    :class="`hover:bg-[rgba(${PRIMARY_COLOR_RGB},0.8)]`"
+                >
+                    <Plus class="h-5 w-5" />
+                    <span>Assign Subject(s)</span>
+                </button>
             </header>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
 
-            <!-- STATISTIC CARDS -->
-            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <!-- Card 1: Total Teachers -->
-                <div 
-                    class="rounded-xl p-6 shadow-lg transition duration-300 ease-in-out"
-                    :style="{ backgroundColor: `rgba(${PRIMARY_COLOR_RGB}, 0.9)`, color: 'white' }"
-                >
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium opacity-80">Total Teachers</p>
-                            <p class="text-4xl font-extrabold mt-1">24</p>
+                <div class="lg:col-span-1 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 h-fit">
+                    <div class="p-6">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Pending Approvals</h2>
+                        
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                            <button 
+                                @click="activeApprovalTab = 'Students'"
+                                class="px-4 py-2 text-sm font-medium transition duration-150"
+                                :class="activeApprovalTab === 'Students' ? `text-[${PRIMARY_COLOR_HEX}] border-b-2 border-[${PRIMARY_COLOR_HEX}] dark:text-white` : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                            >
+                                Students ({{ pendingApprovalsStudents.length }})
+                            </button>
+                            <button 
+                                @click="activeApprovalTab = 'Teachers'"
+                                class="px-4 py-2 text-sm font-medium transition duration-150"
+                                :class="activeApprovalTab === 'Teachers' ? `text-[${PRIMARY_COLOR_HEX}] border-b-2 border-[${PRIMARY_COLOR_HEX}] dark:text-white` : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                            >
+                                Teachers ({{ pendingApprovalsTeachers.length }})
+                            </button>
                         </div>
-                        <Users class="size-10 opacity-70" />
+
+                        <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                            <div 
+                                v-if="(activeApprovalTab === 'Students' && pendingApprovalsStudents.length === 0) || (activeApprovalTab === 'Teachers' && pendingApprovalsTeachers.length === 0)" 
+                                class="p-4 text-center text-gray-500 dark:text-gray-400"
+                            >
+                                No pending {{ activeApprovalTab.toLowerCase() }} approvals.
+                            </div>
+
+                            <div 
+                                v-for="approval in pendingApprovalsStudents" 
+                                :key="approval.id" 
+                                v-if="activeApprovalTab === 'Students'"
+                                class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150"
+                            >
+                                <div class="flex items-center space-x-3">
+                                    <div 
+                                        class="flex-shrink-0 size-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-white"
+                                    >
+                                        {{ approval.initials }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ approval.name }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ approval.requestedTime }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button 
+                                        @click="handleApprove(approval.id)"
+                                        class="size-6 rounded-full flex items-center justify-center text-green-500 hover:text-white hover:bg-green-500 transition duration-150"
+                                        title="Approve"
+                                    >
+                                        <Check class="h-4 w-4" />
+                                    </button>
+                                    <button 
+                                        @click="handleReject(approval.id)"
+                                        class="size-6 rounded-full flex items-center justify-center text-red-500 hover:text-white hover:bg-red-500 transition duration-150"
+                                        title="Reject"
+                                    >
+                                        <X class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div 
+                                v-for="approval in pendingApprovalsTeachers" 
+                                :key="approval.id" 
+                                v-if="activeApprovalTab === 'Teachers'"
+                                class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150"
+                            >
+                                <div class="flex items-center space-x-3">
+                                    <div 
+                                        class="flex-shrink-0 size-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-white"
+                                    >
+                                        {{ approval.initials }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ approval.name }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">Requested on: {{ approval.requestedTime }}</div>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button 
+                                        @click="handleApprove(approval.id)"
+                                        class="size-6 rounded-full flex items-center justify-center text-green-500 hover:text-white hover:bg-green-500 transition duration-150"
+                                        title="Approve"
+                                    >
+                                        <Check class="h-4 w-4" />
+                                    </button>
+                                    <button 
+                                        @click="handleReject(approval.id)"
+                                        class="size-6 rounded-full flex items-center justify-center text-red-500 hover:text-white hover:bg-red-500 transition duration-150"
+                                        title="Reject"
+                                    >
+                                        <X class="h-4 w-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Card 2: Assigned Classes -->
-                <div 
-                    class="rounded-xl p-6 shadow-lg transition duration-300 ease-in-out"
-                    :style="{ backgroundColor: `rgba(${PRIMARY_COLOR_RGB}, 0.8)`, color: 'white' }"
-                >
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium opacity-80">Assigned Classes</p>
-                            <p class="text-4xl font-extrabold mt-1">42</p>
-                        </div>
-                        <LayoutGrid class="size-10 opacity-70" />
-                    </div>
-                </div>
+                <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700">
+                        <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Manage Student Selection</h2>
 
-                <!-- Card 3: Available for Assignment -->
-                <div 
-                    class="rounded-xl p-6 shadow-lg transition duration-300 ease-in-out"
-                    :style="{ backgroundColor: `rgba(${PRIMARY_COLOR_RGB}, 0.7)`, color: 'white' }"
-                >
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-sm font-medium opacity-80">Available for Assignment</p>
-                            <p class="text-4xl font-extrabold mt-1">5</p>
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by student name or ID..."
+                                    class="pl-10 pr-4 py-2 text-sm w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                />
+                            </div>
+                            <div class="flex space-x-3">
+                                <select class="w-1/2 rounded-lg border-gray-300 shadow-sm text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option>Department: All</option>
+                                    <option v-for="dept in studentDepartments" :key="dept" :value="dept">{{ dept }}</option>
+                                </select>
+                                <select class="w-1/2 rounded-lg border-gray-300 shadow-sm text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option>Year Level: All</option>
+                                    <option v-for="year in studentYearLevels" :key="year" :value="year">{{ year }}</option>
+                                </select>
+                            </div>
                         </div>
-                        <Plus class="size-10 opacity-70" />
+
+                        <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                            <div class="flex items-center justify-between p-2">
+                                <label class="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-indigo-500">
+                                    <span>Select All</span>
+                                </label>
+                            </div>
+
+                            <div 
+                                v-for="student in studentsData" 
+                                :key="student.id" 
+                                class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 transition duration-150"
+                                :class="{ 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-300 dark:border-indigo-600': student.selected, 'hover:bg-gray-50 dark:hover:bg-gray-700/50': !student.selected }"
+                            >
+                                <div class="flex items-center space-x-3">
+                                    <input 
+                                        type="checkbox" 
+                                        :checked="student.selected"
+                                        @change="toggleStudentSelection(student.id)"
+                                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:checked:bg-indigo-500"
+                                    >
+                                    <div 
+                                        class="flex-shrink-0 size-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-bold text-white"
+                                    >
+                                        {{ student.initials }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ student.name }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">ID: {{ student.id }} | {{ student.department }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700">
+                        <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Available Subjects</h2>
+
+                        <div class="space-y-4">
+                            <div class="relative">
+                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by subject name or code..."
+                                    class="pl-10 pr-4 py-2 text-sm w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                />
+                            </div>
+                            <div class="flex space-x-3">
+                                <select class="w-1/2 rounded-lg border-gray-300 shadow-sm text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option>Subject Category</option>
+                                    <option v-for="cat in subjectCategory" :key="cat" :value="cat">{{ cat }}</option>
+                                </select>
+                                <select class="w-1/2 rounded-lg border-gray-300 shadow-sm text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option>Credit Value</option>
+                                    <option v-for="credit in creditValue" :key="credit" :value="credit">{{ credit }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3 max-h-96 overflow-y-auto pr-2">
+                            <div 
+                                v-for="subject in availableSubjects" 
+                                :key="subject.id" 
+                                class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition duration-150"
+                            >
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ subject.name }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ subject.code }} - {{ subject.credits }} Credits</div>
+                                </div>
+                                <Menu class="h-5 w-5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer" />
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+            
             </div>
 
             <!-- ASSIGN TEACHER FORM (WHITE CARD) -->
@@ -354,12 +590,11 @@ const handleAssignTeacher = () => {
                     </div>
                 </div>
             </div>
-        </div>
+        
     </AppLayout>
 </template>
 
 <style scoped>
-/* Optional: Adding custom styles for input focus based on the primary color if Tailwind styles aren't enough */
 .focus\\:border-indigo-500:focus {
     border-color: rgb(79, 57, 246) !important;
 }
