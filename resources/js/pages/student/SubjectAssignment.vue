@@ -95,7 +95,7 @@ const selectSubject = (subjectId: number) => {
 </script>
 
 <template>
-    <div class="p-6 bg-gray-50 min-h-screen">
+    <div class="p-6 bg-gray-50 ">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-900">Subject Assignment</h1>
             <button @click="assignSubjects"

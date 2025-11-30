@@ -28,7 +28,7 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { dashboard, students, teachers } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { InertiaLinkProps, Link, usePage } from '@inertiajs/vue3';
-import {Menu} from 'lucide-vue-next';
+import { Menu } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -51,7 +51,7 @@ const activeItemStyles = computed(
     () => (url: NonNullable<InertiaLinkProps['href']>) =>
         isCurrentRoute.value(toUrl(url))
             ? 'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100'
-            : '',
+            : 'hover:text-blue-600',
 );
 
 const mainNavItems: NavItem[] = [
@@ -109,6 +109,14 @@ const mainNavItems: NavItem[] = [
                                         :class="activeItemStyles(item.href)"
                                     >
                                         {{ item.title }}
+                                        <span
+                                            class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-blue-600 opacity-0 transition-opacity duration-200"
+                                            :class="{
+                                                'opacity-100': isCurrentRoute(
+                                                    item.href,
+                                                ),
+                                            }"
+                                        ></span>
                                     </Link>
                                 </nav>
                             </div>
@@ -121,7 +129,7 @@ const mainNavItems: NavItem[] = [
                 </Link>
 
                 <!-- Desktop Menu -->
-                <div class="hidden lg:flex flex-1 justify-end">
+                <div class="hidden flex-1 justify-end lg:flex">
                     <NavigationMenu class="flex h-full items-stretch">
                         <NavigationMenuList
                             class="flex h-full items-stretch space-x-2"
@@ -135,59 +143,63 @@ const mainNavItems: NavItem[] = [
                                     :class="[
                                         navigationMenuTriggerStyle(),
                                         activeItemStyles(item.href),
-                                        'h-9 cursor-pointer px-3 !text-2xl',
+                                        'relative h-9 cursor-pointer px-1 !text-2xl',
                                     ]"
                                     :href="item.href"
                                 >
-                                    {{ item.title }}
+                                    <span class="relative">
+                                        {{ item.title }}
+                                        <span
+                                            class="absolute bottom-0 left-0 h-0.5 w-[100%] origin-left scale-x-0 bg-blue-600 transition-transform dark:bg-white"
+                                            :class="{
+                                                'scale-x-100': isCurrentRoute(
+                                                    item.href,
+                                                ),
+                                            }"
+                                        ></span>
+                                    </span>
                                 </Link>
-                                <div
-                                    v-if="isCurrentRoute(item.href)"
-                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-blue-600  dark:bg-white"
-                                ></div>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
                 </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger :as-child="true">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="relative size-10 w-auto rounded-full p-1 focus-within:ring-2 focus-within:ring-primary"
-                            >
-                                <Avatar
-                                    class="size-8 overflow-hidden rounded-full"
+                <DropdownMenu>
+                    <DropdownMenuTrigger :as-child="true">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            class="relative size-10 w-auto rounded-full p-1 focus-within:ring-2 focus-within:ring-primary"
+                        >
+                            <Avatar class="size-8 overflow-hidden rounded-full">
+                                <AvatarImage
+                                    v-if="auth.user.avatar"
+                                    :src="auth.user.avatar"
+                                    :alt="auth.user.name"
+                                />
+                                <AvatarFallback
+                                    class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
                                 >
-                                    <AvatarImage
-                                        v-if="auth.user.avatar"
-                                        :src="auth.user.avatar"
-                                        :alt="auth.user.name"
-                                    />
-                                    <AvatarFallback
-                                        class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
-                                    >
-                                        {{ getInitials(auth.user?.name) }}
-                                    </AvatarFallback>
-                                </Avatar>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" class="w-56">
-                            <UserMenuContent :user="auth.user" />
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+                                    {{ getInitials(auth.user?.name) }}
+                                </AvatarFallback>
+                            </Avatar>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-56">
+                        <UserMenuContent :user="auth.user" />
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
+    </div>
 
+    <div
+        v-if="props.breadcrumbs.length > 1"
+        class="flex w-full border-b border-sidebar-border/70"
+    >
         <div
-            v-if="props.breadcrumbs.length > 1"
-            class="flex w-full border-b border-sidebar-border/70"
+            class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl"
         >
-            <div
-                class="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl"
-            >
-                <Breadcrumbs :breadcrumbs="breadcrumbs" />
-            </div>
+            <Breadcrumbs :breadcrumbs="breadcrumbs" />
         </div>
+    </div>
 </template>

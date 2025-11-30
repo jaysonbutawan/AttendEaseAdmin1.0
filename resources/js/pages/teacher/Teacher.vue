@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-// NOTE: Assuming your routes file has the necessary route helper functions
-import { dashboard, teachers } from '@/routes'; 
-import { type BreadcrumbItem, type Teacher, type AssignedSubject } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
+import {  type Teacher } from '@/types';
+import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import { LayoutGrid, Users, Plus, BookOpen, Search, Filter } from 'lucide-vue-next'; // Icons
-
-// --- CONSTANTS & TYPES ---
-
-// Define the primary brand color for Tailwind use (it will be injected into style tags)
+import { LayoutGrid, Users, Plus,Search, Filter } from 'lucide-vue-next';
 const PRIMARY_COLOR_RGB = '79, 57, 246'; // rgba(79, 57, 246)
 
 // Dummy data structure for the table
@@ -70,10 +64,7 @@ const teachersData: Teacher[] = [
 // Dummy data for form selections
 const departments = ['Mathematics', 'Science', 'English', 'History'];
 const availableTeachers = ['Select Teacher', 'Dr. Helena Vance', 'Lia Torres', 'Sarah Johnson'];
-
-const breadcrumbs: BreadcrumbItem[] = [
-
-];
+const rooms = ['Room 101', 'Room 102', 'Room 201', 'Room 202'];
 
 const assignForm = ref({
     subjectName: '',
@@ -83,14 +74,9 @@ const assignForm = ref({
 });
 
 const search = ref('');
-
-// --- ACTIONS ---
-
 const handleAssignTeacher = () => {
-    // In a real application, this would send an Inertia POST request
     console.log('Assigning teacher:', assignForm.value);
     alert('Teacher assigned successfully (mock action)!');
-    // Reset form after submission
     assignForm.value = {
         subjectName: '',
         department: '',
@@ -103,7 +89,7 @@ const handleAssignTeacher = () => {
 <template>
     <Head title="Teacher Management" />
 
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout >
         <div class="flex h-full flex-1 flex-col gap-6 p-6 md:p-8">
             <!-- Header Section -->
             <header>
@@ -160,7 +146,7 @@ const handleAssignTeacher = () => {
 
             <!-- ASSIGN TEACHER FORM (WHITE CARD) -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700">
-                <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">Assign Teacher to Class</h2>
+                <h2 class="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">Assign Teacher to Class</h2>
 
                 <form @submit.prevent="handleAssignTeacher" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <!-- Subject Name -->
@@ -191,13 +177,14 @@ const handleAssignTeacher = () => {
                     <!-- Room -->
                     <div class="md:col-span-1">
                         <label for="room" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Room</label>
-                        <input
+                        <select
                             id="room"
                             v-model="assignForm.room"
-                            type="text"
-                            placeholder="Enter room number"
                             class="w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        />
+                        >
+                            <option value="" disabled>Select Room</option>
+                            <option v-for="room in rooms" :key="room" :value="room">{{ room }}</option>
+                        </select>
                     </div>
                     
                     <!-- Teacher Selection -->

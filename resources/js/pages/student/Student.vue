@@ -7,7 +7,6 @@ import StudentsTable from './StudentsTable.vue';
 <template>
     <AppLayout> 
         <SubjectAssignment />
-        <hr class="my-8 border-gray-200" /> 
         <StudentsTable />
     </AppLayout>
 </template>
