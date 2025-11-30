@@ -26,11 +26,9 @@ const totalResults = 50;
 const resultsPerPage = 5;
 const currentPage = ref(1);
 
-// --- COMPUTED PROPERTIES ---
 
 const paginatedStudents = computed(() => {
-    // In a real app, pagination and filtering would be handled by a backend API.
-    // This is a simple front-end slicing for display purposes.
+
     const start = (currentPage.value - 1) * resultsPerPage;
     const end = start + resultsPerPage;
     return allStudents.value.slice(start, end);

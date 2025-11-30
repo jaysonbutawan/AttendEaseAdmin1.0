@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Plus, Search, Users } from 'lucide-vue-next';
+import { Select } from 'reka-ui/namespaced';
 import { ref } from 'vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246'; // rgba(79, 57, 246)
 const PRIMARY_COLOR_HEX = '#4F39F6';
@@ -696,13 +697,16 @@ const handleAssignSubjects = () => {
                             <label for="roomNumber" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Room Number
                             </label>
-                            <input
+                            <select
                                 id="roomNumber"
                                 v-model="assignForm.roomNumber"
-                                type="text"
-                                placeholder="e.g., 301-B"
                                 class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
+                            >
+                                <option value="" disabled>Select Room</option>
+                                <option v-for="room in rooms" :key="room" :value="room">
+                                    {{ room }}
+                                </option>
+                            </select>
                         </div>
 
                         <!-- Actions -->
