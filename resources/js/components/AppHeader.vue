@@ -22,19 +22,13 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import { toUrl, urlIsActive } from '@/lib/utils';
 import { dashboard, students, teachers } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { InertiaLinkProps, Link, usePage } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, Menu, Search, User } from 'lucide-vue-next';
+import { LayoutGrid, Menu, Search, User } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -77,26 +71,14 @@ const mainNavItems: NavItem[] = [
         icon: '/assets/icons/teacher.svg' as string,
     },
 ];
-
-
-const rightNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
 </script>
 
 <template>
     <div>
         <div class="border-b border-sidebar-border/80">
-            <div class="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
+            <div
+                class="flex h-16 w-full items-center px-4 md:h-20 md:px-8 lg:h-24"
+            >
                 <!-- Mobile Menu -->
                 <div class="lg:hidden">
                     <Sheet>
@@ -129,15 +111,19 @@ const rightNavItems: NavItem[] = [
                                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                                         :class="activeItemStyles(item.href)"
                                     >
-                                      <!-- Vue component icon -->
-                                    <component
-                                    v-if="item.icon && typeof item.icon !== 'string'"
-                                    :is="item.icon"
-                                    class="h-5 w-5"
-                                    />
+                                        <component
+                                            v-if="
+                                                item.icon &&
+                                                typeof item.icon !== 'string'
+                                            "
+                                            :is="item.icon"
+                                            class="h-5 w-5"
+                                        />
 
-                                    <img
-                                            v-else-if="typeof item.icon === 'string'"
+                                        <img
+                                            v-else-if="
+                                                typeof item.icon === 'string'
+                                            "
                                             :src="item.icon"
                                             class="h-5 w-5"
                                             alt="icon"
@@ -145,29 +131,6 @@ const rightNavItems: NavItem[] = [
                                         {{ item.title }}
                                     </Link>
                                 </nav>
-                                <div class="flex flex-col space-y-4">
-                                    <a
-                                        v-for="item in rightNavItems"
-                                        :key="item.title"
-                                        :href="toUrl(item.href)"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="flex items-center space-x-2 text-sm font-medium"
-                                    >
-                                        <component
-                                            v-if="item.icon && typeof item.icon !== 'string'"
-                                            :is="item.icon"
-                                            class="h-5 w-5"
-                                        />
-                                          <img
-                                            v-else-if="typeof item.icon === 'string'"
-                                            :src="item.icon"
-                                            class="h-5 w-5"
-                                            alt="icon"
-                                        />
-                                        <span>{{ item.title }}</span>
-                                    </a>
-                                </div>
                             </div>
                         </SheetContent>
                     </Sheet>
@@ -178,7 +141,7 @@ const rightNavItems: NavItem[] = [
                 </Link>
 
                 <!-- Desktop Menu -->
-                <div class="hidden h-full lg:flex lg:flex-1">
+                <div class="hidden h-full lg:flex ml-auto">
                     <NavigationMenu class="ml-10 flex h-full items-stretch">
                         <NavigationMenuList
                             class="flex h-full items-stretch space-x-2"
@@ -192,17 +155,22 @@ const rightNavItems: NavItem[] = [
                                     :class="[
                                         navigationMenuTriggerStyle(),
                                         activeItemStyles(item.href),
-                                        'h-9 cursor-pointer px-3',
+                                        'h-9 cursor-pointer px-3 !text-3xl',
                                     ]"
                                     :href="item.href"
                                 >
                                     <component
-                                        v-if="item.icon && typeof item.icon !== 'string'"
+                                        v-if="
+                                            item.icon &&
+                                            typeof item.icon !== 'string'
+                                        "
                                         :is="item.icon"
                                         class="mr-2 h-4 w-4"
                                     />
                                     <img
-                                        v-else-if="typeof item.icon === 'string'"
+                                        v-else-if="
+                                            typeof item.icon === 'string'
+                                        "
                                         :src="item.icon"
                                         class="mr-2 h-4 w-4"
                                         alt="icon"
@@ -229,39 +197,6 @@ const rightNavItems: NavItem[] = [
                                 class="size-5 opacity-80 group-hover:opacity-100"
                             />
                         </Button>
-
-                        <div class="hidden space-x-1 lg:flex">
-                            <template
-                                v-for="item in rightNavItems"
-                                :key="item.title"
-                            >
-                                <TooltipProvider :delay-duration="0">
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                        <Button variant="ghost" size="icon" as-child class="group h-9 w-9 cursor-pointer">
-                                                <a :href="toUrl(item.href)" target="_blank" rel="noopener noreferrer">
-                                                    <span class="sr-only">{{ item.title }}</span>
-                                                    <component
-                                                        v-if="item.icon && typeof item.icon !== 'string'"
-                                                        :is="item.icon"
-                                                        class="size-5 opacity-80 group-hover:opacity-100"
-                                                    />
-                                                    <img
-                                                        v-else-if="typeof item.icon === 'string'"
-                                                        :src="item.icon"
-                                                        class="size-5 opacity-80 group-hover:opacity-100"
-                                                        alt="icon"
-                                                    />
-                                                </a>
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{{ item.title }}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            </template>
-                        </div>
                     </div>
 
                     <DropdownMenu>
