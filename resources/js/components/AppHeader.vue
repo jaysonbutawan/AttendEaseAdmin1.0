@@ -28,7 +28,7 @@ import { toUrl, urlIsActive } from '@/lib/utils';
 import { dashboard, students, teachers } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import { InertiaLinkProps, Link, usePage } from '@inertiajs/vue3';
-import { LayoutGrid, Menu, Search, User } from 'lucide-vue-next';
+import {Menu} from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Props {
@@ -58,17 +58,14 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: dashboard(),
-        icon: LayoutGrid,
     },
     {
         title: 'Students',
         href: students(),
-        icon: User,
     },
     {
         title: 'Teachers',
         href: teachers(),
-        icon: '/assets/icons/teacher.svg' as string,
     },
 ];
 </script>
@@ -111,23 +108,6 @@ const mainNavItems: NavItem[] = [
                                         class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
                                         :class="activeItemStyles(item.href)"
                                     >
-                                        <component
-                                            v-if="
-                                                item.icon &&
-                                                typeof item.icon !== 'string'
-                                            "
-                                            :is="item.icon"
-                                            class="h-5 w-5"
-                                        />
-
-                                        <img
-                                            v-else-if="
-                                                typeof item.icon === 'string'
-                                            "
-                                            :src="item.icon"
-                                            class="h-5 w-5"
-                                            alt="icon"
-                                        />
                                         {{ item.title }}
                                     </Link>
                                 </nav>
@@ -141,8 +121,8 @@ const mainNavItems: NavItem[] = [
                 </Link>
 
                 <!-- Desktop Menu -->
-                <div class="hidden h-full lg:flex ml-auto">
-                    <NavigationMenu class="ml-10 flex h-full items-stretch">
+                <div class="hidden lg:flex flex-1 justify-end">
+                    <NavigationMenu class="flex h-full items-stretch">
                         <NavigationMenuList
                             class="flex h-full items-stretch space-x-2"
                         >
@@ -155,50 +135,20 @@ const mainNavItems: NavItem[] = [
                                     :class="[
                                         navigationMenuTriggerStyle(),
                                         activeItemStyles(item.href),
-                                        'h-9 cursor-pointer px-3 !text-3xl',
+                                        'h-9 cursor-pointer px-3 !text-2xl',
                                     ]"
                                     :href="item.href"
                                 >
-                                    <component
-                                        v-if="
-                                            item.icon &&
-                                            typeof item.icon !== 'string'
-                                        "
-                                        :is="item.icon"
-                                        class="mr-2 h-4 w-4"
-                                    />
-                                    <img
-                                        v-else-if="
-                                            typeof item.icon === 'string'
-                                        "
-                                        :src="item.icon"
-                                        class="mr-2 h-4 w-4"
-                                        alt="icon"
-                                    />
                                     {{ item.title }}
                                 </Link>
                                 <div
                                     v-if="isCurrentRoute(item.href)"
-                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"
+                                    class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-blue-600  dark:bg-white"
                                 ></div>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
                 </div>
-
-                <div class="ml-auto flex items-center space-x-2">
-                    <div class="relative flex items-center space-x-1">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            class="group h-9 w-9 cursor-pointer"
-                        >
-                            <Search
-                                class="size-5 opacity-80 group-hover:opacity-100"
-                            />
-                        </Button>
-                    </div>
-
                     <DropdownMenu>
                         <DropdownMenuTrigger :as-child="true">
                             <Button
@@ -240,5 +190,4 @@ const mainNavItems: NavItem[] = [
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </div>
         </div>
-    </div>
 </template>
