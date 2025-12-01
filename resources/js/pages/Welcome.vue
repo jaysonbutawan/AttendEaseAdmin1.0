@@ -20,7 +20,7 @@ withDefaults(
         class="flex min-h-screen flex-col items-center bg-gray-50 p-6 text-gray-800 dark:bg-gray-900 dark:text-gray-200 font-inter"
     >
         <header
-            class="w-full max-w-7xl px-4 py-4 flex justify-between items-center"
+            class="w-full max-w-9xl px-4 py-4 flex justify-between items-center"
         >
             <!-- Logo/App Name (Adjust this to match your logo component) -->
             <div class="flex items-center space-x-2 text-2xl font-bold text-gray-800 dark:text-white">

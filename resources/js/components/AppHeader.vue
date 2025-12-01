@@ -94,7 +94,7 @@ const mainNavItems: NavItem[] = [
                             >
                             <SheetHeader class="flex justify-start text-left">
                                 <AppLogoIcon
-                                    class="size-6 fill-current text-black dark:text-white"
+                                    class="size-10 fill-current text-black dark:text-white"
                                 />
                             </SheetHeader>
                             <div
@@ -125,7 +125,7 @@ const mainNavItems: NavItem[] = [
                 </div>
 
                 <Link :href="dashboard()" class="flex items-center gap-x-2">
-                    <AppLogo />
+                    <AppLogo  class="size-10 fill-current text-black dark:text-white"/>
                 </Link>
 
                 <!-- Desktop Menu -->

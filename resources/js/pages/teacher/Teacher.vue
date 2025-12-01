@@ -3,12 +3,11 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Plus, Search, Users } from 'lucide-vue-next';
-import { Select } from 'reka-ui/namespaced';
 import { ref } from 'vue';
-const PRIMARY_COLOR_RGB = '79, 57, 246'; // rgba(79, 57, 246)
+import SelectSubject from './SelectSubject.vue';
+const PRIMARY_COLOR_RGB = '79, 57, 246';
 const PRIMARY_COLOR_HEX = '#4F39F6';
 
-// Dummy data structure for the table
 const teachersData: Teacher[] = [
     {
         id: 1,
@@ -95,54 +94,6 @@ const pendingApprovalsTeachers = ref([
 
 const activeApprovalTab = ref<'Students' | 'Teachers'>('Students');
 
-const studentsData = ref([
-    {
-        id: '12345',
-        name: 'Alex Johnson',
-        department: 'Computer Science',
-        initials: 'AJ',
-        selected: true,
-    },
-    {
-        id: '12346',
-        name: 'Maria Garcia',
-        department: 'Business Admin',
-        initials: 'MG',
-        selected: false,
-    },
-    {
-        id: '12347',
-        name: 'David Smith',
-        department: 'Engineering',
-        initials: 'DS',
-        selected: false,
-    },
-]);
-
-const studentDepartments = [
-    'All',
-    'Computer Science',
-    'Business Admin',
-    'Engineering',
-];
-const studentYearLevels = [
-    'All',
-    '1st Year',
-    '2nd Year',
-    '3rd Year',
-    '4th Year',
-];
-
-const availableSubjects = ref([
-    { id: 101, name: 'Introduction to Algorithms', code: 'CS101', credits: 3 },
-    { id: 102, name: 'Data Structures', code: 'CS202', credits: 4 },
-    { id: 201, name: 'Calculus II', code: 'MATH150', credits: 3 },
-    { id: 301, name: 'Marketing Principles', code: 'BUS210', credits: 3 },
-]);
-
-const subjectCategory = ['All', 'CS', 'Math', 'Business'];
-const creditValue = ['All', '3 Credits', '4 Credits'];
-
 const departments = ['Mathematics', 'Science', 'English', 'History'];
 const availableTeachers = [
     'Select Teacher',
@@ -151,8 +102,20 @@ const availableTeachers = [
     'Sarah Johnson',
 ];
 const rooms = ['Room 101', 'Room 102', 'Room 201', 'Room 202'];
-const courses = ['Computer Science', 'Business Administration', 'Engineering', 'Mathematics'];
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const courses = [
+    'Computer Science',
+    'Business Administration',
+    'Engineering',
+    'Mathematics',
+];
+const days = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+];
 
 const assignForm = ref({
     subjectName: '',
@@ -198,13 +161,6 @@ const handleReject = (id: number) => {
     );
 };
 
-const toggleStudentSelection = (studentId: string) => {
-    const student = studentsData.value.find((s) => s.id === studentId);
-    if (student) {
-        student.selected = !student.selected;
-    }
-};
-
 const handleAssignSubjects = () => {
     alert('Subjects assigned (mock action)!');
 };
@@ -238,7 +194,8 @@ const handleAssignSubjects = () => {
                 </button>
             </header>
 
-            <div class="grid flex-grow grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
                 <div
                     class="h-fit rounded-xl border border-gray-200 bg-white shadow-xl lg:col-span-1 dark:border-gray-700 dark:bg-gray-800"
                 >
@@ -381,7 +338,7 @@ const handleAssignSubjects = () => {
                                         class="flex items-center justify-center gap-1 rounded-md border border-red-600 px-3 py-1 text-red-600 transition hover:bg-red-600 hover:text-white"
                                     >
                                         <X class="h-4 w-4" />
-                                         <span class="ml-1">Reject</span>
+                                        <span class="ml-1">Reject</span>
                                     </button>
                                 </div>
                             </div>
@@ -389,346 +346,211 @@ const handleAssignSubjects = () => {
                     </div>
                 </div>
 
-                <div
-                    class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:col-span-2"
-                >
-                    <div
-                        class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800"
-                    >
-                        <h2
-                            class="mb-6 text-xl font-semibold text-gray-900 dark:text-white"
-                        >
-                            Manage Student Selection
-                        </h2>
-
-                        <div class="space-y-4">
-                            <div class="relative">
-                                <Search
-                                    class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Search by student name or ID..."
-                                    class="w-full rounded-lg border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div class="flex space-x-3">
-                                <select
-                                    class="w-1/2 rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                >
-                                    <option>Department: All</option>
-                                    <option
-                                        v-for="dept in studentDepartments"
-                                        :key="dept"
-                                        :value="dept"
-                                    >
-                                        {{ dept }}
-                                    </option>
-                                </select>
-                                <select
-                                    class="w-1/2 rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                >
-                                    <option>Year Level: All</option>
-                                    <option
-                                        v-for="year in studentYearLevels"
-                                        :key="year"
-                                        :value="year"
-                                    >
-                                        {{ year }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div
-                            class="mt-6 max-h-96 space-y-3 overflow-y-auto border-t border-gray-200 pt-4 pr-2 dark:border-gray-700"
-                        >
-                            <div class="flex items-center justify-between p-2">
-                                <label
-                                    class="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-indigo-500"
-                                    />
-                                    <span>Select All</span>
-                                </label>
-                            </div>
-
-                            <div
-                                v-for="student in studentsData"
-                                :key="student.id"
-                                class="flex items-center justify-between rounded-lg border border-gray-200 p-3 transition duration-150 dark:border-gray-700"
-                                :class="{
-                                    'border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/20':
-                                        student.selected,
-                                    'hover:bg-gray-50 dark:hover:bg-gray-700/50':
-                                        !student.selected,
-                                }"
-                            >
-                                <div class="flex items-center space-x-3">
-                                    <input
-                                        type="checkbox"
-                                        :checked="student.selected"
-                                        @change="
-                                            toggleStudentSelection(student.id)
-                                        "
-                                        class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-indigo-500"
-                                    />
-                                    <div
-                                        class="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-300 text-xs font-bold text-white dark:bg-gray-600"
-                                    >
-                                        {{ student.initials }}
-                                    </div>
-                                    <div>
-                                        <div
-                                            class="text-sm font-medium text-gray-900 dark:text-white"
-                                        >
-                                            {{ student.name }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-gray-500 dark:text-gray-400"
-                                        >
-                                            ID: {{ student.id }} |
-                                            {{ student.department }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div
-                        class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800"
-                    >
-                        <h2
-                            class="mb-6 text-xl font-semibold text-gray-900 dark:text-white"
-                        >
-                            Available Subjects
-                        </h2>
-
-                        <div class="space-y-4">
-                            <div class="relative">
-                                <Search
-                                    class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Search by subject name or code..."
-                                    class="w-full rounded-lg border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                />
-                            </div>
-                            <div class="flex space-x-3">
-                                <select
-                                    class="w-1/2 rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                >
-                                    <option>Subject Category</option>
-                                    <option
-                                        v-for="cat in subjectCategory"
-                                        :key="cat"
-                                        :value="cat"
-                                    >
-                                        {{ cat }}
-                                    </option>
-                                </select>
-                                <select
-                                    class="w-1/2 rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                >
-                                    <option>Credit Value</option>
-                                    <option
-                                        v-for="credit in creditValue"
-                                        :key="credit"
-                                        :value="credit"
-                                    >
-                                        {{ credit }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div
-                            class="mt-6 max-h-96 space-y-3 overflow-y-auto border-t border-gray-200 pt-4 pr-2 dark:border-gray-700"
-                        >
-                            <div
-                                v-for="subject in availableSubjects"
-                                :key="subject.id"
-                                class="flex items-center justify-between rounded-lg border border-gray-200 p-3 transition duration-150 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50"
-                            >
-                                <div>
-                                    <div
-                                        class="text-sm font-medium text-gray-900 dark:text-white"
-                                    >
-                                        {{ subject.name }}
-                                    </div>
-                                    <div
-                                        class="text-xs text-gray-500 dark:text-gray-400"
-                                    >
-                                        {{ subject.code }} -
-                                        {{ subject.credits }} Credits
-                                    </div>
-                                </div>
-                                <Menu
-                                    class="h-5 w-5 cursor-pointer text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                <div class="lg:col-span-2">
+                    <SelectSubject />
                 </div>
             </div>
         </div>
 
         <!-- ASSIGN TEACHER FORM (WHITE CARD) -->
-       <div class="mt-6">
-                <h2 class="mb-6 text-2xl font-semibold text-gray-900 dark:text-white">
-                    Manage Subjects
-                </h2>
+        <div class="mt-2 lg:mx-10">
+            <h2
+                class="mb-6 text-2xl font-semibold text-gray-900 dark:text-white"
+            >
+                Manage Subjects
+            </h2>
 
-                <div class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <form @submit.prevent="handleAssignTeacher" class="grid grid-cols-1 gap-6 md:grid-cols-4">
-                        <!-- Subject Name -->
-                        <div class="md:col-span-1">
-                            <label for="subjectName" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Subject Name
-                            </label>
-                            <input
-                                id="subjectName"
-                                v-model="assignForm.subjectName"
-                                type="text"
-                                placeholder="e.g., Advanced Mathematics"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
+            <div
+                class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            >
+                <form
+                    @submit.prevent="handleAssignTeacher"
+                    class="grid grid-cols-1 gap-6 md:grid-cols-4"
+                >
+                    <!-- Subject Name -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="subjectName"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Subject Name
+                        </label>
+                        <input
+                            id="subjectName"
+                            v-model="assignForm.subjectName"
+                            type="text"
+                            placeholder="e.g., Advanced Mathematics"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
 
-                        <!-- Assigned Teacher -->
-                        <div class="md:col-span-1">
-                            <label for="teacher" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Assigned Teacher
-                            </label>
-                            <select
-                                id="teacher"
-                                v-model="assignForm.teacher"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    <!-- Assigned Teacher -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="teacher"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Assigned Teacher
+                        </label>
+                        <select
+                            id="teacher"
+                            v-model="assignForm.teacher"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="" disabled>Select a teacher</option>
+                            <option
+                                v-for="teacher in availableTeachers"
+                                :key="teacher"
+                                :value="teacher"
                             >
-                                <option value="" disabled>Select a teacher</option>
-                                <option v-for="teacher in availableTeachers" :key="teacher" :value="teacher">
-                                    {{ teacher }}
-                                </option>
-                            </select>
-                        </div>
+                                {{ teacher }}
+                            </option>
+                        </select>
+                    </div>
 
-                        <!-- Department -->
-                        <div class="md:col-span-1">
-                            <label for="department" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Department
-                            </label>
-                            <select
-                                id="department"
-                                v-model="assignForm.department"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    <!-- Department -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="department"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Department
+                        </label>
+                        <select
+                            id="department"
+                            v-model="assignForm.department"
+                            class="w-full rounded-lg border-gray-300 text-lgshadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="" disabled>Select Department</option>
+                            <option
+                                v-for="dept in departments"
+                                :key="dept"
+                                :value="dept"
                             >
-                                <option value="" disabled>Select Department</option>
-                                <option v-for="dept in departments" :key="dept" :value="dept">
-                                    {{ dept }}
-                                </option>
-                            </select>
-                        </div>
+                                {{ dept }}
+                            </option>
+                        </select>
+                    </div>
 
-                        <!-- Course -->
-                        <div class="md:col-span-1">
-                            <label for="course" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Course
-                            </label>
-                            <select
-                                id="course"
-                                v-model="assignForm.course"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    <!-- Course -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="course"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Course
+                        </label>
+                        <select
+                            id="course"
+                            v-model="assignForm.course"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="" disabled>Select Course</option>
+                            <option
+                                v-for="course in courses"
+                                :key="course"
+                                :value="course"
                             >
-                                <option value="" disabled>Select Course</option>
-                                <option v-for="course in courses" :key="course" :value="course">
-                                    {{ course }}
-                                </option>
-                            </select>
-                        </div>
+                                {{ course }}
+                            </option>
+                        </select>
+                    </div>
 
-                        <!-- Day of Week -->
-                        <div class="md:col-span-1">
-                            <label for="dayOfWeek" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Day of the Week
-                            </label>
-                            <select
-                                id="dayOfWeek"
-                                v-model="assignForm.dayOfWeek"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    <!-- Day of Week -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="dayOfWeek"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Day of the Week
+                        </label>
+                        <select
+                            id="dayOfWeek"
+                            v-model="assignForm.dayOfWeek"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option v-for="day in days" :key="day" :value="day">
+                                {{ day }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Start Time -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="startTime"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Start Time
+                        </label>
+                        <input
+                            id="startTime"
+                            v-model="assignForm.startTime"
+                            type="time"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <!-- End Time -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="endTime"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            End Time
+                        </label>
+                        <input
+                            id="endTime"
+                            v-model="assignForm.endTime"
+                            type="time"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <!-- Room Number -->
+                    <div class="md:col-span-1">
+                        <label
+                            for="roomNumber"
+                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Room Number
+                        </label>
+                        <select
+                            id="roomNumber"
+                            v-model="assignForm.roomNumber"
+                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        >
+                            <option value="" disabled>Select Room</option>
+                            <option
+                                v-for="room in rooms"
+                                :key="room"
+                                :value="room"
                             >
-                                <option v-for="day in days" :key="day" :value="day">
-                                    {{ day }}
-                                </option>
-                            </select>
-                        </div>
+                                {{ room }}
+                            </option>
+                        </select>
+                    </div>
 
-                        <!-- Start Time -->
-                        <div class="md:col-span-1">
-                            <label for="startTime" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Start Time
-                            </label>
-                            <input
-                                id="startTime"
-                                v-model="assignForm.startTime"
-                                type="time"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-
-                        <!-- End Time -->
-                        <div class="md:col-span-1">
-                            <label for="endTime" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                End Time
-                            </label>
-                            <input
-                                id="endTime"
-                                v-model="assignForm.endTime"
-                                type="time"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-
-                        <!-- Room Number -->
-                        <div class="md:col-span-1">
-                            <label for="roomNumber" class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Room Number
-                            </label>
-                            <select
-                                id="roomNumber"
-                                v-model="assignForm.roomNumber"
-                                class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            >
-                                <option value="" disabled>Select Room</option>
-                                <option v-for="room in rooms" :key="room" :value="room">
-                                    {{ room }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <!-- Actions -->
-                        <div class="mt-4 flex justify-end space-x-3 md:col-span-4">
-                            <button
-                                type="button"
-                                class="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                class="flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md transition duration-150 ease-in-out hover:opacity-80"
-                                :style="{ backgroundColor: PRIMARY_COLOR_HEX }"
-                            >
-                                <Plus class="h-4 w-4" />
-                                <span>Assign Teacher</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                    <!-- Actions -->
+                    <div class="mt-4 flex justify-end space-x-3 md:col-span-4">
+                        <button
+                            type="button"
+                            class="rounded-lg px-4 py-2 text-lg font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="flex items-center space-x-2 rounded-lg px-4 py-2 text-lg font-semibold text-white shadow-md transition duration-150 ease-in-out hover:opacity-80"
+                            :style="{ backgroundColor: PRIMARY_COLOR_HEX }"
+                        >
+                            <Plus class="h-4 w-4" />
+                            <span>Assign Teacher</span>
+                        </button>
+                    </div>
+                </form>
             </div>
+        </div>
 
         <!-- ALL TEACHERS TABLE (WHITE CARD) -->
         <div
