@@ -1,215 +1,245 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { ref } from 'vue';
-import {
-    Save, // For "Save Changes" button
-    Pencil, // For "Edit" tool and "Save" in modal
-    Trash2, // For "Delete" tool
-    ZoomIn, // For "Zoom In"
-    ZoomOut, // For "Zoom Out"
-    X, // For "Cancel" in modal
-    Grid, // For "New Room" tool (more appropriate than generic Plus/Pencil/Trash2)
-    Move, // Potentially for dragging/moving rooms (visual hint)
-    Check, // For confirming input in modal
-} from 'lucide-vue-next';
+import { ref, computed } from 'vue';
 
-// --- State Management ---
 
-// To control the visibility of the room naming modal
-const isRoomNamingModalOpen = ref(false);
-// To store the current room name being edited/created
-const currentRoomName = ref('');
-// To simulate a currently active/selected room for naming
-const activeRoomId = ref<string | null>(null);
-
-// Mock data for rooms on the map (initially empty or pre-filled)
-interface Room {
-    id: string;
+interface Teacher {
     name: string;
-    x: number; // x position as a percentage or pixel value
-    y: number; // y position as a percentage or pixel value
-    width: number;
-    height: number;
-    color: 'blue' | 'green';
+    subject: string;
+    daysAgo: number;
+    isSelected: boolean;
 }
 
-const rooms = ref<Room[]>([
-    { id: 'room-1', name: 'Library Section A', x: 25, y: 30, width: 40, height: 30, color: 'blue' },
-    { id: 'room-2', name: 'Server Room', x: 60, y: 15, width: 20, height: 20, color: 'green' },
+interface Student {
+    name: string;
+    type: string; 
+    detail: string; 
+    isSelected: boolean;
+}
+
+const teacherList = ref<Teacher[]>([
+    { name: 'Dr. Helena Vance', subject: 'Physics', daysAgo: 2, isSelected: true },
+    { name: 'Mr. Kevin Brooks', subject: 'History', daysAgo: 1, isSelected: true },
+    { name: 'Ms. Sarah Lee', subject: 'Math', daysAgo: 4, isSelected: true },
 ]);
 
-// --- Methods ---
+const studentList = ref<Student[]>([
+    { name: 'Lia Torres', type: 'Grade 10', detail: 'New Transfer', isSelected: true },
+    { name: 'Jacob Chen', type: 'Grade 7', detail: 'Re-enrollment', isSelected: false },
+    { name: 'Olivia R.', type: 'Grade 11', detail: 'New Transfer', isSelected: false },
+]);
 
-const openRoomNamingModal = (roomId: string | null = null, existingName: string = '') => {
-    activeRoomId.value = roomId;
-    currentRoomName.value = existingName;
-    isRoomNamingModalOpen.value = true;
+
+const areAllTeachersSelected = computed(() => teacherList.value.every(t => t.isSelected));
+const areAllStudentsSelected = computed(() => studentList.value.every(s => s.isSelected));
+
+const selectedTeachersCount = computed(() => teacherList.value.filter(t => t.isSelected).length);
+const selectedStudentsCount = computed(() => studentList.value.filter(s => s.isSelected).length);
+
+const toggleAllTeachers = (event: Event) => {
+    const checked = (event.target as HTMLInputElement).checked;
+    teacherList.value.forEach(t => t.isSelected = checked);
 };
 
-const saveRoomName = () => {
-    if (currentRoomName.value.trim() === '') {
-        alert('Room name cannot be empty!');
-        return;
-    }
-
-    if (activeRoomId.value) {
-        // Edit existing room
-        const room = rooms.value.find(r => r.id === activeRoomId.value);
-        if (room) {
-            room.name = currentRoomName.value.trim();
-        }
-    } else {
-        // Create new room (for demonstration, we'll just add a new mock room)
-        const newRoom: Room = {
-            id: `room-${Date.now()}`,
-            name: currentRoomName.value.trim(),
-            x: Math.random() * 50 + 10, // Random position for new room
-            y: Math.random() * 50 + 10,
-            width: 30,
-            height: 20,
-            color: Math.random() > 0.5 ? 'blue' : 'green', // Random color
-        };
-        rooms.value.push(newRoom);
-    }
-
-    closeRoomNamingModal();
+const toggleAllStudents = (event: Event) => {
+    const checked = (event.target as HTMLInputElement).checked;
+    studentList.value.forEach(s => s.isSelected = checked);
 };
 
-const closeRoomNamingModal = () => {
-    isRoomNamingModalOpen.value = false;
-    currentRoomName.value = '';
-    activeRoomId.value = null;
-};
-
-const handleSaveChanges = () => {
-    // In a real application, this would send the 'rooms' data to a backend
-    console.log('Saving all changes:', rooms.value);
-    alert('Changes saved successfully!');
-};
-
-const handleNewRoomClick = () => {
-    // For now, this just opens the naming modal for a new room
-    openRoomNamingModal(null, '');
-};
-
-const handleEditRoomClick = (roomId: string, currentName: string) => {
-    openRoomNamingModal(roomId, currentName);
-};
-
-const handleDeleteRoom = (roomId: string) => {
-    if (confirm('Are you sure you want to delete this room?')) {
-        rooms.value = rooms.value.filter(room => room.id !== roomId);
-    }
-};
-
-// Placeholder for other tool actions
-const handleToolClick = (tool: string) => {
-    alert(`Tool clicked: ${tool}`);
-};
 </script>
 
 <template>
-    <AppLayout>
-    <div class="min-h-screen bg-gray-100 font-sans flex flex-col">
-        <header class="flex items-center justify-between p-4 bg-white shadow-sm z-10">
-            <h1 class="text-xl font-bold text-gray-800">Room Map Management</h1>
-            <button
-                @click="handleSaveChanges"
-                class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-200"
-            >
-                <Save class="w-4 h-4 mr-2" />
-                Save Changes
-            </button>
-        </header>
+<AppLayout>
+  <!-- Main content wrapper to mimic the off-white background and padding of the design -->
+  <div class="p-4 sm:p-6 bg-gray-50 min-h-screen">
+    
+    <!-- Title -->
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-800 mb-8">
+      User Management Overview
+    </h1>
 
-        <main class="flex-grow p-6 relative overflow-hidden">
-            <div
-                class="relative w-full h-full bg-white rounded-lg shadow-xl overflow-hidden"
-                style="background-image: linear-gradient(to right, #f5f5f5 1px, transparent 1px), linear-gradient(to bottom, #f5f5f5 1px, transparent 1px); background-size: 20px 20px;"
-            >
-                <div
-                    v-for="room in rooms"
-                    :key="room.id"
-                    @click="handleEditRoomClick(room.id, room.name)"
-                    :style="{
-                        position: 'absolute',
-                        left: `${room.x}%`,
-                        top: `${room.y}%`,
-                        width: `${room.width}%`,
-                        height: `${room.height}%`,
-                    }"
-                    :class="{
-                        'bg-blue-200/50 border-blue-400': room.color === 'blue',
-                        'bg-green-200/50 border-green-400': room.color === 'green',
-                        'border-2 border-dashed rounded-lg flex items-center justify-center text-sm font-semibold text-gray-700 cursor-pointer hover:shadow-lg transition-shadow duration-200': true
-                    }"
-                    :title="room.name"
-                >
-                    {{ room.name }}
-                    <button
-                        @click.stop="handleDeleteRoom(room.id)"
-                        class="absolute top-1 right-1 p-1 rounded-full bg-red-500/80 text-white hover:bg-red-600 transition-colors duration-200 opacity-0 group-hover:opacity-100"
-                        title="Delete Room"
-                    >
-                        <X class="w-3 h-3" />
-                    </button>
-                </div>
+    <!-- 1. Stats Cards Section -->
+    <!-- Responsive grid for the 4 stats cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
+      
+      <!-- Stat Card 1: Active Teachers -->
+      <div class="flex flex-col p-4 sm:p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        <div class="flex items-start justify-between mb-4">
+          <span class="text-gray-500 font-semibold text-sm">Active Teachers</span>
+          <!-- Icon Container (Blue/Purple Accent) -->
+          <div class="p-2 bg-indigo-100 rounded-full text-indigo-600 flex-shrink-0">
+            <!-- Icon: Person (Using a simple path for vector clarity) -->
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+        </div>
+        <div class="flex items-baseline">
+          <span class="text-3xl sm:text-4xl font-bold text-indigo-600 mr-2">85</span>
+        </div>
+      </div>
 
+      <!-- Stat Card 2: Total Students -->
+      <div class="flex flex-col p-4 sm:p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        <div class="flex items-start justify-between mb-4">
+          <span class="text-gray-500 font-semibold text-sm">Total Students</span>
+          <!-- Icon Container (Green Accent) -->
+          <div class="p-2 bg-green-100 rounded-full text-green-600 flex-shrink-0">
+            <!-- Icon: People -->
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+        </div>
+        <div class="flex items-baseline">
+          <span class="text-3xl sm:text-4xl font-bold text-green-600 mr-2">1,450</span>
+        </div>
+      </div>
 
-                <Transition name="fade">
-                    <div
-                        v-if="isRoomNamingModalOpen"
-                        class="absolute inset-0 bg-gray-800 bg-opacity-40 flex items-center justify-center z-20"
-                    >
-                        <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Name this room</h3>
-                            <div class="relative flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition duration-200">
-                                <input
-                                    type="text"
-                                    v-model="currentRoomName"
-                                    placeholder="e.g., Library Section A"
-                                    class="flex-grow py-2 px-3 text-gray-800 outline-none border-none"
-                                    @keyup.enter="saveRoomName"
-                                />
-                                <button
-                                    @click="saveRoomName"
-                                    class="p-2 bg-blue-600 text-white hover:bg-blue-700 transition duration-200"
-                                    title="Save Name"
-                                >
-                                    <Check class="w-5 h-5" />
-                                </button>
-                                <button
-                                    @click="closeRoomNamingModal"
-                                    class="p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 transition duration-200"
-                                    title="Cancel"
-                                >
-                                    <X class="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </Transition>
+      <!-- Stat Card 3: Pending Approvals -->
+      <div class="flex flex-col p-4 sm:p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        <div class="flex items-start justify-between mb-4">
+          <span class="text-gray-500 font-semibold text-sm">Pending Approvals</span>
+          <!-- Icon Container (Red/Clock Accent) -->
+          <div class="p-2 bg-red-100 rounded-full text-red-600 flex-shrink-0">
+            <!-- Icon: Clock -->
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+        </div>
+        <div class="flex items-baseline">
+          <span class="text-3xl sm:text-4xl font-bold text-red-600 mr-2">15</span>
+        </div>
+      </div>
 
-
-                <div class="absolute bottom-6 right-6 flex items-center space-x-2 bg-white p-3 rounded-xl shadow-lg border border-gray-200 z-10">
-                    <button @click="handleNewRoomClick" class="tool-button group" title="Add New Room">
-                        <Grid class="w-5 h-5 text-gray-600 group-hover:text-blue-600 transition-colors duration-200" />
-                    </button>
-                    <button @click="handleToolClick('Delete')" class="tool-button group" title="Delete Selected">
-                        <Trash2 class="w-5 h-5 text-gray-600 group-hover:text-red-600 transition-colors duration-200" />
-                    </button>
-                    <div class="w-px h-6 bg-gray-200 mx-1"></div> <button @click="handleToolClick('Zoom In')" class="tool-button group" title="Zoom In">
-                        <ZoomIn class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors duration-200" />
-                    </button>
-                    <button @click="handleToolClick('Zoom Out')" class="tool-button group" title="Zoom Out">
-                        <ZoomOut class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors duration-200" />
-                    </button>
-                    <button @click="handleToolClick('Move')" class="tool-button group" title="Move Map">
-                        <Move class="w-5 h-5 text-gray-600 group-hover:text-gray-900 transition-colors duration-200" />
-                    </button>
-                </div>
-            </div>
-        </main>
+      <!-- Stat Card 4: Classes in Session -->
+      <div class="flex flex-col p-4 sm:p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        <div class="flex items-start justify-between mb-4">
+          <span class="text-gray-500 font-semibold text-sm">Classes in Session</span>
+          <!-- Icon Container (Teal/School Accent) -->
+          <div class="p-2 bg-teal-100 rounded-full text-teal-600 flex-shrink-0">
+            <!-- Icon: Building/School -->
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><path d="M12 22v-4"/><path d="M9 18h6"/></svg>
+          </div>
+        </div>
+        <div class="flex items-baseline">
+          <span class="text-3xl sm:text-4xl font-bold text-teal-600 mr-2">42</span>
+        </div>
+      </div>
     </div>
-    </AppLayout>
+
+    <!-- 2. Action Required Section -->
+    <h2 class="text-xl font-bold text-gray-800 mb-6">
+      Action Required: Pending Approvals (15 Total)
+    </h2>
+
+    <!-- Action Cards Container -->
+    <!-- Responsive grid for the two action lists -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+      <!-- Action Card 1: New Teacher Registrations -->
+      <div class="flex flex-col p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        
+        <!-- Card Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100">
+          <h3 class="flex items-center text-lg font-semibold text-gray-800">
+            <!-- Icon: Teacher Hat (Yellow Accent) -->
+            <svg class="w-5 h-5 mr-2 text-yellow-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            New Teacher Registrations (3)
+          </h3>
+          <button 
+            :disabled="selectedTeachersCount === 0"
+            :class="[selectedTeachersCount === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700', 'px-4 py-2 text-sm font-medium text-white rounded-lg transition duration-150 shadow-md flex-shrink-0']"
+          >
+            Approve Selected ({{ selectedTeachersCount }})
+          </button>
+        </div>
+
+        <!-- Select All Checkbox -->
+        <div class="flex justify-start items-center mb-4">
+          <label class="flex items-center text-sm font-medium text-gray-600 cursor-pointer">
+            <input 
+              type="checkbox" 
+              :checked="areAllTeachersSelected" 
+              @change="toggleAllTeachers" 
+              class="form-checkbox text-indigo-600 rounded-md border-gray-300 w-4 h-4 mr-2 focus:ring-indigo-500"
+            >
+            Select All
+          </label>
+        </div>
+
+        <!-- Teacher List -->
+        <div v-for="(teacher, index) in teacherList" :key="teacher.name" 
+             class="flex items-start justify-between py-3 border-t border-gray-100"
+             :class="{ 'border-t-0': index === 0 }">
+          <div class="flex items-start">
+            <input type="checkbox" v-model="teacher.isSelected" class="form-checkbox text-indigo-600 rounded-md border-gray-300 w-5 h-5 mt-1 mr-3 focus:ring-indigo-500">
+            <div>
+              <p class="text-base font-semibold text-gray-900">{{ teacher.name }} ({{ teacher.subject }})</p>
+              <p class="text-xs text-gray-500">Application submitted {{ teacher.daysAgo }} {{ teacher.daysAgo > 1 ? 'days' : 'day' }} ago.</p>
+            </div>
+          </div>
+          <!-- PENDING Badge -->
+          <span class="px-3 py-1 text-xs font-semibold text-orange-600 bg-orange-100 rounded-full tracking-wider flex-shrink-0">
+            PENDING
+          </span>
+        </div>
+
+        <!-- Footer Link -->
+        <a href="#" class="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 self-start">
+          View all 3 teacher applications →
+        </a>
+      </div>
+
+      <!-- Action Card 2: New Student Requests -->
+      <div class="flex flex-col p-6 bg-white rounded-xl shadow-lg border border-gray-100">
+        
+        <!-- Card Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-4 border-b border-gray-100">
+          <h3 class="flex items-center text-lg font-semibold text-gray-800">
+            <!-- Icon: Student (Blue/Teal Accent) -->
+            <svg class="w-5 h-5 mr-2 text-teal-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 13a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"/></svg>
+            New Student Requests (12)
+          </h3>
+          <button 
+            :disabled="selectedStudentsCount === 0"
+            :class="[selectedStudentsCount === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700', 'px-4 py-2 text-sm font-medium text-white rounded-lg transition duration-150 shadow-md flex-shrink-0']"
+          >
+            Approve Selected ({{ selectedStudentsCount }})
+          </button>
+        </div>
+
+        <!-- Select All Checkbox -->
+        <div class="flex justify-start items-center mb-4">
+          <label class="flex items-center text-sm font-medium text-gray-600 cursor-pointer">
+            <input 
+              type="checkbox" 
+              :checked="areAllStudentsSelected" 
+              @change="toggleAllStudents" 
+              class="form-checkbox text-indigo-600 rounded-md border-gray-300 w-4 h-4 mr-2 focus:ring-indigo-500"
+            >
+            Select All
+          </label>
+        </div>
+
+        <!-- Student List -->
+        <div v-for="(student, index) in studentList" :key="student.name" 
+             class="flex items-start justify-between py-3 border-t border-gray-100"
+             :class="{ 'border-t-0': index === 0 }">
+          <div class="flex items-start">
+            <input type="checkbox" v-model="student.isSelected" class="form-checkbox text-indigo-600 rounded-md border-gray-300 w-5 h-5 mt-1 mr-3 focus:ring-indigo-500">
+            <div>
+              <p class="text-base font-semibold text-gray-900">{{ student.name }} ({{ student.type }})</p>
+              <p class="text-xs text-gray-500">Request type: {{ student.detail }}.</p>
+            </div>
+          </div>
+          <!-- PENDING Badge -->
+          <span class="px-3 py-1 text-xs font-semibold text-orange-600 bg-orange-100 rounded-full tracking-wider flex-shrink-0">
+            PENDING
+          </span>
+        </div>
+
+        <!-- Footer Link -->
+        <a href="#" class="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 self-start">
+          View all 12 student applications →
+        </a>
+      </div>
+    </div>
+  </div>
+</AppLayout>
 </template>

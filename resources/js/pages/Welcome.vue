@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { about, dashboard, login, register } from '@/routes';
+import { about, login, register } from '@/routes';
 import { Head, Link } from '@inertiajs/vue3';
 
 withDefaults(
@@ -17,61 +17,73 @@ withDefaults(
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
     <div
-        class="flex min-h-screen flex-col items-center bg-gray-50 p-6 text-gray-800 dark:bg-gray-900 dark:text-gray-200 font-inter"
+        class="font-inter flex min-h-screen flex-col items-center bg-gray-50 p-6 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     >
         <header
-            class="w-full max-w-9xl px-4 py-4 flex justify-between items-center"
+            class="max-w-9xl flex w-full items-center justify-between px-4 py-4"
         >
-            <!-- Logo/App Name (Adjust this to match your logo component) -->
-            <div class="flex items-center space-x-2 text-2xl font-bold text-gray-800 dark:text-white">
-                AttendEase
+            <div class="ml-30 grid flex-1 text-left text-xl">
+                <p class="text-sm text-gray-500">
+                    <span class="text-2xl font-bold text-black">Attend</span>
+                    <span class="text-2xl font-bold text-indigo-600">Ease</span
+                    >.
+                </p>
             </div>
 
             <!-- Auth Links -->
             <nav class="flex items-center justify-end space-x-3">
-              
-                
-                    <!-- This would be an about Button -->
-                    <Link
-                        :href="about()" 
-                        class="rounded-lg px-4 py-2 text-lg font-medium text-indigo-600 hover:bg-indigo-50 transition duration-150"
-                    >
-                        About
-                    </Link>
-                   
+                <!-- This would be an about Button -->
+                <Link
+                    :href="about()"
+                    class="rounded-lg px-4 py-2 text-lg font-medium text-indigo-600 transition duration-150 hover:bg-indigo-50"
+                >
+                    About
+                </Link>
             </nav>
         </header>
 
         <!-- MAIN HERO CONTENT (The center design) -->
-        <main class="flex flex-col flex-grow w-full justify-center items-center text-center">
-            <h1 class="text-6xl md:text-8xl font-extrabold leading-tight tracking-tighter">
+        <main
+            class="flex w-full flex-grow flex-col items-center justify-center text-center"
+        >
+            <h1
+                class="text-6xl leading-tight font-extrabold tracking-tighter md:text-8xl"
+            >
                 Attendance <span class="text-indigo-600">Simplified</span>.
             </h1>
-            <p class="mt-6 text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-                AttendEase is the smart platform for seamless student attendance tracking, teacher management, and subject organization.
+            <p class="mt-6 max-w-3xl text-xl text-gray-600 dark:text-gray-400">
+                AttendEase is the smart platform for seamless student attendance
+                tracking, teacher management, and subject organization.
             </p>
 
             <!-- CALL TO ACTION BUTTONS (Updated to Login and Register) -->
-            <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div
+                class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row"
+            >
                 <Link
                     :href="login()"
-                    class="rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105"
+                    class="transform rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-lg transition duration-300 hover:scale-105 hover:bg-indigo-700"
                 >
                     Login
                 </Link>
                 <Link
                     v-if="canRegister"
                     :href="register()"
-                    class="rounded-xl border border-gray-300 bg-white px-8 py-3 text-lg font-semibold text-gray-700 shadow-md hover:bg-gray-50 transition duration-300 transform hover:scale-105"
+                    class="transform rounded-xl border border-gray-300 bg-white px-8 py-3 text-lg font-semibold text-gray-700 shadow-md transition duration-300 hover:scale-105 hover:bg-gray-50"
                 >
                     Register
                 </Link>
             </div>
         </main>
-        
-        <!-- Placeholder for a simple footer or extra content if needed -->
-        <footer class="w-full max-w-7xl py-4 text-center text-sm text-gray-500">
-            &copy; {{ new Date().getFullYear() }} AttendEase. All rights reserved.
+
+       <footer
+            class="w-full py-2 text-center text-lg text-gray-500 dark:border-gray-700"
+        >
+            <p class="text-sm text-gray-500">
+                <span class="text-2xl font-bold text-black">Attend</span>
+                <span class="text-2xl font-bold text-indigo-600">Ease</span>.
+                All rights reserved. © {{ new Date().getFullYear() }}
+            </p>
         </footer>
     </div>
 </template>

@@ -3,14 +3,11 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 </script>
 
 <template>
-    <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-    >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
-    <div class="ml-1 grid flex-1 text-left text-xl">
-        <span class="mb-0.5 truncate leading-tight font-semibold"
-            >AttendEase</span
-        >
+    <div class="ml-30 grid flex-1 text-left text-xl">
+                <p class="text-sm text-gray-500">
+                    <span class="text-2xl font-bold text-black">Attend</span>
+                    <span class="text-2xl font-bold text-indigo-600">Ease</span
+                    >.
+                </p>
     </div>
 </template>
