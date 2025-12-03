@@ -195,13 +195,15 @@ const props = withDefaults(
                         <div class="mt-10 flex justify-center space-x-4">
                             <a
                                 href="#help-section"
-                                class="inline-flex items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 px-8 py-3 text-lg font-medium text-white shadow-md transition hover:animate-bounce"
+                                class="inline-flex items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 
+                                px-8 py-3 text-lg font-medium text-white shadow-md transition duration-300 hover:scale-105 hover:bg-indigo-700"
                             >
                                 Download Our App
                             </a>
                             <a
                                 href="#faq-section"
-                                class="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-8 py-3 text-lg font-medium text-gray-700 transition duration-150 hover:bg-gray-50"
+                                class="transform inline-flex items-center justify-center rounded-xl border border-gray-300
+                                 bg-white px-8 py-3 text-lg font-medium text-gray-700 shadow-md transition duration-300 hover:scale-105 hover:bg-gray-50"
                             >
                                 Find Quick Answers
                             </a>

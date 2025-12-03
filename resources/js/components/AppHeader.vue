@@ -17,7 +17,6 @@ import {
 import {
     Sheet,
     SheetContent,
-    SheetHeader,
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
@@ -91,7 +90,7 @@ const mainNavItems: NavItem[] = [
                             <SheetTitle class="sr-only"
                                 >Navigation Menu</SheetTitle
                             >
-                        
+
                             <div
                                 class="flex h-full flex-1 flex-col justify-between space-y-4 py-6"
                             >
@@ -120,7 +119,9 @@ const mainNavItems: NavItem[] = [
                 </div>
 
                 <Link :href="dashboard()" class="flex items-center gap-x-2">
-                    <AppLogo  class="size-10 fill-current text-black dark:text-white"/>
+                    <AppLogo
+                        class="size-10 fill-current text-black dark:text-white"
+                    />
                 </Link>
 
                 <!-- Desktop Menu -->
@@ -138,16 +139,16 @@ const mainNavItems: NavItem[] = [
                                     :class="[
                                         navigationMenuTriggerStyle(),
                                         activeItemStyles(item.href),
-                                        'relative h-9 cursor-pointer px-1 !text-2xl',
+                                        'group relative h-9 cursor-pointer px-1 !text-2xl',
                                     ]"
                                     :href="item.href"
                                 >
                                     <span class="relative">
                                         {{ item.title }}
                                         <span
-                                            class="absolute bottom-0 left-0 h-0.5 w-[100%] origin-left scale-x-0 bg-blue-600 transition-transform dark:bg-white"
+                                            class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-blue-600 opacity-0 transition-opacity duration-200 hover:opacity-100"
                                             :class="{
-                                                'scale-x-100': isCurrentRoute(
+                                                'opacity-100': isCurrentRoute(
                                                     item.href,
                                                 ),
                                             }"
