@@ -69,14 +69,14 @@ const props = defineProps<{
 
         <Link
           :href="login()"
-          class="rounded-lg px-4 py-2 text-lg font-medium text-gray-600 transition duration-150 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+          class="transform rounded-xl border border-gray-300 bg-white px-8 py-3 text-lg font-semibold text-gray-700 shadow-md transition duration-300 hover:scale-105 hover:bg-gray-50"
         >
           Log in
         </Link>
         <Link
           v-if="props.canRegister"
           :href="register()"
-          class="rounded-lg bg-indigo-600 px-4 py-2 text-lg font-medium text-white shadow-md transition duration-150 hover:bg-indigo-700"
+          class="transform rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-lg transition duration-300 hover:scale-105 hover:bg-indigo-700"
         >
           Register
         </Link>
