@@ -365,7 +365,7 @@ const handleAssignSubjects = () => {
             >
                 <form
                     @submit.prevent="handleAssignTeacher"
-                    class="grid grid-cols-1 gap-6 md:grid-cols-4"
+                    class="grid grid-cols-1 gap-6 md:grid-cols-5"
                 >
                     <!-- Subject Name -->
                     <div class="md:col-span-1">
@@ -407,55 +407,6 @@ const handleAssignSubjects = () => {
                             </option>
                         </select>
                     </div>
-
-                    <!-- Department -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="department"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Department
-                        </label>
-                        <select
-                            id="department"
-                            v-model="assignForm.department"
-                            class="w-full rounded-lg border-gray-300 text-lgshadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        >
-                            <option value="" disabled>Select Department</option>
-                            <option
-                                v-for="dept in departments"
-                                :key="dept"
-                                :value="dept"
-                            >
-                                {{ dept }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Course -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="course"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Course
-                        </label>
-                        <select
-                            id="course"
-                            v-model="assignForm.course"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        >
-                            <option value="" disabled>Select Course</option>
-                            <option
-                                v-for="course in courses"
-                                :key="course"
-                                :value="course"
-                            >
-                                {{ course }}
-                            </option>
-                        </select>
-                    </div>
-
                     <!-- Day of Week -->
                     <div class="md:col-span-1">
                         <label
