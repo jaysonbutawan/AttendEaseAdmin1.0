@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { about, login, register } from '@/routes';
+import { about, login } from '@/routes';
 import { Head, Link } from '@inertiajs/vue3';
 
 withDefaults(
@@ -30,7 +30,6 @@ withDefaults(
                 </p>
             </div>
 
-            <!-- Auth Links -->
             <nav class="flex items-center justify-end space-x-3">
                 <!-- This would be an about Button -->
                 <Link
@@ -65,13 +64,6 @@ withDefaults(
                     class="transform rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-lg transition duration-300 hover:scale-105 hover:bg-indigo-700"
                 >
                     Login
-                </Link>
-                <Link
-                    v-if="canRegister"
-                    :href="register()"
-                    class="transform rounded-xl border border-gray-300 bg-white px-8 py-3 text-lg font-semibold text-gray-700 shadow-md transition duration-300 hover:scale-105 hover:bg-gray-50"
-                >
-                    Register
                 </Link>
             </div>
         </main>

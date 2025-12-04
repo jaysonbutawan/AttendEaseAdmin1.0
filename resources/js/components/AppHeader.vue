@@ -104,7 +104,7 @@ const mainNavItems: NavItem[] = [
                                     >
                                         {{ item.title }}
                                         <span
-                                            class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-blue-600 opacity-0 transition-opacity duration-200"
+                                            class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-indigo-600 opacity-0 transition-opacity duration-200"
                                             :class="{
                                                 'opacity-100': isCurrentRoute(
                                                     item.href,
@@ -136,24 +136,15 @@ const mainNavItems: NavItem[] = [
                                 class="relative flex h-full items-center"
                             >
                                 <Link
+                                    :href="item.href"
                                     :class="[
                                         navigationMenuTriggerStyle(),
+                                        'nav-item !text-base text-gray-500 ', // use nav-item class
                                         activeItemStyles(item.href),
-                                        'group relative h-9 cursor-pointer px-1 !text-2xl',
+                                        { active: isCurrentRoute(item.href) }, // adds .active when current
                                     ]"
-                                    :href="item.href"
                                 >
-                                    <span class="relative">
-                                        {{ item.title }}
-                                        <span
-                                            class="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-blue-600 opacity-0 transition-opacity duration-200 hover:opacity-100"
-                                            :class="{
-                                                'opacity-100': isCurrentRoute(
-                                                    item.href,
-                                                ),
-                                            }"
-                                        ></span>
-                                    </span>
+                                    {{ item.title }}
                                 </Link>
                             </NavigationMenuItem>
                         </NavigationMenuList>

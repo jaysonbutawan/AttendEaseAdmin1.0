@@ -1,19 +1,15 @@
 <script setup lang="ts">
-import { login, register } from '@/routes';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 
-import { onMounted, onUnmounted, ref } from 'vue';
-import AttendEaseHeader from '@/pages/about/AboutHeader.vue';
 import {
-  LandingPageController,
-  Slide,
-  Feature,
+    Feature,
+    LandingPageController,
+    Slide,
 } from '@/controllers/LandingPageController';
-
-
+import AttendEaseHeader from '@/pages/about/AboutHeader.vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 
 // controller instance
-
 
 // Define the carousel slides data
 const slides: Slide[] = [
@@ -30,7 +26,6 @@ const slides: Slide[] = [
         alt: 'Student Records List',
     },
 ];
-
 
 const currentSlideIndex = ref(0);
 const activeSection = ref('faq-section'); // Default active section
@@ -117,8 +112,6 @@ onUnmounted(() => {
     window.removeEventListener('scroll', updateActiveSection);
 });
 
-
-
 const features: Feature[] = [
     {
         title: 'For Students',
@@ -145,10 +138,10 @@ const features: Feature[] = [
 const controller = new LandingPageController(slides, features);
 
 const props = withDefaults(
-  defineProps<{
-    canRegister: boolean;
-  }>(),
-  { canRegister: true },
+    defineProps<{
+        canRegister: boolean;
+    }>(),
+    { canRegister: true },
 );
 </script>
 
@@ -157,22 +150,20 @@ const props = withDefaults(
         <link rel="preconnect" href="https://rsms.me/" />
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     </Head>
-     <div
+    <div
         class="font-inter flex min-h-screen flex-col items-center bg-gray-50 p-6 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     >
         <header
             class="sticky top-0 z-10 flex w-full items-center justify-between bg-gray-50 px-30 py-4 dark:bg-gray-900"
         >
-    
-    <AttendEaseHeader
-      :controller="controller"
-      :can-register="props.canRegister"
-    />
+            <AttendEaseHeader
+                :controller="controller"
+                :can-register="props.canRegister"
+            />
         </header>
-         <div
+        <div
             class="font-inter flex min-h-screen flex-col items-center bg-gray-50 p-6 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
         >
-      
             <div class="flex min-h-screen flex-col antialiased">
                 <main
                     class="mx-auto max-w-7xl flex-grow px-4 py-20 sm:px-6 lg:px-8"
@@ -195,15 +186,13 @@ const props = withDefaults(
                         <div class="mt-10 flex justify-center space-x-4">
                             <a
                                 href="#help-section"
-                                class="inline-flex items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 
-                                px-8 py-3 text-lg font-medium text-white shadow-md transition duration-300 hover:scale-105 hover:bg-indigo-700"
+                                class="inline-flex items-center justify-center rounded-xl border border-indigo-600 bg-indigo-600 px-8 py-3 text-lg font-medium text-white shadow-md transition duration-300 hover:scale-105 hover:bg-indigo-700"
                             >
                                 Download Our App
                             </a>
                             <a
                                 href="#faq-section"
-                                class="transform inline-flex items-center justify-center rounded-xl border border-gray-300
-                                 bg-white px-8 py-3 text-lg font-medium text-gray-700 shadow-md transition duration-300 hover:scale-105 hover:bg-gray-50"
+                                class="inline-flex transform items-center justify-center rounded-xl border border-gray-300 bg-white px-8 py-3 text-lg font-medium text-gray-700 shadow-md transition duration-300 hover:scale-105 hover:bg-gray-50"
                             >
                                 Find Quick Answers
                             </a>
@@ -232,7 +221,9 @@ const props = withDefaults(
                             class="faq-card rounded-xl border border-gray-200 p-6 shadow-md"
                         >
                             <h3 class="primary-text mb-3 text-xl font-bold">
-                                How do I reset my password?
+                                <span class="text-indigo-600"
+                                    >How do I reset my password?</span
+                                >
                             </h3>
                             <div class="flex items-start gap-6">
                                 <p
@@ -255,9 +246,12 @@ const props = withDefaults(
                         <div
                             class="faq-card rounded-xl border border-gray-200 p-6 shadow-md"
                         >
-                            <h3 class="primary-text mb-3 text-xl font-bold">
-                                What devices are supported?
+                            <h3 class="mb-3 text-xl font-bold">
+                                <span class="text-indigo-600">
+                                    What devices are supported?</span
+                                >
                             </h3>
+
                             <div class="flex items-start gap-6">
                                 <p
                                     class="flex-1 text-sm leading-relaxed text-gray-600"
@@ -278,7 +272,9 @@ const props = withDefaults(
                             class="faq-card rounded-xl border border-gray-200 p-6 shadow-md"
                         >
                             <h3 class="primary-text mb-3 text-xl font-bold">
-                                Is there a free trial period?
+                                <span class="text-indigo-600"
+                                    >Is there a free trial period?</span
+                                >
                             </h3>
                             <div class="flex items-start gap-6">
                                 <p
@@ -729,7 +725,7 @@ const props = withDefaults(
                 All rights reserved. © {{ new Date().getFullYear() }}
             </p>
         </footer>
-     </div>
+    </div>
 </template>
 
 <style scoped>
@@ -821,7 +817,7 @@ header {
     transition: all 0.2s ease-in-out;
 }
 .primary-button:hover {
-    background-color: var(--primary-color-hover); 
+    background-color: var(--primary-color-hover);
     box-shadow:
         0 4px 6px -1px rgba(0, 0, 0, 0.1),
         0 2px 4px -2px rgba(0, 0, 0, 0.1);
@@ -829,10 +825,10 @@ header {
 }
 
 .inline-form-field {
-    width: 150px; 
+    width: 150px;
 }
 .inline-signin-button {
-    height: 40px; 
+    height: 40px;
 }
 
 .desktop-flex-grow {

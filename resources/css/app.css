@@ -162,6 +162,35 @@
     --sidebar: hsl(240 5.9% 10%);
 }
 
+.nav-item {
+  position: relative;
+  display: inline-block;  
+  padding: 4px 0;
+  transition: color 0.2s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: rgb(79 70 229);
+  transition: width 0.3s ease-in-out, left 0.3s ease-in-out;
+}
+
+.nav-item:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+.nav-item.active::after {
+  width: 100%;
+  left: 0;
+}
+
+
 @layer base {
     * {
         @apply border-border outline-ring/50;

@@ -15,6 +15,8 @@ withDefaults(defineProps<Props>(), {
     <AppLayout :breadcrumbs="breadcrumbs">
         <slot />
 
+    </AppLayout>
+    
          <footer
             class="w-full py-2 text-center text-lg text-gray-500 dark:border-gray-700"
         >
@@ -24,5 +26,4 @@ withDefaults(defineProps<Props>(), {
                 All rights reserved. © {{ new Date().getFullYear() }}
             </p>
         </footer>
-    </AppLayout>
 </template>
