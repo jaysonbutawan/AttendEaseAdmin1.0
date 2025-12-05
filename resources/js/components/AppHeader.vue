@@ -90,7 +90,6 @@ const mainNavItems: NavItem[] = [
                             <SheetTitle class="sr-only"
                                 >Navigation Menu</SheetTitle
                             >
-
                             <div
                                 class="flex h-full flex-1 flex-col justify-between space-y-4 py-6"
                             >
@@ -99,7 +98,7 @@ const mainNavItems: NavItem[] = [
                                         v-for="item in mainNavItems"
                                         :key="item.title"
                                         :href="item.href"
-                                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent"
+                                        class="flex items-center gap-x-3 rounded-lg px-3 py-2 font-medium hover:bg-accent"
                                         :class="activeItemStyles(item.href)"
                                     >
                                         {{ item.title }}
@@ -113,6 +112,68 @@ const mainNavItems: NavItem[] = [
                                         ></span>
                                     </Link>
                                 </nav>
+                            </div>
+
+                            <div class="mt-4 border-t pt-4">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger :as-child="true">
+                                        <Button
+                                            variant="ghost"
+                                            class="flex w-full items-center justify-between rounded-lg px-3 py-2 hover:bg-accent"
+                                        >
+                                            <div
+                                                class="flex items-center gap-3"
+                                            >
+                                                <Avatar
+                                                    class="size-9 overflow-hidden rounded-full"
+                                                >
+                                                    <AvatarImage
+                                                        v-if="auth.user.avatar"
+                                                        :src="auth.user.avatar"
+                                                        :alt="auth.user.name"
+                                                    />
+                                                    <AvatarFallback
+                                                        class="rounded-full bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
+                                                    >
+                                                        {{
+                                                            getInitials(
+                                                                auth.user?.name,
+                                                            )
+                                                        }}
+                                                    </AvatarFallback>
+                                                </Avatar>
+
+                                                <div
+                                                    class="flex flex-col items-start"
+                                                >
+                                                    <span
+                                                        class="text-sm font-semibold text-neutral-900 dark:text-neutral-50"
+                                                    >
+                                                        {{ auth.user?.name }}
+                                                    </span>
+                                                    <span
+                                                        class="max-w-[180px] truncate text-xs text-neutral-500 dark:text-neutral-400"
+                                                    >
+                                                        {{ auth.user?.email }}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <!-- little chevron indicator (optional) -->
+                                            <span
+                                                class="text-xs text-neutral-500"
+                                                >▼</span
+                                            >
+                                        </Button>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent
+                                        align="start"
+                                        class="w-56"
+                                    >
+                                        <UserMenuContent :user="auth.user" />
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </SheetContent>
                     </Sheet>
@@ -139,7 +200,7 @@ const mainNavItems: NavItem[] = [
                                     :href="item.href"
                                     :class="[
                                         navigationMenuTriggerStyle(),
-                                        'nav-item !text-base text-gray-500 ', // use nav-item class
+                                        'nav-item !text-base text-gray-500', // use nav-item class
                                         activeItemStyles(item.href),
                                         { active: isCurrentRoute(item.href) }, // adds .active when current
                                     ]"
@@ -149,32 +210,35 @@ const mainNavItems: NavItem[] = [
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger :as-child="true">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            class="relative size-10 w-auto rounded-full p-1 focus-within:ring-2 focus-within:ring-primary"
-                        >
-                            <Avatar class="size-8 overflow-hidden rounded-full">
-                                <AvatarImage
-                                    v-if="auth.user.avatar"
-                                    :src="auth.user.avatar"
-                                    :alt="auth.user.name"
-                                />
-                                <AvatarFallback
-                                    class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger :as-child="true">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="relative size-10 w-auto rounded-full p-1 focus-within:ring-2 focus-within:ring-primary"
+                            >
+                                <Avatar
+                                    class="size-8 overflow-hidden rounded-full"
                                 >
-                                    {{ getInitials(auth.user?.name) }}
-                                </AvatarFallback>
-                            </Avatar>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" class="w-56">
-                        <UserMenuContent :user="auth.user" />
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                                    <AvatarImage
+                                        v-if="auth.user.avatar"
+                                        :src="auth.user.avatar"
+                                        :alt="auth.user.name"
+                                    />
+                                    <AvatarFallback
+                                        class="rounded-lg bg-neutral-200 font-semibold text-black dark:bg-neutral-700 dark:text-white"
+                                    >
+                                        {{ getInitials(auth.user?.name) }}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-56">
+                            <UserMenuContent :user="auth.user" />
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
         </div>
     </div>

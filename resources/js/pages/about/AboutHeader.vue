@@ -117,7 +117,7 @@ const props = defineProps<{
                     <Button
                         variant="ghost"
                         size="icon"
-                        class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="mr-2 h-9 w-9"
                     >
                         <Menu class="h-5 w-5" />
                     </Button>
