@@ -4,7 +4,7 @@ import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Plus, Search, Users } from 'lucide-vue-next';
 import { ref } from 'vue';
-import SelectSubject from './SelectSubject.vue';
+import SelectSubject from '../student/SelectSubject.vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
 const PRIMARY_COLOR_HEX = '#4F39F6';
 
@@ -73,28 +73,7 @@ const pendingApprovals = ref([
     },
 ]);
 
-const pendingApprovalsStudents = ref([
-    { id: 1, name: 'John Doe', requestedTime: '2 hours ago', initials: 'JD' },
-    { id: 2, name: 'Jane Smith', requestedTime: '5 hours ago', initials: 'JS' },
-    { id: 3, name: 'Mike...', requestedTime: '1 day ago', initials: 'M' },
-    { id: 3, name: 'Mike...', requestedTime: '1 day ago', initials: 'M' },
-    { id: 3, name: 'Mike...', requestedTime: '1 day ago', initials: 'M' },
-    { id: 3, name: 'Mike...', requestedTime: '1 day ago', initials: 'M' },
-]);
 
-const pendingApprovalsTeachers = ref([
-    { id: 10, name: 'Jane Doe', requestedTime: '2024-07-28', initials: 'JD' },
-    {
-        id: 20,
-        name: 'Alex Johnson',
-        requestedTime: '2024-07-27',
-        initials: 'AJ',
-    },
-]);
-
-const activeApprovalTab = ref<'Students' | 'Teachers'>('Students');
-
-const departments = ['Mathematics', 'Science', 'English', 'History'];
 const availableTeachers = [
     'Select Teacher',
     'Dr. Helena Vance',
@@ -102,12 +81,7 @@ const availableTeachers = [
     'Sarah Johnson',
 ];
 const rooms = ['Room 101', 'Room 102', 'Room 201', 'Room 202'];
-const courses = [
-    'Computer Science',
-    'Business Administration',
-    'Engineering',
-    'Mathematics',
-];
+
 const days = [
     'Monday',
     'Tuesday',
@@ -145,22 +119,6 @@ const handleAssignTeacher = () => {
 
 const search = ref('');
 
-const handleApprove = (id: number) => {
-    console.log('Approving teacher ID:', id);
-    alert(`Teacher ${id} approved (mock action)!`);
-    pendingApprovals.value = pendingApprovals.value.filter(
-        (item) => item.id !== id,
-    );
-};
-
-const handleReject = (id: number) => {
-    console.log('Rejecting teacher ID:', id);
-    alert(`Teacher ${id} rejected (mock action)!`);
-    pendingApprovals.value = pendingApprovals.value.filter(
-        (item) => item.id !== id,
-    );
-};
-
 const handleAssignSubjects = () => {
     alert('Subjects assigned (mock action)!');
 };
@@ -193,163 +151,6 @@ const handleAssignSubjects = () => {
                     <span>Assign Subject(s)</span>
                 </button>
             </header>
-
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-
-                <div
-                    class="h-fit rounded-xl border border-gray-200 bg-white shadow-xl lg:col-span-1 dark:border-gray-700 dark:bg-gray-800"
-                >
-                    <div class="p-6">
-                        <h2
-                            class="mb-4 text-xl font-semibold text-gray-900 dark:text-white"
-                        >
-                            Pending Approvals
-                        </h2>
-
-                        <div
-                            class="mb-4 flex border-b border-gray-200 dark:border-gray-700"
-                        >
-                            <button
-                                @click="activeApprovalTab = 'Students'"
-                                class="px-4 py-2 text-sm font-medium transition duration-150"
-                                :class="
-                                    activeApprovalTab === 'Students'
-                                        ? `text-[${PRIMARY_COLOR_HEX}] border-b-2 border-[${PRIMARY_COLOR_HEX}] dark:text-white`
-                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                                "
-                            >
-                                Students ({{ pendingApprovalsStudents.length }})
-                            </button>
-                            <button
-                                @click="activeApprovalTab = 'Teachers'"
-                                class="px-4 py-2 text-sm font-medium transition duration-150"
-                                :class="
-                                    activeApprovalTab === 'Teachers'
-                                        ? `text-[${PRIMARY_COLOR_HEX}] border-b-2 border-[${PRIMARY_COLOR_HEX}] dark:text-white`
-                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                                "
-                            >
-                                Teachers ({{ pendingApprovalsTeachers.length }})
-                            </button>
-                        </div>
-
-                        <div class="max-h-96 space-y-3 overflow-y-auto pr-2">
-                            <div
-                                v-if="
-                                    (activeApprovalTab === 'Students' &&
-                                        pendingApprovalsStudents.length ===
-                                            0) ||
-                                    (activeApprovalTab === 'Teachers' &&
-                                        pendingApprovalsTeachers.length === 0)
-                                "
-                                class="p-4 text-center text-gray-500 dark:text-gray-400"
-                            >
-                                No pending
-                                {{ activeApprovalTab.toLowerCase() }} approvals.
-                            </div>
-
-                            <div
-                                v-for="approval in pendingApprovalsStudents"
-                                :key="approval.id"
-                                v-if="activeApprovalTab === 'Students'"
-                                class="flex items-center justify-between rounded-lg p-3 transition duration-150 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                            >
-                                <div class="flex items-center space-x-3">
-                                    <div
-                                        class="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-300 text-xs font-bold text-white dark:bg-gray-600"
-                                    >
-                                        {{ approval.initials }}
-                                    </div>
-
-                                    <div>
-                                        <div
-                                            class="text-sm font-medium text-gray-900 dark:text-white"
-                                        >
-                                            {{ approval.name }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-gray-500 dark:text-gray-400"
-                                        >
-                                            {{ approval.requestedTime }}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="flex space-x-2">
-                                    <!-- APPROVE BUTTON -->
-                                    <button
-                                        @click="handleApprove(approval.id)"
-                                        class="flex items-center gap-1 rounded-md border border-green-600 px-3 py-1 text-green-600 transition hover:bg-green-600 hover:text-white"
-                                    >
-                                        <Check class="h-4 w-4" />
-                                        Approve
-                                    </button>
-
-                                    <!-- REJECT BUTTON -->
-                                    <button
-                                        @click="handleReject(approval.id)"
-                                        class="flex items-center gap-1 rounded-md border border-red-600 px-3 py-1 text-red-600 transition hover:bg-red-600 hover:text-white"
-                                    >
-                                        <X class="h-4 w-4" />
-                                        Reject
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div
-                                v-for="approval in pendingApprovalsTeachers"
-                                :key="approval.id"
-                                v-if="activeApprovalTab === 'Teachers'"
-                                class="flex items-center justify-between rounded-lg p-2 transition duration-150 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                            >
-                                <div class="flex items-center space-x-3">
-                                    <div
-                                        class="flex size-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-300 text-xs font-bold text-white dark:bg-gray-600"
-                                    >
-                                        {{ approval.initials }}
-                                    </div>
-                                    <div>
-                                        <div
-                                            class="text-sm font-medium text-gray-900 dark:text-white"
-                                        >
-                                            {{ approval.name }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-gray-500 dark:text-gray-400"
-                                        >
-                                            Requested on:
-                                            {{ approval.requestedTime }}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="flex space-x-2">
-                                    <!-- APPROVE BUTTON -->
-                                    <button
-                                        @click="handleApprove(approval.id)"
-                                        class="flex items-center justify-center gap-1 rounded-md border border-green-600 px-3 py-1 text-green-600 transition hover:bg-green-600 hover:text-white"
-                                    >
-                                        <Check class="h-4 w-4" />
-                                        Approve
-                                    </button>
-
-                                    <!-- REJECT BUTTON -->
-                                    <button
-                                        @click="handleReject(approval.id)"
-                                        class="flex items-center justify-center gap-1 rounded-md border border-red-600 px-3 py-1 text-red-600 transition hover:bg-red-600 hover:text-white"
-                                    >
-                                        <X class="h-4 w-4" />
-                                        <span class="ml-1">Reject</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="lg:col-span-2">
-                    <SelectSubject />
-                </div>
-            </div>
         </div>
 
         <!-- ASSIGN TEACHER FORM (WHITE CARD) -->
