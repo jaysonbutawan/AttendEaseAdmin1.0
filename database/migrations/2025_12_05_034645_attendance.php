@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('attendance', function (Blueprint $table) {
             $table->increments('attendance_id');
 
-            $table->unsignedInteger('session_id')->nullable();
+            $table->integer('session_id', 50)->nullable();
             $table->string('student_id', 50)->nullable();
 
             $table->string('name', 255)->nullable();
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->date('attendance_date')->nullable();
             $table->timestamps();
 
-            $table->foreign('session_id')->references('session_id')->on('sessions');
+            $table->foreign('session_id')->references('session_id')->on('class_sessions');
         });
     }
 
@@ -38,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('attendance');
+       Schema::dropIfExists('attendance');
     }
 };

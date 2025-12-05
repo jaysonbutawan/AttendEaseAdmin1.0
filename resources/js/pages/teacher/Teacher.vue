@@ -2,11 +2,10 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
-import { Filter, Plus, Search, Users } from 'lucide-vue-next';
+import { Filter, Search, Users } from 'lucide-vue-next';
 import { ref } from 'vue';
-import SelectSubject from '../student/SelectSubject.vue';
+import SubjectManager from './SubjectManager.vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
-const PRIMARY_COLOR_HEX = '#4F39F6';
 
 const teachersData: Teacher[] = [
     {
@@ -62,66 +61,7 @@ const teachersData: Teacher[] = [
     },
 ];
 
-const pendingApprovals = ref([
-    { id: 1, name: 'Jane Doe', requestedOn: '2024-07-28', initials: 'JD' },
-    { id: 2, name: 'Mike Ross', requestedOn: '2024-07-27', initials: 'MR' },
-    {
-        id: 3,
-        name: 'Harvey Specter',
-        requestedOn: '2024-07-26',
-        initials: 'HS',
-    },
-]);
-
-
-const availableTeachers = [
-    'Select Teacher',
-    'Dr. Helena Vance',
-    'Lia Torres',
-    'Sarah Johnson',
-];
-const rooms = ['Room 101', 'Room 102', 'Room 201', 'Room 202'];
-
-const days = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-];
-
-const assignForm = ref({
-    subjectName: '',
-    teacher: '',
-    department: '',
-    course: '',
-    dayOfWeek: 'Monday',
-    startTime: '',
-    endTime: '',
-    roomNumber: '',
-});
-
-const handleAssignTeacher = () => {
-    console.log('Assigning teacher:', assignForm.value);
-    alert('Teacher assigned successfully!');
-    assignForm.value = {
-        subjectName: '',
-        teacher: '',
-        department: '',
-        course: '',
-        dayOfWeek: 'Monday',
-        startTime: '',
-        endTime: '',
-        roomNumber: '',
-    };
-};
-
 const search = ref('');
-
-const handleAssignSubjects = () => {
-    alert('Subjects assigned (mock action)!');
-};
 </script>
 
 <template>
@@ -129,184 +69,14 @@ const handleAssignSubjects = () => {
 
     <AppLayout>
         <div class="flex h-full flex-1 flex-col gap-6 p-6 md:p-8">
-            <header class="flex items-center justify-between">
-                <div>
-                    <h1
-                        class="text-3xl font-bold text-gray-900 dark:text-white"
-                    >
-                        Subject Assignment
-                    </h1>
-                    <p class="mt-1 text-gray-500 dark:text-gray-400">
-                        Assign subjects to one or more students using the panels
-                        below.
-                    </p>
-                </div>
-                <button
-                    @click="handleAssignSubjects"
-                    class="flex items-center space-x-2 rounded-xl px-6 py-3 text-base font-semibold text-white shadow-md transition duration-150 ease-in-out"
-                    :style="{ backgroundColor: PRIMARY_COLOR_HEX }"
-                    :class="`hover:bg-[rgba(${PRIMARY_COLOR_RGB},0.8)]`"
-                >
-                    <Plus class="h-5 w-5" />
-                    <span>Assign Subject(s)</span>
-                </button>
-            </header>
-        </div>
-
-        <!-- ASSIGN TEACHER FORM (WHITE CARD) -->
-        <div class="mt-2 lg:mx-10">
-            <h2
-                class="mb-6 text-2xl font-semibold text-gray-900 dark:text-white"
-            >
-                Manage Subjects
-            </h2>
-
-            <div
-                class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800"
-            >
-                <form
-                    @submit.prevent="handleAssignTeacher"
-                    class="grid grid-cols-1 gap-6 md:grid-cols-5"
-                >
-                    <!-- Subject Name -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="subjectName"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Subject Name
-                        </label>
-                        <input
-                            id="subjectName"
-                            v-model="assignForm.subjectName"
-                            type="text"
-                            placeholder="e.g., Advanced Mathematics"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                    </div>
-
-                    <!-- Assigned Teacher -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="teacher"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Assigned Teacher
-                        </label>
-                        <select
-                            id="teacher"
-                            v-model="assignForm.teacher"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        >
-                            <option value="" disabled>Select a teacher</option>
-                            <option
-                                v-for="teacher in availableTeachers"
-                                :key="teacher"
-                                :value="teacher"
-                            >
-                                {{ teacher }}
-                            </option>
-                        </select>
-                    </div>
-                    <!-- Day of Week -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="dayOfWeek"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Day of the Week
-                        </label>
-                        <select
-                            id="dayOfWeek"
-                            v-model="assignForm.dayOfWeek"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        >
-                            <option v-for="day in days" :key="day" :value="day">
-                                {{ day }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Start Time -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="startTime"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Start Time
-                        </label>
-                        <input
-                            id="startTime"
-                            v-model="assignForm.startTime"
-                            type="time"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                    </div>
-
-                    <!-- End Time -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="endTime"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            End Time
-                        </label>
-                        <input
-                            id="endTime"
-                            v-model="assignForm.endTime"
-                            type="time"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        />
-                    </div>
-
-                    <!-- Room Number -->
-                    <div class="md:col-span-1">
-                        <label
-                            for="roomNumber"
-                            class="mb-2 block text-xl font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Room Number
-                        </label>
-                        <select
-                            id="roomNumber"
-                            v-model="assignForm.roomNumber"
-                            class="w-full rounded-lg border-gray-300 text-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                        >
-                            <option value="" disabled>Select Room</option>
-                            <option
-                                v-for="room in rooms"
-                                :key="room"
-                                :value="room"
-                            >
-                                {{ room }}
-                            </option>
-                        </select>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="mt-4 flex justify-end space-x-3 md:col-span-4">
-                        <button
-                            type="button"
-                            class="rounded-lg px-4 py-2 text-lg font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            class="flex items-center space-x-2 rounded-lg px-4 py-2 text-lg font-semibold text-white shadow-md transition duration-150 ease-in-out hover:opacity-80"
-                            :style="{ backgroundColor: PRIMARY_COLOR_HEX }"
-                        >
-                            <Plus class="h-4 w-4" />
-                            <span>Assign Teacher</span>
-                        </button>
-                    </div>
-                </form>
+            <div class="w-full">
+                <div class="w-full"><SubjectManager /></div>
             </div>
         </div>
 
         <!-- ALL TEACHERS TABLE (WHITE CARD) -->
         <div
-            class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800"
+            class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800 "
         >
             <div class="mb-6 flex items-center justify-between">
                 <h2

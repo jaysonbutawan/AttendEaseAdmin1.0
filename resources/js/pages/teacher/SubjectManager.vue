@@ -1,0 +1,393 @@
+<script setup lang="ts">
+import {
+    BookOpen,
+    Calendar,
+    ChevronsUpDown,
+    Clock,
+    Home,
+    PlusCircle,
+    User,
+} from 'lucide-vue-next';
+import { computed, defineComponent, h, ref, VNode } from 'vue';
+import SubjectCombox from './SubjectCombox.vue';
+
+// --- TYPESCRIPT INTERFACES ---
+interface FormState {
+    subjectName: string;
+    assignedTeacher: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    roomNumber: string;
+}
+
+// --- MOCK DATA ---
+const MOCK_SUBJECTS: string[] = [
+    'Advanced Mathematics',
+    'English Literature',
+    'Filipino',
+    'Physics',
+    'Chemistry',
+    'Biology',
+    'History',
+];
+
+const MOCK_TEACHERS: string[] = [
+    'Mr. Alvin Cruz',
+    'Ms. Jane Smith',
+    'Dr. Robert Lee',
+];
+
+const MOCK_ROOMS: string[] = [
+    'Room 101 (Lecture)',
+    'Room 205 (Lab)',
+    'Auditorium A',
+];
+
+const DAYS_OF_WEEK: string[] = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+];
+
+// --- COMPONENTS ---
+const Button = defineComponent({
+    props: {
+        variant: { type: String, default: 'primary' },
+        size: { type: String, default: 'default' },
+        className: { type: String, default: '' },
+        disabled: { type: Boolean, default: false },
+    },
+    setup(props, { slots, emit }) {
+        const handleClick = (e: MouseEvent) => {
+            if (!props.disabled) {
+                emit('click', e);
+            }
+        };
+
+        const classes = computed(() => {
+            let baseStyle =
+                'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-blue-500 disabled:pointer-events-none disabled:opacity-50';
+            let variantStyle = '';
+            let padding = 'px-4 py-2';
+            let textStyle = 'text-sm';
+
+            if (props.size === 'icon') {
+                padding = 'p-2';
+            }
+
+            if (props.variant === 'primary') {
+                variantStyle =
+                    'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg';
+            } else if (props.variant === 'outline') {
+                variantStyle =
+                    'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700';
+            } else if (props.variant === 'ghost') {
+                variantStyle =
+                    'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700';
+            }
+
+            return `${baseStyle} ${variantStyle} ${padding} ${textStyle} ${props.className} ${props.disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
+        });
+
+        return () =>
+            h(
+                'button',
+                {
+                    class: classes.value,
+                    disabled: props.disabled,
+                    onClick: handleClick,
+                },
+                slots.default ? slots.default() : undefined,
+            );
+    },
+});
+
+const Input = defineComponent({
+    props: {
+        modelValue: { type: [String, Number], default: '' },
+        placeholder: { type: String, default: '' },
+        className: { type: String, default: '' },
+        type: { type: String, default: 'text' },
+        name: { type: String, required: true },
+    },
+    setup(props, { emit }) {
+        const handleInput = (e: Event) => {
+            emit('update:modelValue', (e.target as HTMLInputElement).value);
+        };
+
+        const classes = computed(() => {
+            const baseStyle =
+                'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
+            const darkStyle =
+                'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50 dark:placeholder:text-gray-500';
+            const typeStyle = props.type === 'time' ? 'appearance-none' : '';
+
+            return `${baseStyle} ${darkStyle} ${typeStyle} ${props.className}`;
+        });
+
+        return () =>
+            h('input', {
+                class: classes.value,
+                type: props.type,
+                name: props.name,
+                value: props.modelValue,
+                placeholder: props.placeholder,
+                onInput: handleInput,
+            });
+    },
+});
+
+const Select = defineComponent({
+    props: {
+        modelValue: { type: String, default: '' },
+        options: { type: Array as () => string[], required: true },
+        placeholder: { type: String, default: 'Select option' },
+        className: { type: String, default: '' },
+        name: { type: String, required: true },
+    },
+    setup(props, { emit }) {
+        const handleInput = (e: Event) => {
+            emit('update:modelValue', (e.target as HTMLSelectElement).value);
+        };
+
+        const classes = computed(() => {
+            const baseStyle =
+                'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
+            const darkStyle =
+                'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50 dark:placeholder:text-gray-500';
+
+            return `${baseStyle} ${darkStyle} ${props.className} appearance-none pr-8`;
+        });
+
+        const optionsVNodes = computed(() => {
+            const nodes: VNode[] = [
+                h(
+                    'option',
+                    { value: '', disabled: true, selected: !props.modelValue },
+                    props.placeholder,
+                ),
+                ...props.options.map((option) =>
+                    h('option', { value: option, key: option }, option),
+                ),
+            ];
+            return nodes;
+        });
+
+        return () =>
+            h('div', { class: 'relative' }, [
+                h(
+                    'select',
+                    {
+                        class: classes.value,
+                        name: props.name,
+                        value: props.modelValue,
+                        onChange: handleInput,
+                    },
+                    optionsVNodes.value,
+                ),
+                h(ChevronsUpDown, {
+                    class: 'h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400',
+                }),
+            ]);
+    },
+});
+
+const subjects = ref<string[]>(MOCK_SUBJECTS);
+const form = ref<FormState>({
+    subjectName: '',
+    assignedTeacher: '',
+    dayOfWeek: '',
+    startTime: '',
+    endTime: '',
+    roomNumber: '',
+});
+const statusMessage = ref<string>('');
+
+const handleFormChange = (name: keyof FormState, value: string) => {
+    form.value[name] = value as never;
+};
+
+const handleAssignTeacher = () => {
+    const f = form.value;
+    if (
+        !f.subjectName ||
+        !f.assignedTeacher ||
+        !f.dayOfWeek ||
+        !f.startTime ||
+        !f.endTime ||
+        !f.roomNumber
+    ) {
+        statusMessage.value = 'Please fill all fields before assigning.';
+        return;
+    }
+
+    const assignmentDetails = { ...f };
+    statusMessage.value = `Assignment saved! Subject: ${assignmentDetails.subjectName}, Teacher: ${assignmentDetails.assignedTeacher}`;
+    console.log('New Assignment:', assignmentDetails);
+
+    form.value = {
+        subjectName: '',
+        assignedTeacher: '',
+        dayOfWeek: '',
+        startTime: '',
+        endTime: '',
+        roomNumber: '',
+    };
+};
+
+const handleCancel = () => {
+    form.value = {
+        subjectName: '',
+        assignedTeacher: '',
+        dayOfWeek: '',
+        startTime: '',
+        endTime: '',
+        roomNumber: '',
+    };
+    statusMessage.value = 'Form reset.';
+};
+</script>
+
+<template>
+    <div class="w-full">
+        <h1
+            class="mb-8 border-b border-gray-200 pb-2 text-3xl font-extrabold text-gray-900 dark:text-white"
+        >
+            <Calendar class="mr-2 inline-block h-6 w-6 text-blue-600" />
+            Class Schedule Assignment
+        </h1>
+
+        <div
+            class="rounded-xl border border-gray-100 bg-white p-6 shadow-2xl md:p-8 dark:border-gray-700/50 dark:bg-gray-800"
+        >
+            <!-- Row 1: 3 columns -->
+            <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
+                <!-- Subject Name -->
+                <div class="space-y-2">
+                    <label
+                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                        <BookOpen class="mr-2 h-4 w-4 text-blue-500" />
+                        Subject Name
+                    </label>
+                    <SubjectCombox
+                        :subjects="subjects"
+                        :currentSubject="form.subjectName"
+                        @select="handleFormChange('subjectName', $event)"
+                        @create="handleFormChange('subjectName', $event)"
+                    />
+                </div>
+
+                <!-- Assigned Teacher -->
+                <div class="space-y-2">
+                    <label
+                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                        <User class="mr-2 h-4 w-4 text-blue-500" />
+                        Assigned Teacher
+                    </label>
+                    <Select
+                        name="assignedTeacher"
+                        :modelValue="form.assignedTeacher"
+                        @update:modelValue="
+                            handleFormChange('assignedTeacher', $event)
+                        "
+                        :options="MOCK_TEACHERS"
+                        placeholder="Select a teacher"
+                    />
+                </div>
+
+                <!-- Room Number -->
+                <div class="space-y-2">
+                    <label
+                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                        <Home class="mr-2 h-4 w-4 text-blue-500" />
+                        Room Number
+                    </label>
+                    <Select
+                        name="roomNumber"
+                        :modelValue="form.roomNumber"
+                        @update:modelValue="
+                            handleFormChange('roomNumber', $event)
+                        "
+                        :options="MOCK_ROOMS"
+                        placeholder="Select Room"
+                    />
+                </div>
+            </div>
+
+            <!-- Row 2: 3 columns -->
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <!-- Day of Week -->
+                <div class="space-y-2">
+                    <label
+                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                        <Calendar class="mr-2 h-4 w-4 text-blue-500" />
+                        Day of the Week
+                    </label>
+                    <Select
+                        name="dayOfWeek"
+                        :modelValue="form.dayOfWeek"
+                        @update:modelValue="
+                            handleFormChange('dayOfWeek', $event)
+                        "
+                        :options="DAYS_OF_WEEK"
+                        placeholder="Select day"
+                    />
+                </div>
+
+                <!-- Start Time -->
+                <div class="space-y-2">
+                    <label
+                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                        <Clock class="mr-2 h-4 w-4 text-blue-500" />
+                        Start Time
+                    </label>
+                    <Input
+                        name="startTime"
+                        type="time"
+                        :modelValue="form.startTime"
+                        @update:modelValue="
+                            handleFormChange('startTime', $event)
+                        "
+                    />
+                </div>
+
+                <!-- End Time -->
+                <div class="space-y-2">
+                    <label
+                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
+                    >
+                        <Clock class="mr-2 h-4 w-4 text-blue-500" />
+                        End Time
+                    </label>
+                    <Input
+                        name="endTime"
+                        type="time"
+                        :modelValue="form.endTime"
+                        @update:modelValue="handleFormChange('endTime', $event)"
+                    />
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div
+                class="mt-8 flex items-center justify-end border-t border-gray-100 pt-6 dark:border-gray-700/50"
+            >
+                <Button @click="handleCancel" variant="ghost" class="mr-3">
+                    Cancel
+                </Button>
+                <Button @click="handleAssignTeacher" variant="primary">
+                    <PlusCircle class="mr-2 h-4 w-4" />
+                    Assign Schedule
+                </Button>
+            </div>
+        </div>
+    </div>
+</template>

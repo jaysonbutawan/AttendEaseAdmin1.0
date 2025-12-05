@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::create('sessions', function (Blueprint $table) {
+        Schema::create('class_sessions', function (Blueprint $table) {
             $table->increments('session_id');
             $table->unsignedInteger('subject_id');
             $table->unsignedInteger('room_id');
@@ -34,8 +34,15 @@ return new class extends Migration
             $table->foreign('room_id')->references('room_id')->on('rooms');
             $table->foreign('teacher_id')->references('teacher_id')->on('teachers');
 
-            $table->unique(['room_id', 'session_date', 'start_time', 'end_time']);
-            $table->unique(['teacher_id', 'session_date', 'start_time', 'end_time']);
+            $table->unique(
+                ['teacher_id', 'session_date', 'start_time', 'end_time'],
+                'teacher_schedule_unique'
+            );
+
+            $table->unique(
+                ['room_id', 'session_date', 'start_time', 'end_time'],
+                'room_schedule_unique'
+            );
         });
     }
 
@@ -44,6 +51,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('class_sessions');
     }
 };
