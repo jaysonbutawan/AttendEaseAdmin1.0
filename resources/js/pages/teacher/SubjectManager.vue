@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import axios from 'axios';
 import {
     BookOpen,
     Calendar,
@@ -8,8 +9,11 @@ import {
     PlusCircle,
     User,
 } from 'lucide-vue-next';
-import { computed, defineComponent, h, ref, VNode } from 'vue';
+import { computed, defineComponent, h, ref, VNode, onMounted } from 'vue';
+
 import SubjectCombox from './SubjectCombox.vue';
+import { route } from 'ziggy-js';
+
 
 // --- TYPESCRIPT INTERFACES ---
 interface FormState {
@@ -23,13 +27,7 @@ interface FormState {
 
 // --- MOCK DATA ---
 const MOCK_SUBJECTS: string[] = [
-    'Advanced Mathematics',
-    'English Literature',
-    'Filipino',
-    'Physics',
-    'Chemistry',
-    'Biology',
-    'History',
+    'sample subject',
 ];
 
 const MOCK_TEACHERS: string[] = [
@@ -195,7 +193,23 @@ const Select = defineComponent({
     },
 });
 
-const subjects = ref<string[]>(MOCK_SUBJECTS);
+const subjects = ref<string[]>([]);
+onMounted(async () => {
+  try {
+    const url = route ? route('subjects.index') : '/subjects';
+    const { data } = await axios.get(url);
+
+    if (Array.isArray(data.subjects)) {
+      subjects.value = data.subjects;
+    } else {
+      subjects.value = [...MOCK_SUBJECTS]; // fallback
+    }
+  } catch (error) {
+    console.error('Error loading subjects, using fallback:', error);
+    subjects.value = [...MOCK_SUBJECTS];
+  }
+});
+
 const form = ref<FormState>({
     subjectName: '',
     assignedTeacher: '',
@@ -209,6 +223,37 @@ const statusMessage = ref<string>('');
 const handleFormChange = (name: keyof FormState, value: string) => {
     form.value[name] = value as never;
 };
+const handleSubjectSelect = (subjectName: string) => {
+    handleFormChange('subjectName', subjectName);
+};
+
+const handleSubjectCreate = async (subjectName: string) => {
+  try {
+    const response = await axios.post(
+      route ? route('subjects.store') : '/subjects',
+      { subject_name: subjectName },
+    );
+
+    const created = response.data.subject;
+
+    if (
+      !subjects.value.some(
+        (s) => s.toLowerCase() === created.subject_name.toLowerCase(),
+      )
+    ) {
+      subjects.value.push(created.subject_name);
+      subjects.value.sort((a, b) => a.localeCompare(b));
+    }
+
+    handleFormChange('subjectName', created.subject_name);
+    statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
+  } catch (error) {
+    console.error(error);
+    statusMessage.value =
+      'Error saving subject. Please try again or contact support.';
+  }
+};
+
 
 const handleAssignTeacher = () => {
     const f = form.value;
@@ -273,12 +318,12 @@ const handleCancel = () => {
                         <BookOpen class="mr-2 h-4 w-4 text-blue-500" />
                         Subject Name
                     </label>
-                    <SubjectCombox
-                        :subjects="subjects"
-                        :currentSubject="form.subjectName"
-                        @select="handleFormChange('subjectName', $event)"
-                        @create="handleFormChange('subjectName', $event)"
-                    />
+                   <SubjectCombox
+    :subjects="subjects"
+    :currentSubject="form.subjectName"
+    @subjectSelect="handleSubjectSelect"
+    @subjectCreate="handleSubjectCreate"
+/>
                 </div>
 
                 <!-- Assigned Teacher -->

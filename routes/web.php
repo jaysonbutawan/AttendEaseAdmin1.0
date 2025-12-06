@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use App\Http\Controllers\SubjectController;
+
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -26,5 +28,10 @@ Route::get('/teachers', function () {
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
+Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
+
+
 
 require __DIR__.'/settings.php';
