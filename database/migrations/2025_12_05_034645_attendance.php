@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('attendance', function (Blueprint $table) {
             $table->increments('attendance_id');
 
-            $table->integer('session_id', 50)->nullable();
+            $table->unsignedInteger('session_id')->nullable();
             $table->string('student_id', 50)->nullable();
 
             $table->string('name', 255)->nullable();
