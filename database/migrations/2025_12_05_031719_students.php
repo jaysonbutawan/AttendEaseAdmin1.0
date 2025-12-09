@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('students', function (Blueprint $table) {
             $table->string('student_id')->primary();
+            $table->string('firebase_uid')->unique();
             $table->unsignedInteger('course_id')->nullable();
             $table->string('email')->unique();
             $table->string('contact_number', 20)->nullable();
