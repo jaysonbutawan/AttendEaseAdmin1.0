@@ -1,104 +1,107 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
+import axios from 'axios';
 
 interface Teacher {
     name: string;
-    subject: string;
     daysAgo: number;
     isSelected: boolean;
 }
 
-const teacherList = ref<Teacher[]>([
-    {
-        name: 'Dr. Helena Vance',
-        subject: 'Physics',
-        daysAgo: 2,
-        isSelected: true,
-    },
-    {
-        name: 'Mr. Kevin Brooks',
-        subject: 'History',
-        daysAgo: 1,
-        isSelected: true,
-    },
-]);
+const teacherList = ref<Teacher[]>([]);
 const COLLAPSED_COUNT = 7;
 const SCROLL_THRESHOLD = 12;
 
 const showAll = ref(false);
 
-const displayedTeachers = computed(() => {
-    if (!showAll.value) {
-        return teacherList.value.slice(0, COLLAPSED_COUNT);
+const loadTeachers = async () => {
+    try {
+        const res = await axios.get('/teachers_controller');
+        console.log('Teachers:', res.data); 
+        teacherList.value = res.data.map((t: any) => ({
+            name: t.name,
+            daysAgo: t.daysAgo,
+            isSelected: false,
+        }));
+    } catch (error) {
+        console.error('Failed to load teachers:', error);
     }
-    return teacherList.value;
-});
+};
 
-const areAllTeachersSelected = computed(() =>
-    teacherList.value.every((t) => t.isSelected),
+const displayedTeachers = computed(() =>
+    showAll.value ? teacherList.value : teacherList.value.slice(0, COLLAPSED_COUNT)
 );
 
+const areAllTeachersSelected = computed(() =>
+    teacherList.value.every((t) => t.isSelected)
+);
 
 const selectedTeachersCount = computed(
-    () => teacherList.value.filter((t) => t.isSelected).length,
+    () => teacherList.value.filter((t) => t.isSelected).length
 );
 
 const toggleAllTeachers = (event: Event) => {
     const checked = (event.target as HTMLInputElement).checked;
     teacherList.value.forEach((t) => (t.isSelected = checked));
 };
+
+
+
+
 interface Student {
     name: string;
-    type: string;
-    detail: string;
+    daysAgo: number;
     isSelected: boolean;
 }
 
-const studentList = ref<Student[]>([
-    {
-        name: 'Lia Torres',
-        type: 'Grade 10',
-        detail: 'New Transfer',
-        isSelected: true,
-    },
-    {
-        name: 'Jacob Chen',
-        type: 'Grade 7',
-        detail: 'Re-enrollment',
-        isSelected: false,
-    },
-    {
-        name: 'Olivia R.',
-        type: 'Grade 11',
-        detail: 'New Transfer',
-        isSelected: false,
-    },
-]);
+const studentList = ref<Student[]>([]);
 const STUDENT_COUNT = 7;
 const STUDENT_SCROLL_THRESHOLD = 12;
 
 const showAllStudents = ref(false);
 
-const displayedStudents = computed(() => {
-    if (!showAllStudents.value) {
-        return studentList.value.slice(0, STUDENT_COUNT);
+const loadStudents = async () => {
+    try {
+        const res = await axios.get('/students_controller');
+        console.log('Students:', res.data); 
+        studentList.value = res.data.map((s: any) => ({
+            name: s.name,
+            daysAgo: s.daysAgo,
+            isSelected: false,
+        }));
+    } catch (error) {
+        console.error('Failed to load students:', error);
     }
-    return studentList.value;
-});
-const selectedStudentsCount = computed(
-    () => studentList.value.filter((s) => s.isSelected).length,
-);
-const areAllStudentsSelected = computed(() =>
-    studentList.value.every((s) => s.isSelected),
+};
+
+const displayedStudents = computed(() =>
+    showAllStudents.value
+        ? studentList.value
+        : studentList.value.slice(0, STUDENT_COUNT)
 );
 
+const selectedStudentsCount = computed(
+    () => studentList.value.filter((s) => s.isSelected).length
+);
+
+const areAllStudentsSelected = computed(() =>
+    studentList.value.every((s) => s.isSelected)
+);
 
 const toggleAllStudents = (event: Event) => {
     const checked = (event.target as HTMLInputElement).checked;
     studentList.value.forEach((s) => (s.isSelected = checked));
 };
+
+onMounted(() => {
+    console.log('Component mounted');
+    loadTeachers();
+    loadStudents();
+});
 </script>
+
+
 
 <template>
     <AppLayout>
@@ -340,9 +343,7 @@ const toggleAllStudents = (event: Event) => {
                                     <p
                                         class="text-base font-semibold text-gray-900"
                                     >
-                                        {{ teacher.name }} ({{
-                                            teacher.subject
-                                        }})
+                                        {{ teacher.name }}
                                     </p>
                                     <p class="text-xs text-gray-500">
                                         Application submitted
@@ -457,10 +458,10 @@ const toggleAllStudents = (event: Event) => {
                                 <p
                                     class="text-base font-semibold text-gray-900"
                                 >
-                                    {{ student.name }} ({{ student.type }})
+                                    {{ student.name }}
                                 </p>
                                 <p class="text-xs text-gray-500">
-                                    Request type: {{ student.detail }}.
+                                    Request type: .
                                 </p>
                             </div>
                         </div>

@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\StudentController;
 
 
 Route::get('/', function () {
@@ -31,6 +33,8 @@ Route::get('dashboard', function () {
 
 Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
 Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
+Route::get('/teachers_controller', [TeacherController::class, 'index']);
+Route::get('/students_controller', [StudentController::class, 'index']);
 
 
 
