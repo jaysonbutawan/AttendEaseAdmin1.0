@@ -15,11 +15,7 @@ interface StudentRecord {
 }
 
 const allStudents = ref<StudentRecord[]>([
-    { id: 1, studentId: 'STU-00123', name: 'Alex Johnson', email: 'alex.j@school.com', department: 'Computer Science', yearLevel: '3rd Year', isSelected: false },
-    { id: 2, studentId: 'STU-00124', name: 'Maria Garcia', email: 'maria.g@school.com', department: 'Fine Arts', yearLevel: '2nd Year', isSelected: false },
-    { id: 3, studentId: 'STU-00125', name: 'David Smith', email: 'david.s@school.com', department: 'Engineering', yearLevel: '4th Year', isSelected: false },
-    { id: 4, studentId: 'STU-00126', name: 'Emily White', email: 'emily.w@school.com', department: 'Business', yearLevel: '1st Year', isSelected: false },
-    { id: 5, studentId: 'STU-00127', name: 'Chris Lee', email: 'chris.l@school.com', department: 'Computer Science', yearLevel: '3rd Year', isSelected: false },
+    { id: 1, studentId: 'STU-00123', name: 'Alex Johnson', email: 'alex.j@school.com', department: 'Computer Science', yearLevel: '3rd Year', isSelected: false }
 ]);
 
 const totalResults = 50;
