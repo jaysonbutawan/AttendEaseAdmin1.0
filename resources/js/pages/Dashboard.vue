@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { computed, ref, onMounted } from 'vue';
 import axios from 'axios';
+import { computed, onMounted, ref } from 'vue';
+import Department from './Department.vue';
 
 interface Teacher {
     name: string;
@@ -18,7 +19,7 @@ const showAll = ref(false);
 const loadTeachers = async () => {
     try {
         const res = await axios.get('/teachers_controller');
-        console.log('Teachers:', res.data); 
+        console.log('Teachers:', res.data);
         teacherList.value = res.data.map((t: any) => ({
             name: t.name,
             daysAgo: t.daysAgo,
@@ -30,24 +31,23 @@ const loadTeachers = async () => {
 };
 
 const displayedTeachers = computed(() =>
-    showAll.value ? teacherList.value : teacherList.value.slice(0, COLLAPSED_COUNT)
+    showAll.value
+        ? teacherList.value
+        : teacherList.value.slice(0, COLLAPSED_COUNT),
 );
 
 const areAllTeachersSelected = computed(() =>
-    teacherList.value.every((t) => t.isSelected)
+    teacherList.value.every((t) => t.isSelected),
 );
 
 const selectedTeachersCount = computed(
-    () => teacherList.value.filter((t) => t.isSelected).length
+    () => teacherList.value.filter((t) => t.isSelected).length,
 );
 
 const toggleAllTeachers = (event: Event) => {
     const checked = (event.target as HTMLInputElement).checked;
     teacherList.value.forEach((t) => (t.isSelected = checked));
 };
-
-
-
 
 interface Student {
     name: string;
@@ -64,7 +64,7 @@ const showAllStudents = ref(false);
 const loadStudents = async () => {
     try {
         const res = await axios.get('/students_controller');
-        console.log('Students:', res.data); 
+        console.log('Students:', res.data);
         studentList.value = res.data.map((s: any) => ({
             name: s.name,
             daysAgo: s.daysAgo,
@@ -78,15 +78,15 @@ const loadStudents = async () => {
 const displayedStudents = computed(() =>
     showAllStudents.value
         ? studentList.value
-        : studentList.value.slice(0, STUDENT_COUNT)
+        : studentList.value.slice(0, STUDENT_COUNT),
 );
 
 const selectedStudentsCount = computed(
-    () => studentList.value.filter((s) => s.isSelected).length
+    () => studentList.value.filter((s) => s.isSelected).length,
 );
 
 const areAllStudentsSelected = computed(() =>
-    studentList.value.every((s) => s.isSelected)
+    studentList.value.every((s) => s.isSelected),
 );
 
 const toggleAllStudents = (event: Event) => {
@@ -100,8 +100,6 @@ onMounted(() => {
     loadStudents();
 });
 </script>
-
-
 
 <template>
     <AppLayout>
@@ -263,7 +261,6 @@ onMounted(() => {
                 Action Required: Pending Approvals (15 Total)
             </h2>
 
-        
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div
                     class="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-lg"
@@ -434,45 +431,45 @@ onMounted(() => {
                         </label>
                     </div>
 
-                   
                     <div
                         :class="[
-                            showAllStudents && studentList.length >= STUDENT_SCROLL_THRESHOLD
+                            showAllStudents &&
+                            studentList.length >= STUDENT_SCROLL_THRESHOLD
                                 ? 'max-h-[600px] overflow-y-auto'
                                 : '',
                         ]"
                     >
-                    <div
-                        v-for="(student, index) in displayedStudents"
-                        :key="student.name"
-                        class="flex items-start justify-between border-t border-gray-100 py-3"
-                        :class="{ 'border-t-0': index === 0 }"
-                    >
-                        <div class="flex items-start">
-                            <input
-                                type="checkbox"
-                                v-model="student.isSelected"
-                                class="form-checkbox mt-1 mr-3 h-5 w-5 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            <div>
-                                <p
-                                    class="text-base font-semibold text-gray-900"
-                                >
-                                    {{ student.name }}
-                                </p>
-                                <p class="text-xs text-gray-500">
-                                    Request type: .
-                                </p>
-                            </div>
-                        </div>
-                        <!-- PENDING Badge -->
-                        <span
-                            class="flex-shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold tracking-wider text-orange-600"
+                        <div
+                            v-for="(student, index) in displayedStudents"
+                            :key="student.name"
+                            class="flex items-start justify-between border-t border-gray-100 py-3"
+                            :class="{ 'border-t-0': index === 0 }"
                         >
-                            PENDING
-                        </span>
-                    </div>
-<a
+                            <div class="flex items-start">
+                                <input
+                                    type="checkbox"
+                                    v-model="student.isSelected"
+                                    class="form-checkbox mt-1 mr-3 h-5 w-5 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                <div>
+                                    <p
+                                        class="text-base font-semibold text-gray-900"
+                                    >
+                                        {{ student.name }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        Request type: .
+                                    </p>
+                                </div>
+                            </div>
+                            <!-- PENDING Badge -->
+                            <span
+                                class="flex-shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold tracking-wider text-orange-600"
+                            >
+                                PENDING
+                            </span>
+                        </div>
+                        <a
                             href="#"
                             v-if="studentList.length > STUDENT_COUNT"
                             @click.prevent="showAllStudents = !showAllStudents"
@@ -484,10 +481,14 @@ onMounted(() => {
                                     : 'View all student applications →'
                             }}
                         </a>
-        
-                </div>
+                    </div>
                 </div>
             </div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+   
+                    <Department />
+                </div>
         </div>
     </AppLayout>
 </template>
