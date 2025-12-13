@@ -6,6 +6,7 @@ use Laravel\Fortify\Features;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\CourseController;
 
 
 Route::get('/', function () {
@@ -35,6 +36,12 @@ Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.st
 Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
 Route::get('/teachers_controller', [TeacherController::class, 'index']);
 Route::get('/students_controller', [StudentController::class, 'index']);
+
+//course routes
+Route::post('/courses', [CourseController::class, 'store'])->name('courses.store');
+Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
+
 
 
 
