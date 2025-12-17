@@ -30,6 +30,7 @@ class StudentController extends Controller
             'firebase_uid' => 'required',
             'firstName' => 'required|string|max:100',
             'lastName' => 'required|string|max:100',
+            'course_id' => 'nullable',
         ]);
 
         $student = Student::where('firebase_uid', $request->firebase_uid)->first();
@@ -43,6 +44,7 @@ class StudentController extends Controller
 
         $student->firstname = $request->firstName;
         $student->lastname = $request->lastName;
+        $student->course_id = $request->course_id;
         $student->save();
 
         return response()->json([
@@ -58,7 +60,6 @@ class StudentController extends Controller
             'firebase_uid' => 'required'
         ]);
 
-        // JOIN students + courses table
         $student = Student::select(
             'students.*',
             'courses.course_name'

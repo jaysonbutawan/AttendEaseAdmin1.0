@@ -3,6 +3,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import axios from 'axios';
 import { computed, onMounted, ref } from 'vue';
 import Department from './Department.vue';
+import Room from './rooms/Room.vue';
 
 interface Teacher {
     name: string;
@@ -485,10 +486,14 @@ onMounted(() => {
                 </div>
             </div>
 
-<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-   
-                    <Department />
-                </div>
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <Department />
+            </div>
+            <div>
+                                <Room />
+
+            </div>
+            
         </div>
     </AppLayout>
 </template>

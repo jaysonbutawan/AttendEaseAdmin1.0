@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
             $table->string('status', 50)->nullable();
 
-            $table->foreign('course_id')->references('course_id')->on('courses');
+            $table->foreign('course_id')->references('course_id')->on('courses') ->onDelete('set null');
         });
     }
 

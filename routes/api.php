@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\CourseController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -26,6 +27,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/firebase-register', [AuthController::class, 'firebaseRegister']);
     Route::post('/update-profile', [StudentController::class, 'updateProfile']);
     Route::post('/get-profile', [StudentController::class, 'getProfile']);
+    Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 });
 
 
