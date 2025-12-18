@@ -74,7 +74,6 @@ const mainNavItems: NavItem[] = [
             <div
                 class="flex h-16 w-full items-center px-4 md:h-20 md:px-8 lg:h-24"
             >
-                <!-- Mobile Menu -->
                 <div class="lg:hidden">
                     <Sheet>
                         <SheetTrigger :as-child="true">

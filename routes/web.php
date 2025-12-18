@@ -7,6 +7,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\RoomController;
 
 
 Route::get('/', function () {
@@ -27,6 +28,10 @@ Route::get('/teachers', function () {
     return Inertia::render('teacher/Teacher');
 })->name('teachers');
 
+Route::get('/rooms', function () {
+    return Inertia::render('rooms/Room');
+})->name('rooms');
+
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
@@ -41,6 +46,11 @@ Route::get('/students_controller', [StudentController::class, 'index']);
 Route::post('/courses', [CourseController::class, 'store'])->name('courses.store');
 Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
+
+//room routes
+Route::post('/room_polygon', [RoomController::class, 'store']);
+Route::get('/room_polygon', [RoomController::class, 'index']);
+
 
 
 
