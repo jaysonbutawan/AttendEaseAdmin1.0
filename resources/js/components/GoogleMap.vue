@@ -8,7 +8,7 @@ onMounted(async () => {
   const google = await loadGoogleMaps();
 
   new google.maps.Map(mapEl.value!, {
-    center: { lat: 14.5995, lng: 120.9842 },
+    center: { lat: 7.457503334166103, lng: 125.79201037415505 },
     zoom: 18,
     mapTypeId: "satellite",
   });
