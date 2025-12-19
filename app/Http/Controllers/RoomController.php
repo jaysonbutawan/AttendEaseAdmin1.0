@@ -21,6 +21,7 @@ class RoomController extends Controller
         return DB::transaction(function () use ($data) {
             $roomId = DB::table('rooms')->insertGetId([
                 'room_name' => $data['room_name'],
+                'color' => $data['color'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ], 'room_id');
