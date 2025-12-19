@@ -32,9 +32,6 @@ Route::get('/rooms', function () {
     return Inertia::render('rooms/Room');
 })->name('rooms');
 
-Route::get('/courses_route', function () {
-    return Inertia::render('courses_route/Course');
-})->name('courses_route');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
