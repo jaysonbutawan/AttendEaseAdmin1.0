@@ -71,4 +71,14 @@ class RoomController extends Controller
     return response()->json(['rooms' => $rooms]);
 }
 
+public function destroy($id)
+{
+    return DB::transaction(function () use ($id) {
+        DB::table('room_polygons')->where('room_id', $id)->delete();
+        DB::table('rooms')->where('room_id', $id)->delete();
+
+        return response()->json(['deleted' => true]);
+    });
+}
+
 }

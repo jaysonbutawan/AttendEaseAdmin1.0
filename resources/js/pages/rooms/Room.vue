@@ -20,8 +20,7 @@ interface Area {
 const selectedArea = ref<Area>({
     name: 'East Wing',
     polygonColor: '#3b82f6',
-    rooms: [
-    ],
+    rooms: [],
 });
 
 const isEditMode = ref(false);
@@ -40,96 +39,101 @@ const newRoom = ref({
     color: 'blue',
 });
 
-
 const editRoom = (room: Room) => {
-  // open modal in edit mode
-  isEditMode.value = true;
-  editingRoomId.value = room.id;
+    // open modal in edit mode
+    isEditMode.value = true;
+    editingRoomId.value = room.id;
 
-  newRoom.value.name = room.name;
-  newRoom.value.capacity = room.capacity;
-  newRoom.value.color = room.color;
+    newRoom.value.name = room.name;
+    newRoom.value.capacity = room.capacity;
+    newRoom.value.color = room.color;
 
-  // IMPORTANT:
-  // Editing should not depend on the activePolygon you draw.
-  // You can optionally allow polygon editing later by making stored polygons editable.
-  showRoomPrompt.value = true;
+    // IMPORTANT:
+    // Editing should not depend on the activePolygon you draw.
+    // You can optionally allow polygon editing later by making stored polygons editable.
+    showRoomPrompt.value = true;
 };
 
 const updateRoom = async () => {
-  if (!editingRoomId.value) return;
-  if (!newRoom.value.name.trim()) {
-    alert("Enter room name first.");
-    return;
-  }
-
-  isSaving.value = true;
-  try {
-    const payload = {
-      room_name: newRoom.value.name,
-      capacity: newRoom.value.capacity,
-      color: newRoom.value.color,
-      // polygon optional (only send if you support polygon editing)
-    };
-
-    const res = await axios.put(`/room_polygon/${editingRoomId.value}`, payload);
-
-    // update list
-    const idx = selectedArea.value.rooms.findIndex(r => r.id === editingRoomId.value);
-    if (idx !== -1) {
-      selectedArea.value.rooms[idx] = {
-        ...selectedArea.value.rooms[idx],
-        name: res.data.room.room_name,
-        capacity: res.data.room.capacity,
-        color: res.data.room.color,
-      };
+    if (!editingRoomId.value) return;
+    if (!newRoom.value.name.trim()) {
+        alert('Enter room name first.');
+        return;
     }
 
-    // update polygon color/name on map (no need to redraw points)
-    const poly = roomPolygons[editingRoomId.value];
-    if (poly) {
-      poly.setOptions({
-        fillColor: res.data.room.color,
-        strokeColor: res.data.room.color,
-      });
-    }
+    isSaving.value = true;
+    try {
+        const payload = {
+            room_name: newRoom.value.name,
+            capacity: newRoom.value.capacity,
+            color: newRoom.value.color,
+            // polygon optional (only send if you support polygon editing)
+        };
 
-    showRoomPrompt.value = false;
-    isEditMode.value = false;
-    editingRoomId.value = null;
-  } catch (err) {
-    console.error(err);
-    alert("Failed to update room.");
-  } finally {
-    isSaving.value = false;
-  }
+        const res = await axios.put(
+            `/room_polygon/${editingRoomId.value}`,
+            payload,
+        );
+
+        // update list
+        const idx = selectedArea.value.rooms.findIndex(
+            (r) => r.id === editingRoomId.value,
+        );
+        if (idx !== -1) {
+            selectedArea.value.rooms[idx] = {
+                ...selectedArea.value.rooms[idx],
+                name: res.data.room.room_name,
+                capacity: res.data.room.capacity,
+                color: res.data.room.color,
+            };
+        }
+
+        // update polygon color/name on map (no need to redraw points)
+        const poly = roomPolygons[editingRoomId.value];
+        if (poly) {
+            poly.setOptions({
+                fillColor: res.data.room.color,
+                strokeColor: res.data.room.color,
+            });
+        }
+
+        showRoomPrompt.value = false;
+        isEditMode.value = false;
+        editingRoomId.value = null;
+    } catch (err) {
+        console.error(err);
+        alert('Failed to update room.');
+    } finally {
+        isSaving.value = false;
+    }
 };
 
 const deleteRoom = async (roomId: number) => {
-  const ok = confirm("Delete this room and its polygon?");
-  if (!ok) return;
+    const ok = confirm('Delete this room and its polygon?');
+    if (!ok) return;
 
-  try {
-    await axios.delete(`/room_polygon/${roomId}`);
+    try {
+        await axios.delete(`/room_polygon/${roomId}`);
 
-    selectedArea.value.rooms = selectedArea.value.rooms.filter(r => r.id !== roomId);
+        selectedArea.value.rooms = selectedArea.value.rooms.filter(
+            (r) => r.id !== roomId,
+        );
 
-    if (roomPolygons[roomId]) {
-      roomPolygons[roomId].setMap(null);
-      delete roomPolygons[roomId];
+        if (roomPolygons[roomId]) {
+            roomPolygons[roomId].setMap(null);
+            delete roomPolygons[roomId];
+        }
+
+        if (editingRoomId.value === roomId) {
+            showRoomPrompt.value = false;
+            isEditMode.value = false;
+            editingRoomId.value = null;
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Failed to delete room.');
     }
-
-    if (editingRoomId.value === roomId) {
-      showRoomPrompt.value = false;
-      isEditMode.value = false;
-      editingRoomId.value = null;
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Failed to delete room.");
-  }
 };
-
 
 const mapEl = ref<HTMLDivElement | null>(null);
 let map: google.maps.Map | null = null;
@@ -212,7 +216,7 @@ const saveRoomWithPolygon = async () => {
             room_id: res.data.room.room_id,
             room_name: res.data.room.room_name,
             color: res.data.room.color || newRoom.value.color,
-            polygon, 
+            polygon,
         });
 
         showRoomPrompt.value = false;
@@ -234,25 +238,23 @@ const randomHexColor = () => {
 };
 
 const loadRoomsAndDraw = async () => {
-  try {
-    const res = await axios.get('/room_polygon');
-    const rooms = res.data.rooms ?? [];
+    try {
+        const res = await axios.get('/room_polygon');
+        const rooms = res.data.rooms ?? [];
 
-    selectedArea.value.rooms = rooms.map((r: any) => ({
-      id: r.room_id,
-      name: r.room_name,
-      type: 'Room',
-      capacity: 'N/A',
-      color: r.color ?? 'blue',
-    }));
+        selectedArea.value.rooms = rooms.map((r: any) => ({
+            id: r.room_id,
+            name: r.room_name,
+            type: 'Room',
+            capacity: 'N/A',
+            color: r.color ?? 'blue',
+        }));
 
-    rooms.forEach((r: any) => drawRoomPolygon(r));
-  } catch (err) {
-    console.error('loadRoomsAndDraw failed:', err);
-  }
+        rooms.forEach((r: any) => drawRoomPolygon(r));
+    } catch (err) {
+        console.error('loadRoomsAndDraw failed:', err);
+    }
 };
-
-
 
 const drawRoomPolygon = (room: any) => {
     if (!map || !googleRef) return;
@@ -381,53 +383,101 @@ onMounted(async () => {
                 <div
                     class="flex w-80 flex-col gap-4 overflow-y-auto border-l bg-gray-50 p-4"
                 >
+                    <div
+                        class="flex-1 rounded-xl border bg-white p-4 shadow-sm"
+                    >
+                        <div class="space-y-3 bg-amber-100 rounded-lg">
+                            <div
+                                v-for="room in selectedArea.rooms"
+                                :key="room.id"
+                                class="flex items-center justify-between rounded-lg border border-transparent p-2 hover:border-gray-200 hover:bg-gray-50"
+                            >
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        :class="`flex h-8 w-8 items-center justify-center rounded-full text-white bg-${room.color}-500 text-xs`"
+                                    >
+                                        {{ room.name[0] }}
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="text-sm leading-tight font-bold"
+                                        >
+                                            {{ room.name }}
+                                        </p>
+                                    </div>
+                                </div>
 
-                 <div class="flex-1 rounded-xl border bg-white p-4 shadow-sm">
-    <div class="space-y-3">
-        <div
-            v-for="room in selectedArea.rooms"
-            :key="room.id"
-            class="flex items-center justify-between rounded-lg border border-transparent p-2 hover:border-gray-200 hover:bg-gray-50"
-        >
-            <div class="flex items-center gap-3">
-                <div
-                    :class="`flex h-8 w-8 items-center justify-center rounded-full text-white bg-${room.color}-500 text-xs`"
-                >
-                    {{ room.name[0] }}
-                </div>
-                <div>
-                    <p class="text-sm leading-tight font-bold">
-                        {{ room.name }}
-                    </p>
-                </div>
-            </div>
+                                <div class="flex items-center gap-1">
+                                    <button
+                                        @click="editRoom(room)"
+                                        class="rounded p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
+                                        title="Edit Room"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path
+                                                d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"
+                                            />
+                                            <path d="m15 5 4 4" />
+                                        </svg>
+                                    </button>
 
-            <div class="flex items-center gap-1">
-                <button
-                    @click="editRoom(room)"
-                    class="rounded p-1.5 text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    title="Edit Room"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                </button>
+                                    <button
+                                        @click="deleteRoom(room.id)"
+                                        class="rounded p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                                        title="Delete Room"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <path d="M3 6h18" />
+                                            <path
+                                                d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"
+                                            />
+                                            <path
+                                                d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+                                            />
+                                            <line
+                                                x1="10"
+                                                x2="10"
+                                                y1="11"
+                                                y2="17"
+                                            />
+                                            <line
+                                                x1="14"
+                                                x2="14"
+                                                y1="11"
+                                                y2="17"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-                <button
-                    @click="deleteRoom(room.id)"
-                    class="rounded p-1.5 text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                    title="Delete Room"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <button
-        class="mt-6 w-full rounded-lg border-2 border-dashed border-blue-300 py-2 text-sm font-bold text-blue-500 hover:bg-blue-50"
-    >
-        + Add New Room
-    </button>
-</div>
+                        <button
+                            class="mt-6 w-full rounded-lg border-2 border-dashed border-blue-300 py-2 text-sm font-bold text-blue-500 hover:bg-blue-50"
+                        >
+                            + Add New Room
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

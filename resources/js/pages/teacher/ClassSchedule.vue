@@ -9,38 +9,36 @@ import {
     PlusCircle,
     User,
 } from 'lucide-vue-next';
-import { computed, defineComponent, h, ref, VNode, onMounted } from 'vue';
+import { computed, defineComponent, h, onMounted, ref, VNode } from 'vue';
 
-import SubjectCombox from './SubjectCombox.vue';
 import { route } from 'ziggy-js';
+import SubjectCombox from './SubjectCombox.vue';
 
-
-// --- TYPESCRIPT INTERFACES ---
 interface FormState {
     subjectName: string;
     assignedTeacher: string;
-    dayOfWeek: string;
+    dayOfWeek: string[];
     startTime: string;
     endTime: string;
     roomNumber: string;
 }
 
-// --- MOCK DATA ---
-const MOCK_SUBJECTS: string[] = [
-    'sample subject',
-];
 
-const MOCK_TEACHERS: string[] = [
-    'Mr. Alvin Cruz',
-    'Ms. Jane Smith',
-    'Dr. Robert Lee',
-];
+type TeacherApi = { name: string; daysAgo?: number };
 
-const MOCK_ROOMS: string[] = [
-    'Room 101 (Lecture)',
-    'Room 205 (Lab)',
-    'Auditorium A',
-];
+const teachers = ref<TeacherApi[]>([]);
+const teacherOptions = computed(() => teachers.value.map((t) => t.name));
+
+
+type RoomApi = {
+    room_id: number;
+    room_name: string;
+    color?: string | null;
+    polygon?: any[];
+};
+
+const rooms = ref<RoomApi[]>([]);
+const roomOptions = computed(() => rooms.value.map((r) => r.room_name));
 
 const DAYS_OF_WEEK: string[] = [
     'Monday',
@@ -50,7 +48,6 @@ const DAYS_OF_WEEK: string[] = [
     'Friday',
 ];
 
-// --- COMPONENTS ---
 const Button = defineComponent({
     props: {
         variant: { type: String, default: 'primary' },
@@ -195,25 +192,60 @@ const Select = defineComponent({
 
 const subjects = ref<string[]>([]);
 onMounted(async () => {
-  try {
-    const url = route ? route('subjects.index') : '/subjects';
-    const { data } = await axios.get(url);
+    try {
+        const url = route ? route('subjects.index') : '/subjects';
+        const { data } = await axios.get(url);
 
-    if (Array.isArray(data.subjects)) {
-      subjects.value = data.subjects;
-    } else {
-      subjects.value = [...MOCK_SUBJECTS]; // fallback
+        if (Array.isArray(data.subjects)) {
+            subjects.value = data.subjects;
+        } else {
+            subjects.value = [];
+        }
+    } catch (error) {
+        console.error('Error loading subjects, using fallback:', error);
     }
-  } catch (error) {
-    console.error('Error loading subjects, using fallback:', error);
-    subjects.value = [...MOCK_SUBJECTS];
-  }
+
+    try {
+        const { data } = await axios.get('/room_polygon');
+        rooms.value = Array.isArray(data.rooms) ? data.rooms : [];
+    } catch (error) {
+        console.error('Error loading rooms:', error);
+        rooms.value = [];
+    }
+
+    try {
+  const url = route ? route('teachers.index') : '/teachers_controller';
+  const { data } = await axios.get(url);
+  teachers.value = Array.isArray(data) ? data : [];
+} catch (error) {
+  console.error('Error loading teachers:', error);
+  teachers.value = [];
+}
+
 });
+
+const MAX_DAYS = 3;
+
+const toggleDay = (day: string) => {
+    const days = form.value.dayOfWeek;
+
+    if (days.includes(day)) {
+        form.value.dayOfWeek = days.filter((d) => d !== day);
+        return;
+    }
+
+    if (days.length >= MAX_DAYS) {
+        statusMessage.value = `You can select up to ${MAX_DAYS} days only.`;
+        return;
+    }
+
+    form.value.dayOfWeek = [...days, day];
+};
 
 const form = ref<FormState>({
     subjectName: '',
     assignedTeacher: '',
-    dayOfWeek: '',
+    dayOfWeek: [],
     startTime: '',
     endTime: '',
     roomNumber: '',
@@ -228,32 +260,31 @@ const handleSubjectSelect = (subjectName: string) => {
 };
 
 const handleSubjectCreate = async (subjectName: string) => {
-  try {
-    const response = await axios.post(
-      route ? route('subjects.store') : '/subjects',
-      { subject_name: subjectName },
-    );
+    try {
+        const response = await axios.post(
+            route ? route('subjects.store') : '/subjects',
+            { subject_name: subjectName },
+        );
 
-    const created = response.data.subject;
+        const created = response.data.subject;
 
-    if (
-      !subjects.value.some(
-        (s) => s.toLowerCase() === created.subject_name.toLowerCase(),
-      )
-    ) {
-      subjects.value.push(created.subject_name);
-      subjects.value.sort((a, b) => a.localeCompare(b));
+        if (
+            !subjects.value.some(
+                (s) => s.toLowerCase() === created.subject_name.toLowerCase(),
+            )
+        ) {
+            subjects.value.push(created.subject_name);
+            subjects.value.sort((a, b) => a.localeCompare(b));
+        }
+
+        handleFormChange('subjectName', created.subject_name);
+        statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
+    } catch (error) {
+        console.error(error);
+        statusMessage.value =
+            'Error saving subject. Please try again or contact support.';
     }
-
-    handleFormChange('subjectName', created.subject_name);
-    statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
-  } catch (error) {
-    console.error(error);
-    statusMessage.value =
-      'Error saving subject. Please try again or contact support.';
-  }
 };
-
 
 const handleAssignTeacher = () => {
     const f = form.value;
@@ -276,7 +307,7 @@ const handleAssignTeacher = () => {
     form.value = {
         subjectName: '',
         assignedTeacher: '',
-        dayOfWeek: '',
+        dayOfWeek: [],
         startTime: '',
         endTime: '',
         roomNumber: '',
@@ -287,7 +318,7 @@ const handleCancel = () => {
     form.value = {
         subjectName: '',
         assignedTeacher: '',
-        dayOfWeek: '',
+        dayOfWeek: [],
         startTime: '',
         endTime: '',
         roomNumber: '',
@@ -318,12 +349,12 @@ const handleCancel = () => {
                         <BookOpen class="mr-2 h-4 w-4 text-blue-500" />
                         Subject Name
                     </label>
-                   <SubjectCombox
-    :subjects="subjects"
-    :currentSubject="form.subjectName"
-    @subjectSelect="handleSubjectSelect"
-    @subjectCreate="handleSubjectCreate"
-/>
+                    <SubjectCombox
+                        :subjects="subjects"
+                        :currentSubject="form.subjectName"
+                        @subjectSelect="handleSubjectSelect"
+                        @subjectCreate="handleSubjectCreate"
+                    />
                 </div>
 
                 <!-- Assigned Teacher -->
@@ -340,7 +371,7 @@ const handleCancel = () => {
                         @update:modelValue="
                             handleFormChange('assignedTeacher', $event)
                         "
-                        :options="MOCK_TEACHERS"
+                        :options="teacherOptions"
                         placeholder="Select a teacher"
                     />
                 </div>
@@ -351,7 +382,7 @@ const handleCancel = () => {
                         class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
                     >
                         <Home class="mr-2 h-4 w-4 text-blue-500" />
-                        Room Number
+                        Room Name
                     </label>
                     <Select
                         name="roomNumber"
@@ -359,7 +390,7 @@ const handleCancel = () => {
                         @update:modelValue="
                             handleFormChange('roomNumber', $event)
                         "
-                        :options="MOCK_ROOMS"
+                        :options="roomOptions"
                         placeholder="Select Room"
                     />
                 </div>
@@ -373,17 +404,23 @@ const handleCancel = () => {
                         class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
                     >
                         <Calendar class="mr-2 h-4 w-4 text-blue-500" />
-                        Day of the Week
+                        Day of the Week (select up to 3)
                     </label>
-                    <Select
-                        name="dayOfWeek"
-                        :modelValue="form.dayOfWeek"
-                        @update:modelValue="
-                            handleFormChange('dayOfWeek', $event)
-                        "
-                        :options="DAYS_OF_WEEK"
-                        placeholder="Select day"
-                    />
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <label
+                            v-for="day in DAYS_OF_WEEK"
+                            :key="day"
+                            class="flex items-center gap-2 rounded border bg-white px-3 py-2 text-sm hover:bg-gray-50"
+                        >
+                            <input
+                                type="checkbox"
+                                :checked="form.dayOfWeek.includes(day)"
+                                @change="toggleDay(day)"
+                            />
+                            <span>{{ day }}</span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Start Time -->
