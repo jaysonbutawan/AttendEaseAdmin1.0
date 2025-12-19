@@ -286,33 +286,34 @@ const handleSubjectCreate = async (subjectName: string) => {
     }
 };
 
-const handleAssignTeacher = () => {
-    const f = form.value;
-    if (
-        !f.subjectName ||
-        !f.assignedTeacher ||
-        !f.dayOfWeek ||
-        !f.startTime ||
-        !f.endTime ||
-        !f.roomNumber
-    ) {
-        statusMessage.value = 'Please fill all fields before assigning.';
-        return;
-    }
+const handleAssignTeacher = async () => {
+  const f = form.value;
 
-    const assignmentDetails = { ...f };
-    statusMessage.value = `Assignment saved! Subject: ${assignmentDetails.subjectName}, Teacher: ${assignmentDetails.assignedTeacher}`;
-    console.log('New Assignment:', assignmentDetails);
+  if (!f.subjectName || !f.assignedTeacher || f.dayOfWeek.length === 0 || !f.startTime || !f.endTime || !f.roomNumber) {
+    statusMessage.value = 'Please fill all fields before assigning.';
+    return;
+  }
 
-    form.value = {
-        subjectName: '',
-        assignedTeacher: '',
-        dayOfWeek: [],
-        startTime: '',
-        endTime: '',
-        roomNumber: '',
+  try {
+    const payload = {
+      subject_name: f.subjectName,
+      teacher_id: f.assignedTeacher,        // if this is actually teacher_id; if it's a name, backend must map it
+      room_name: f.roomNumber,              // if this is room_name; backend must map it to room_id
+      start_time: f.startTime,
+      end_time: f.endTime,
+      session_days: f.dayOfWeek.map(d => d.toLowerCase()), // ["monday","tuesday"]
     };
+
+    await axios.post('/class_sessions', payload);
+
+    statusMessage.value = 'Schedule saved successfully.';
+    form.value = { subjectName:'', assignedTeacher:'', dayOfWeek:[], startTime:'', endTime:'', roomNumber:'' };
+  } catch (e) {
+    console.error(e);
+    statusMessage.value = 'Failed to save schedule.';
+  }
 };
+
 
 const handleCancel = () => {
     form.value = {
