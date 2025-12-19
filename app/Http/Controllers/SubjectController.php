@@ -10,7 +10,6 @@ class SubjectController extends Controller
 
      public function index()
     {
-        // Return just the names, sorted
         $subjects = Subject::orderBy('subject_name')
             ->pluck('subject_name');
 

@@ -23,7 +23,7 @@ class StudentController extends Controller
 
         return response()->json($students);
     }
-
+//mobile app profile update and get profile
     public function updateProfile(Request $request)
     {
         $request->validate([

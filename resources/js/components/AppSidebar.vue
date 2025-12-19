@@ -10,7 +10,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard, students, teachers, rooms } from '@/routes';
+import { dashboard, students, teachers, rooms, courses_route } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import AppLogo from './AppLogo.vue';
@@ -32,6 +32,11 @@ const mainNavItems: NavItem[] = [
         title: 'Rooms',
         href: rooms(),
     },
+     {
+        title: 'Course',
+        href: courses_route(),
+    },
+
 ];
 
 </script>
