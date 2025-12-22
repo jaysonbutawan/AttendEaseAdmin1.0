@@ -1,10 +1,51 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import CourseCard from '@/pages/course/CourseCard.vue';
+
+type ApiCourse = { id: number; course_name: string };
+type CardCourse = {
+	id: number;
+	name: string;
+	code: string;
+	status: string;
+	teacher: string;
+	students: number;
+	subjects: number;
+	gradient: string;
+};
 
 const showCourseModal = ref(false);
 const courseModalTitle = ref('Create New Course');
+const newCourseName = ref('');
+const loading = ref(false);
+const error = ref('');
+const courses = ref<ApiCourse[]>([]);
+
+const gradients = [
+	'from-blue-500 to-blue-600',
+	'from-green-500 to-emerald-600',
+	'from-amber-500 to-orange-600',
+	'from-pink-500 to-rose-600',
+	'from-cyan-500 to-blue-600',
+	'from-violet-500 to-purple-600',
+];
+
+function toCardCourse(c: ApiCourse, index: number): CardCourse {
+	return {
+		id: c.id,
+		name: c.course_name,
+		code: '',
+		status: '',
+		teacher: '',
+		students: 0,
+		subjects: 0,
+		gradient: gradients[index % gradients.length],
+	};
+}
+
+const cardCourses = computed(() => courses.value.map((c, i) => toCardCourse(c, i)));
 
 function openCourseModal(mode = 'create') {
 	courseModalTitle.value = mode === 'create' ? 'Create New Course' : 'Edit Course';
@@ -13,7 +54,55 @@ function openCourseModal(mode = 'create') {
 
 function closeCourseModal() {
 	showCourseModal.value = false;
+	newCourseName.value = '';
+	error.value = '';
 }
+
+async function loadCourses() {
+	loading.value = true;
+	error.value = '';
+	try {
+		const res = await fetch('/api/courses', { credentials: 'same-origin' });
+		if (!res.ok) throw new Error('Failed to fetch courses');
+		const data = await res.json();
+		courses.value = (data?.courses ?? []) as ApiCourse[];
+	} catch (e: any) {
+		error.value = e?.message ?? 'Unable to load courses';
+	} finally {
+		loading.value = false;
+	}
+}
+
+async function createCourse() {
+	error.value = '';
+	if (!newCourseName.value.trim()) {
+		error.value = 'Course name is required';
+		return;
+	}
+	try {
+		const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
+		const res = await fetch('/api/courses', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+			body: JSON.stringify({ course_name: newCourseName.value.trim() }),
+			credentials: 'same-origin',
+		});
+		if (!res.ok) {
+			const err = await res.json().catch(() => ({}));
+			throw new Error(err?.message ?? 'Failed to create course');
+		}
+		const data = await res.json();
+		const created = data?.course as ApiCourse;
+		if (created?.id) {
+			courses.value.unshift(created);
+		}
+		closeCourseModal();
+	} catch (e: any) {
+		error.value = e?.message ?? 'Unable to create course';
+	}
+}
+
+onMounted(loadCourses);
 </script>
 
 <template>
@@ -35,8 +124,8 @@ function closeCourseModal() {
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Total Courses</p>
-							<h3 class="text-3xl font-bold text-gray-800 mt-2">48</h3>
-							<p class="text-xs text-gray-500 mt-2">↑ 3 new this term</p>
+							<h3 class="text-3xl font-bold text-gray-800 mt-2">{{ courses.length }}</h3>
+							<p class="text-xs text-gray-500 mt-2">Dynamic from database</p>
 						</div>
 						<div class="bg-blue-100 rounded-lg p-3">
 							<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -46,21 +135,6 @@ function closeCourseModal() {
 					</div>
 				</div>
 
-				<!-- Active Courses -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-					<div class="flex items-start justify-between">
-						<div>
-							<p class="text-gray-600 text-sm font-medium">Active Courses</p>
-							<h3 class="text-3xl font-bold text-green-600 mt-2">44</h3>
-							<p class="text-xs text-gray-500 mt-2">91.7% of total</p>
-						</div>
-						<div class="bg-green-100 rounded-lg p-3">
-							<svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
-							</svg>
-						</div>
-					</div>
-				</div>
 
 				<!-- Total Enrollments -->
 				<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -136,263 +210,13 @@ function closeCourseModal() {
 
 			<!-- Courses Grid -->
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				<!-- Course Card 1 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-					<div class="h-2 bg-gradient-to-r from-blue-500 to-blue-600"></div>
-					<div class="p-6">
-						<!-- Course Header -->
-						<div class="flex items-start justify-between mb-4">
-							<div>
-								<h3 class="text-lg font-bold text-gray-900">Mathematics 101</h3>
-								<p class="text-xs text-gray-500 font-mono mt-1">MAT-101</p>
-							</div>
-							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-						</div>
-
-						<!-- Course Info -->
-						<div class="space-y-3 mb-4">
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600">Prof. Sarah Martinez</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">32</span> Students Enrolled</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">3</span> Subjects</p>
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2 pt-4 border-t border-gray-200">
-							<button @click="openCourseModal('edit')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium">Edit</button>
-							<button class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">View Details</button>
-						</div>
-					</div>
-				</div>
-
-				<!-- Course Card 2 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-					<div class="h-2 bg-gradient-to-r from-green-500 to-emerald-600"></div>
-					<div class="p-6">
-						<!-- Course Header -->
-						<div class="flex items-start justify-between mb-4">
-							<div>
-								<h3 class="text-lg font-bold text-gray-900">Physics 201</h3>
-								<p class="text-xs text-gray-500 font-mono mt-1">PHY-201</p>
-							</div>
-							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-						</div>
-
-						<!-- Course Info -->
-						<div class="space-y-3 mb-4">
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600">Prof. Emma Wilson</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">28</span> Students Enrolled</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">2</span> Subjects</p>
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2 pt-4 border-t border-gray-200">
-							<button @click="openCourseModal('edit')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium">Edit</button>
-							<button class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">View Details</button>
-						</div>
-					</div>
-				</div>
-
-				<!-- Course Card 3 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-					<div class="h-2 bg-gradient-to-r from-amber-500 to-orange-600"></div>
-					<div class="p-6">
-						<!-- Course Header -->
-						<div class="flex items-start justify-between mb-4">
-							<div>
-								<h3 class="text-lg font-bold text-gray-900">Chemistry 102</h3>
-								<p class="text-xs text-gray-500 font-mono mt-1">CHM-102</p>
-							</div>
-							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Inactive</span>
-						</div>
-
-						<!-- Course Info -->
-						<div class="space-y-3 mb-4">
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600">Prof. Michael Chen</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">24</span> Students Enrolled</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">4</span> Subjects</p>
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2 pt-4 border-t border-gray-200">
-							<button @click="openCourseModal('edit')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium">Edit</button>
-							<button class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">View Details</button>
-						</div>
-					</div>
-				</div>
-
-				<!-- Course Card 4 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-					<div class="h-2 bg-gradient-to-r from-pink-500 to-rose-600"></div>
-					<div class="p-6">
-						<!-- Course Header -->
-						<div class="flex items-start justify-between mb-4">
-							<div>
-								<h3 class="text-lg font-bold text-gray-900">English Literature</h3>
-								<p class="text-xs text-gray-500 font-mono mt-1">ENG-301</p>
-							</div>
-							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-						</div>
-
-						<!-- Course Info -->
-						<div class="space-y-3 mb-4">
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600">Prof. James Anderson</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">35</span> Students Enrolled</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">5</span> Subjects</p>
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2 pt-4 border-t border-gray-200">
-							<button @click="openCourseModal('edit')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium">Edit</button>
-							<button class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">View Details</button>
-						</div>
-					</div>
-				</div>
-
-				<!-- Course Card 5 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-					<div class="h-2 bg-gradient-to-r from-cyan-500 to-blue-600"></div>
-					<div class="p-6">
-						<!-- Course Header -->
-						<div class="flex items-start justify-between mb-4">
-							<div>
-								<h3 class="text-lg font-bold text-gray-900">History 150</h3>
-								<p class="text-xs text-gray-500 font-mono mt-1">HIS-150</p>
-							</div>
-							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-						</div>
-
-						<!-- Course Info -->
-						<div class="space-y-3 mb-4">
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600">Prof. Helen White</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">31</span> Students Enrolled</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">3</span> Subjects</p>
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2 pt-4 border-t border-gray-200">
-							<button @click="openCourseModal('edit')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium">Edit</button>
-							<button class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">View Details</button>
-						</div>
-					</div>
-				</div>
-
-				<!-- Course Card 6 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-					<div class="h-2 bg-gradient-to-r from-violet-500 to-purple-600"></div>
-					<div class="p-6">
-						<!-- Course Header -->
-						<div class="flex items-start justify-between mb-4">
-							<div>
-								<h3 class="text-lg font-bold text-gray-900">Computer Science</h3>
-								<p class="text-xs text-gray-500 font-mono mt-1">CS-201</p>
-							</div>
-							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
-						</div>
-
-						<!-- Course Info -->
-						<div class="space-y-3 mb-4">
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600">Prof. David Kumar</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">40</span> Students Enrolled</p>
-							</div>
-							<div class="flex items-center gap-2">
-								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"></path>
-								</svg>
-								<p class="text-sm text-gray-600"><span class="font-semibold text-gray-900">6</span> Subjects</p>
-							</div>
-						</div>
-
-						<!-- Actions -->
-						<div class="flex gap-2 pt-4 border-t border-gray-200">
-							<button @click="openCourseModal('edit')" class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium">Edit</button>
-							<button class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium">View Details</button>
-						</div>
-					</div>
-				</div>
+				<CourseCard
+					v-for="course in cardCourses"
+					:key="course.id"
+					:course="course"
+					:onEdit="() => openCourseModal('edit')"
+					:onViewDetails="() => {}"
+				/>
 			</div>
 		</div>
 
@@ -410,7 +234,7 @@ function closeCourseModal() {
 				</div>
 
 				<!-- Modal Content -->
-				<form @submit.prevent class="p-6 space-y-6">
+				<form @submit.prevent="createCourse" class="p-6 space-y-6">
 					<!-- Course Name -->
 					<div>
 						<h3 class="text-sm font-semibold text-gray-900 mb-4">Course Information</h3>
@@ -420,9 +244,11 @@ function closeCourseModal() {
 								type="text" 
 								placeholder="Enter course name (e.g., Mathematics 101)" 
 								class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								v-model="newCourseName"
 								required
 							>
 							<p class="text-xs text-gray-500 mt-1">This is the only field required in the database</p>
+							<p v-if="error" class="text-xs text-red-600 mt-1">{{ error }}</p>
 						</div>
 					</div>
 

@@ -19,6 +19,7 @@ defineProps<Props>();
           <p class="text-xs text-gray-500 font-mono mt-1">{{ course.code }}</p>
         </div>
         <span
+          v-if="course.status"
           :class="[
             'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
             course.status === 'Active'
