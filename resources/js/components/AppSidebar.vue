@@ -23,7 +23,7 @@ const navSections: { title: string; items: NavLink[] }[] = [
         title: 'Management',
         items: [
             { label: 'Dashboard', href: '/dashboard' },
-            { label: 'User Management', href: '/users', disabled: true },
+            { label: 'User Management', href: '/usermanagement' },
             { label: 'Courses', href: '/courses' },
         ],
     },

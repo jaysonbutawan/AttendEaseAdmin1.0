@@ -41,6 +41,10 @@ Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');
 
+Route::get('/usermanagement', function () {
+    return Inertia::render('management/UserManagement');
+})->middleware(['auth', 'verified'])->name('user.management');
+
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -57,6 +61,7 @@ Route::prefix('api')->group(function () {
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 });
+
 
 //course routes
 Route::post('/api/courses', [CourseController::class, 'store'])->name('courses.store');
