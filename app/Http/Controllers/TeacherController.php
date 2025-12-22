@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Teacher;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class TeacherController extends Controller
@@ -23,5 +24,18 @@ class TeacherController extends Controller
             });
 
         return response()->json($teachers);
+    }
+
+    /**
+     * Count of assigned teachers (distinct teacher_id appearing in class_sessions).
+     */
+    public function assignedCount()
+    {
+        $count = DB::table('class_sessions')->distinct()->count('teacher_id');
+
+        return response()->json([
+            'success' => true,
+            'assigned_teachers' => $count,
+        ]);
     }
 }

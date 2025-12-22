@@ -72,6 +72,9 @@ Route::post('/api/courses', [CourseController::class, 'store'])->name('courses.s
 Route::get('/api/courses', [CourseController::class, 'index'])->name('courses.index');
 Route::delete('/api/courses/{id}', [CourseController::class, 'destroy']);
 
+// enrollment metrics routes
+Route::get('/api/enrollments/total', [StudentController::class, 'totalEnrollments'])->name('enrollments.total');
+
 //room routes
 Route::post('/room_polygon', [RoomController::class, 'store']);
 Route::get('/room_polygon', [RoomController::class, 'index']);
@@ -79,6 +82,9 @@ Route::delete('/room_polygon/{id}', [RoomController::class, 'destroy']);
 
 //class session routes
 Route::post('/class_sessions', [ClassSessionController::class, 'store'])->name('class_sessions.store');
+
+// teachers metrics routes
+Route::get('/api/teachers/assigned-count', [TeacherController::class, 'assignedCount'])->name('teachers.assigned_count');
 
 
 

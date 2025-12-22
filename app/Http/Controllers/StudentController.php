@@ -23,6 +23,20 @@ class StudentController extends Controller
 
         return response()->json($students);
     }
+
+    /**
+     * Total enrollments across all courses.
+     * Counts students with a non-null course_id.
+     */
+    public function totalEnrollments()
+    {
+        $total = Student::whereNotNull('course_id')->count();
+
+        return response()->json([
+            'success' => true,
+            'total_enrollments' => $total,
+        ]);
+    }
 //mobile app profile update and get profile
     public function updateProfile(Request $request)
     {

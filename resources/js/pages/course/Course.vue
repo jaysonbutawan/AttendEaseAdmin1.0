@@ -22,6 +22,8 @@ const newCourseName = ref('');
 const loading = ref(false);
 const error = ref('');
 const courses = ref<ApiCourse[]>([]);
+const totalEnrollments = ref(0);
+const assignedTeachers = ref(0);
 
 const gradients = [
 	'from-blue-500 to-blue-600',
@@ -73,6 +75,28 @@ async function loadCourses() {
 	}
 }
 
+async function loadTotalEnrollments() {
+	try {
+		const res = await fetch('/api/enrollments/total', { credentials: 'same-origin' });
+		if (!res.ok) throw new Error('Failed to fetch total enrollments');
+		const data = await res.json();
+		totalEnrollments.value = Number(data?.total_enrollments ?? 0);
+	} catch (e) {
+		// keep silent in UI, optional logging
+	}
+}
+
+async function loadAssignedTeachers() {
+	try {
+		const res = await fetch('/api/teachers/assigned-count', { credentials: 'same-origin' });
+		if (!res.ok) throw new Error('Failed to fetch assigned teachers');
+		const data = await res.json();
+		assignedTeachers.value = Number(data?.assigned_teachers ?? 0);
+	} catch (e) {
+		// silent
+	}
+}
+
 async function createCourse() {
 	error.value = '';
 	if (!newCourseName.value.trim()) {
@@ -102,7 +126,9 @@ async function createCourse() {
 	}
 }
 
-onMounted(loadCourses);
+onMounted(async () => {
+	await Promise.all([loadCourses(), loadTotalEnrollments(), loadAssignedTeachers()]);
+});
 </script>
 
 <template>
@@ -141,8 +167,8 @@ onMounted(loadCourses);
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Total Enrollments</p>
-							<h3 class="text-3xl font-bold text-indigo-600 mt-2">1,230</h3>
-							<p class="text-xs text-gray-500 mt-2">Avg: 27.95 per course</p>
+							<h3 class="text-3xl font-bold text-indigo-600 mt-2">{{ totalEnrollments }}</h3>
+							<p class="text-xs text-gray-500 mt-2">Avg: {{ courses.length ? (Math.round((totalEnrollments / courses.length) * 100) / 100) : 0 }} per course</p>
 						</div>
 						<div class="bg-indigo-100 rounded-lg p-3">
 							<svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -157,8 +183,8 @@ onMounted(loadCourses);
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Assigned Teachers</p>
-							<h3 class="text-3xl font-bold text-amber-600 mt-2">42</h3>
-							<p class="text-xs text-gray-500 mt-2">1.14 courses per teacher</p>
+							<h3 class="text-3xl font-bold text-amber-600 mt-2">{{ assignedTeachers }}</h3>
+							<p class="text-xs text-gray-500 mt-2">{{ assignedTeachers ? (Math.round((courses.length / assignedTeachers) * 100) / 100) : 0 }} courses per teacher</p>
 						</div>
 						<div class="bg-amber-100 rounded-lg p-3">
 							<svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
