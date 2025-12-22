@@ -16,6 +16,7 @@ class TeacherController extends Controller
             ->get()
             ->map(function ($teacher) {
                 return [
+                    'teacher_id' => $teacher->teacher_id,
                     'name' => $teacher->firstname . ' ' . $teacher->lastname,
                     'daysAgo' => now()->diffInDays($teacher->created_at),
                 ];

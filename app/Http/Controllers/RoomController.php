@@ -21,6 +21,7 @@ class RoomController extends Controller
         return DB::transaction(function () use ($data) {
             $roomId = DB::table('rooms')->insertGetId([
                 'room_name' => $data['room_name'],
+                'color' => $data['color'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ], 'room_id');
@@ -68,6 +69,16 @@ class RoomController extends Controller
         });
 
     return response()->json(['rooms' => $rooms]);
+}
+
+public function destroy($id)
+{
+    return DB::transaction(function () use ($id) {
+        DB::table('room_polygons')->where('room_id', $id)->delete();
+        DB::table('rooms')->where('room_id', $id)->delete();
+
+        return response()->json(['deleted' => true]);
+    });
 }
 
 }

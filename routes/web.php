@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClassSessionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -40,6 +41,9 @@ Route::get('dashboard', function () {
 Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
 Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
 Route::get('/teachers_controller', [TeacherController::class, 'index']);
+Route::get('/teachers_controller', [TeacherController::class, 'index'])->name('teachers.index');
+
+
 Route::get('/students_controller', [StudentController::class, 'index']);
 
 //course routes
@@ -50,6 +54,11 @@ Route::delete('/courses/{id}', [CourseController::class, 'destroy']);
 //room routes
 Route::post('/room_polygon', [RoomController::class, 'store']);
 Route::get('/room_polygon', [RoomController::class, 'index']);
+Route::delete('/room_polygon/{id}', [RoomController::class, 'destroy']);
+
+//class session routes
+Route::post('/class_sessions', [ClassSessionController::class, 'store'])->name('class_sessions.store');
+
 
 
 

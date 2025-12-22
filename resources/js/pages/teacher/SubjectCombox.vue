@@ -2,63 +2,86 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { ChevronsUpDown, Check, PlusCircle } from 'lucide-vue-next';
 
+type SubjectApi = { subject_id: number; subject_name: string };
+const subjects = ref<SubjectApi[]>([]);
+
+
 const props = defineProps<{
-  subjects: string[];
-  currentSubject?: string;
+  subjects: SubjectApi[];
+  modelValue: number | '';
 }>();
 
+
 const emit = defineEmits<{
-  (e: 'subjectSelect', value: string): void;
+  (e: 'update:modelValue', value: number | ''): void;
   (e: 'subjectCreate', value: string): void;
 }>();
 
+const selectedSubjectName = computed(() => {
+  if (props.modelValue === '') return '';
+  const found = props.subjects.find(s => s.subject_id === props.modelValue);
+  return found?.subject_name ?? '';
+});
+
 const open = ref(false);
-const inputValue = ref(props.currentSubject ?? '');
-const containerRef = ref<HTMLElement | null>(null);
+const inputValue = ref(selectedSubjectName.value);
 
-const currentSubject = computed(() => props.currentSubject ?? '');
-
-// keep input in sync when parent changes currentSubject
 watch(
-  () => props.currentSubject,
-  newVal => {
-    if (typeof newVal === 'string') {
-      inputValue.value = newVal;
+  () => props.modelValue,
+  (newId) => {
+    if (open.value) return;
+    if (newId === '') {
+      inputValue.value = '';
+      return;
     }
+
+    const found = props.subjects.find(s => s.subject_id === newId);
+    inputValue.value = found?.subject_name ?? '';
   }
 );
+
+
+const containerRef = ref<HTMLElement | null>(null);
 
 const trimmedInput = computed(() => inputValue.value.trim());
 
 const filteredSubjects = computed(() => {
   if (!trimmedInput.value) return props.subjects;
   const lower = trimmedInput.value.toLowerCase();
-  return props.subjects.filter(subject =>
-    subject.toLowerCase().includes(lower)
-  );
+
+  return props.subjects.filter(s => {
+    const name = s?.subject_name ?? '';
+    return name.toLowerCase().includes(lower);
+  });
 });
 
 const isNewSubjectCandidate = computed(() => {
-  if (!trimmedInput.value) return false;
-  const exists = props.subjects.some(
-    subject => subject.toLowerCase() === trimmedInput.value.toLowerCase()
-  );
+  const candidate = trimmedInput.value;
+  if (!candidate) return false;
+
+  const lower = candidate.toLowerCase();
+  const exists = props.subjects.some(s => (s?.subject_name ?? '').toLowerCase() === lower);
   return !exists;
 });
 
-const handleSelect = (subjectName: string) => {
-  emit('subjectSelect', subjectName);
-  inputValue.value = subjectName;
+
+
+const handleSelect = (subject: SubjectApi) => {
+  emit('update:modelValue', subject.subject_id);
+  inputValue.value = subject.subject_name;
   open.value = false;
 };
+
 
 const handleCreate = (newSubjectName: string) => {
   const value = newSubjectName.trim();
   if (!value) return;
+
   emit('subjectCreate', value);
-  inputValue.value = value;
+
   open.value = false;
 };
+
 
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Enter' && isNewSubjectCandidate.value) {
@@ -124,22 +147,23 @@ onBeforeUnmount(() => {
         </div>
 
         <template v-if="filteredSubjects.length > 0">
-          <div
-            v-for="subject in filteredSubjects"
-            :key="subject"
-            @click="handleSelect(subject)"
-            :class="[
-              'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300',
-              currentSubject === subject ? 'bg-blue-50 dark:bg-blue-900/30' : ''
-            ]"
-          >
-            <Check
-              v-if="currentSubject === subject"
-              class="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400"
-            />
-            <div v-else class="mr-2 h-4 w-4"></div>
-            {{ subject }}
-          </div>
+    <div
+  v-for="subject in filteredSubjects"
+  :key="subject.subject_id"
+  @click="handleSelect(subject)"
+  :class="[
+    'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300',
+    props.modelValue === subject.subject_id ? 'bg-blue-50 dark:bg-blue-900/30' : ''
+  ]"
+>
+  <Check
+    v-if="props.modelValue === subject.subject_id"
+    class="mr-2 h-4 w-4 text-blue-600 dark:text-blue-400"
+  />
+  <div v-else class="mr-2 h-4 w-4"></div>
+  {{ subject.subject_name }}
+</div>
+
         </template>
 
         <template v-else>

@@ -4,7 +4,8 @@ import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Search, Users } from 'lucide-vue-next';
 import { ref } from 'vue';
-import SubjectManager from './SubjectManager.vue';
+import SubjectManager from './ClassSchedule.vue';
+import Card from './Card.vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
 
 const teachersData: Teacher[] = [
@@ -256,7 +257,6 @@ const search = ref('');
                 </table>
             </div>
 
-            <!-- Pagination -->
             <div
                 class="mt-6 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400"
             >
@@ -292,6 +292,8 @@ const search = ref('');
                     </button>
                 </div>
             </div>
+
+            <Card />
         </div>
     </AppLayout>
 </template>

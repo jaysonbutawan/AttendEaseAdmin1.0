@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->time('start_time')->nullable();
             $table->time('end_time')->nullable();
-            $table->date('session_date');
+            $table->json('session_days');
 
             $table->enum('session_status', ['active', 'ended', 'pending'])->default('pending');
 
@@ -35,12 +35,12 @@ return new class extends Migration
             $table->foreign('teacher_id')->references('teacher_id')->on('teachers');
 
             $table->unique(
-                ['teacher_id', 'session_date', 'start_time', 'end_time'],
+                ['teacher_id', 'start_time', 'end_time'],
                 'teacher_schedule_unique'
             );
 
             $table->unique(
-                ['room_id', 'session_date', 'start_time', 'end_time'],
+                ['room_id','start_time', 'end_time'],
                 'room_schedule_unique'
             );
         });
