@@ -5,7 +5,7 @@ import { Head } from '@inertiajs/vue3';
 import { Filter, Search, Users } from 'lucide-vue-next';
 import { ref } from 'vue';
 import SubjectManager from './ClassSchedule.vue';
-import Card from './Card.vue';
+import Card from './TeacherCard.vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
 
 const teachersData: Teacher[] = [

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const page = usePage();
@@ -46,7 +46,7 @@ const formattedDate = computed(() => {
             <!-- Summary Statistics Section -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <!-- Total Enrolled Students -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                <Link href="/courses" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition cursor-pointer block">
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Total Enrolled Students</p>
@@ -59,7 +59,7 @@ const formattedDate = computed(() => {
                             </svg>
                         </div>
                     </div>
-                </div>
+                </Link>
 
                 <!-- Active Class Sessions -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
