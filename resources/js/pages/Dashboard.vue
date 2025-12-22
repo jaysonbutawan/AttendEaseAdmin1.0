@@ -1,494 +1,309 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import axios from 'axios';
-import { computed, onMounted, ref } from 'vue';
-import Department from './Department.vue';
-import Room from './rooms/Room.vue';
+import { Head, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-interface Teacher {
-    name: string;
-    daysAgo: number;
-    isSelected: boolean;
-}
+const page = usePage();
+const userName = computed(() => page.props.auth?.user?.name ?? 'Administrator');
 
-const teacherList = ref<Teacher[]>([]);
-const COLLAPSED_COUNT = 7;
-const SCROLL_THRESHOLD = 12;
-
-const showAll = ref(false);
-
-const loadTeachers = async () => {
-    try {
-        const res = await axios.get('/teachers_controller');
-        console.log('Teachers:', res.data);
-        teacherList.value = res.data.map((t: any) => ({
-            name: t.name,
-            daysAgo: t.daysAgo,
-            isSelected: false,
-        }));
-    } catch (error) {
-        console.error('Failed to load teachers:', error);
-    }
-};
-
-const displayedTeachers = computed(() =>
-    showAll.value
-        ? teacherList.value
-        : teacherList.value.slice(0, COLLAPSED_COUNT),
-);
-
-const areAllTeachersSelected = computed(() =>
-    teacherList.value.every((t) => t.isSelected),
-);
-
-const selectedTeachersCount = computed(
-    () => teacherList.value.filter((t) => t.isSelected).length,
-);
-
-const toggleAllTeachers = (event: Event) => {
-    const checked = (event.target as HTMLInputElement).checked;
-    teacherList.value.forEach((t) => (t.isSelected = checked));
-};
-
-interface Student {
-    name: string;
-    daysAgo: number;
-    isSelected: boolean;
-}
-
-const studentList = ref<Student[]>([]);
-const STUDENT_COUNT = 7;
-const STUDENT_SCROLL_THRESHOLD = 12;
-
-const showAllStudents = ref(false);
-
-const loadStudents = async () => {
-    try {
-        const res = await axios.get('/students_controller');
-        console.log('Students:', res.data);
-        studentList.value = res.data.map((s: any) => ({
-            name: s.name,
-            daysAgo: s.daysAgo,
-            isSelected: false,
-        }));
-    } catch (error) {
-        console.error('Failed to load students:', error);
-    }
-};
-
-const displayedStudents = computed(() =>
-    showAllStudents.value
-        ? studentList.value
-        : studentList.value.slice(0, STUDENT_COUNT),
-);
-
-const selectedStudentsCount = computed(
-    () => studentList.value.filter((s) => s.isSelected).length,
-);
-
-const areAllStudentsSelected = computed(() =>
-    studentList.value.every((s) => s.isSelected),
-);
-
-const toggleAllStudents = (event: Event) => {
-    const checked = (event.target as HTMLInputElement).checked;
-    studentList.value.forEach((s) => (s.isSelected = checked));
-};
-
-onMounted(() => {
-    console.log('Component mounted');
-    loadTeachers();
-    loadStudents();
+const formattedDate = computed(() => {
+    const now = new Date();
+    return new Intl.DateTimeFormat(undefined, {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+    }).format(now);
 });
 </script>
 
 <template>
     <AppLayout>
-        <div class="min-h-screen bg-gray-50 p-4 sm:p-6">
-            <h1 class="mb-8 text-2xl font-extrabold text-gray-800 sm:text-3xl">
-                User Management Overview
-            </h1>
+        <div class="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+            <Head title="Dashboard - AttendEase" />
 
-            <div class="mb-10 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-                <div
-                    class="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-lg sm:p-6"
-                >
-                    <div class="mb-4 flex items-start justify-between">
-                        <span class="text-sm font-semibold text-gray-500"
-                            >Active Teachers</span
-                        >
-                        <div
-                            class="flex-shrink-0 rounded-full bg-indigo-100 p-2 text-indigo-600"
-                        >
-                            <svg
-                                class="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
-                                />
-                                <circle cx="12" cy="7" r="4" />
+            <!-- Header Section -->
+            <div class="mb-8 pb-6 border-b border-gray-200">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">Good Morning, {{ userName }}</h1>
+                        <p class="text-gray-500 text-sm mt-2">Today is {{ formattedDate }} | Current Semester</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="relative">
+                            <svg class="w-6 h-6 text-gray-600 cursor-pointer hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 0 0-4-5.659V5a2 2 0 1 0-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9"></path>
                             </svg>
+                            <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                         </div>
-                    </div>
-                    <div class="flex items-baseline">
-                        <span
-                            class="mr-2 text-3xl font-bold text-indigo-600 sm:text-4xl"
-                            >85</span
-                        >
-                    </div>
-                </div>
-
-                <!-- Stat Card 2: Total Students -->
-                <div
-                    class="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-lg sm:p-6"
-                >
-                    <div class="mb-4 flex items-start justify-between">
-                        <span class="text-sm font-semibold text-gray-500"
-                            >Total Students</span
-                        >
-                        <!-- Icon Container (Green Accent) -->
-                        <div
-                            class="flex-shrink-0 rounded-full bg-green-100 p-2 text-green-600"
-                        >
-                            <!-- Icon: People -->
-                            <svg
-                                class="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-                                />
-                                <circle cx="8.5" cy="7" r="4" />
-                                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
+                        <div class="text-right">
+                            <p class="text-sm font-semibold text-gray-700">Active</p>
+                            <p class="text-xs text-green-600">Online</p>
                         </div>
-                    </div>
-                    <div class="flex items-baseline">
-                        <span
-                            class="mr-2 text-3xl font-bold text-green-600 sm:text-4xl"
-                            >1,450</span
-                        >
-                    </div>
-                </div>
-
-                <!-- Stat Card 3: Pending Approvals -->
-                <div
-                    class="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-lg sm:p-6"
-                >
-                    <div class="mb-4 flex items-start justify-between">
-                        <span class="text-sm font-semibold text-gray-500"
-                            >Pending Approvals</span
-                        >
-                        <!-- Icon Container (Red/Clock Accent) -->
-                        <div
-                            class="flex-shrink-0 rounded-full bg-red-100 p-2 text-red-600"
-                        >
-                            <!-- Icon: Clock -->
-                            <svg
-                                class="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <circle cx="12" cy="12" r="10" />
-                                <polyline points="12 6 12 12 16 14" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline">
-                        <span
-                            class="mr-2 text-3xl font-bold text-red-600 sm:text-4xl"
-                            >15</span
-                        >
-                    </div>
-                </div>
-
-                <!-- Stat Card 4: Classes in Session -->
-                <div
-                    class="flex flex-col rounded-xl border border-gray-100 bg-white p-4 shadow-lg sm:p-6"
-                >
-                    <div class="mb-4 flex items-start justify-between">
-                        <span class="text-sm font-semibold text-gray-500"
-                            >Classes in Session</span
-                        >
-                        <!-- Icon Container (Teal/School Accent) -->
-                        <div
-                            class="flex-shrink-0 rounded-full bg-teal-100 p-2 text-teal-600"
-                        >
-                            <!-- Icon: Building/School -->
-                            <svg
-                                class="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
-                                />
-                                <path d="M12 22v-4" />
-                                <path d="M9 18h6" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="flex items-baseline">
-                        <span
-                            class="mr-2 text-3xl font-bold text-teal-600 sm:text-4xl"
-                            >42</span
-                        >
                     </div>
                 </div>
             </div>
 
-            <!-- 2. Action Required Section -->
-            <h2 class="mb-6 text-xl font-bold text-gray-800">
-                Action Required: Pending Approvals (15 Total)
-            </h2>
-
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <div
-                    class="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-lg"
-                >
-                    <div
-                        class="mb-4 flex flex-col items-start justify-between gap-4 border-b border-gray-100 pb-4 sm:flex-row sm:items-center"
-                    >
-                        <h3
-                            class="flex items-center text-lg font-semibold text-gray-800"
-                        >
-                            <svg
-                                class="mr-2 h-5 w-5 text-yellow-600"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
-                                />
-                                <circle cx="9" cy="7" r="4" />
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                            </svg>
-                            New Teacher Registrations (3)
-                        </h3>
-                        <button
-                            :disabled="selectedTeachersCount === 0"
-                            :class="[
-                                selectedTeachersCount === 0
-                                    ? 'cursor-not-allowed bg-gray-400'
-                                    : 'bg-indigo-600 hover:bg-indigo-700',
-                                'flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-md transition duration-150',
-                            ]"
-                        >
-                            Approve Selected ({{ selectedTeachersCount }})
-                        </button>
-                    </div>
-
-                    <!-- Select All Checkbox -->
-                    <div class="mb-4 flex items-center justify-start">
-                        <label
-                            class="flex cursor-pointer items-center text-sm font-medium text-gray-600"
-                        >
-                            <input
-                                type="checkbox"
-                                :checked="areAllTeachersSelected"
-                                @change="toggleAllTeachers"
-                                class="form-checkbox mr-2 h-4 w-4 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            Select All
-                        </label>
-                    </div>
-
-                    <div
-                        :class="[
-                            showAll && teacherList.length >= SCROLL_THRESHOLD
-                                ? 'max-h-[600px] overflow-y-auto'
-                                : '',
-                        ]"
-                    >
-                        <div
-                            v-for="(teacher, index) in displayedTeachers"
-                            :key="index"
-                            class="flex items-start justify-between border-t border-gray-100 py-3"
-                            :class="{ 'border-t-0': index === 0 }"
-                        >
-                            <div class="flex items-start">
-                                <input
-                                    type="checkbox"
-                                    v-model="teacher.isSelected"
-                                    class="form-checkbox mt-1 mr-3 h-5 w-5 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <div>
-                                    <p
-                                        class="text-base font-semibold text-gray-900"
-                                    >
-                                        {{ teacher.name }}
-                                    </p>
-                                    <p class="text-xs text-gray-500">
-                                        Application submitted
-                                        {{ teacher.daysAgo }}
-                                        {{
-                                            teacher.daysAgo > 1 ? 'days' : 'day'
-                                        }}
-                                        ago.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <span
-                                class="flex-shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold tracking-wider text-orange-600"
-                            >
-                                PENDING
-                            </span>
+            <!-- Summary Statistics Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Enrolled Students -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Total Enrolled Students</p>
+                            <h3 class="text-3xl font-bold text-blue-600 mt-2">1,245</h3>
+                            <p class="text-xs text-gray-500 mt-2">↑ 12% from last month</p>
                         </div>
-
-                        <a
-                            href="#"
-                            v-if="teacherList.length > COLLAPSED_COUNT"
-                            @click.prevent="showAll = !showAll"
-                            class="mt-4 self-start text-sm font-medium text-indigo-600 transition duration-150 hover:text-indigo-800"
-                        >
-                            {{
-                                showAll
-                                    ? 'Show less'
-                                    : 'View all teacher applications →'
-                            }}
-                        </a>
+                        <div class="bg-blue-100 rounded-lg p-3">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 1 1-12 0 6 6 0 0 1 12 0z"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Action Card 2: New Student Requests -->
-                <div
-                    class="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-lg"
-                >
-                    <!-- Card Header -->
-                    <div
-                        class="mb-4 flex flex-col items-start justify-between gap-4 border-b border-gray-100 pb-4 sm:flex-row sm:items-center"
-                    >
-                        <h3
-                            class="flex items-center text-lg font-semibold text-gray-800"
-                        >
-                            <!-- Icon: Student (Blue/Teal Accent) -->
-                            <svg
-                                class="mr-2 h-5 w-5 text-teal-600"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <circle cx="12" cy="10" r="3" />
-                                <path
-                                    d="M12 13a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7z"
-                                />
-                            </svg>
-                            New Student Requests (12)
-                        </h3>
-                        <button
-                            :disabled="selectedStudentsCount === 0"
-                            :class="[
-                                selectedStudentsCount === 0
-                                    ? 'cursor-not-allowed bg-gray-400'
-                                    : 'bg-indigo-600 hover:bg-indigo-700',
-                                'flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white shadow-md transition duration-150',
-                            ]"
-                        >
-                            Approve Selected ({{ selectedStudentsCount }})
-                        </button>
-                    </div>
-
-                    <!-- Select All Checkbox -->
-                    <div class="mb-4 flex items-center justify-start">
-                        <label
-                            class="flex cursor-pointer items-center text-sm font-medium text-gray-600"
-                        >
-                            <input
-                                type="checkbox"
-                                :checked="areAllStudentsSelected"
-                                @change="toggleAllStudents"
-                                class="form-checkbox mr-2 h-4 w-4 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                            />
-                            Select All
-                        </label>
-                    </div>
-
-                    <div
-                        :class="[
-                            showAllStudents &&
-                            studentList.length >= STUDENT_SCROLL_THRESHOLD
-                                ? 'max-h-[600px] overflow-y-auto'
-                                : '',
-                        ]"
-                    >
-                        <div
-                            v-for="(student, index) in displayedStudents"
-                            :key="student.name"
-                            class="flex items-start justify-between border-t border-gray-100 py-3"
-                            :class="{ 'border-t-0': index === 0 }"
-                        >
-                            <div class="flex items-start">
-                                <input
-                                    type="checkbox"
-                                    v-model="student.isSelected"
-                                    class="form-checkbox mt-1 mr-3 h-5 w-5 rounded-md border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                />
-                                <div>
-                                    <p
-                                        class="text-base font-semibold text-gray-900"
-                                    >
-                                        {{ student.name }}
-                                    </p>
-                                    <p class="text-xs text-gray-500">
-                                        Request type: .
-                                    </p>
-                                </div>
-                            </div>
-                            <!-- PENDING Badge -->
-                            <span
-                                class="flex-shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold tracking-wider text-orange-600"
-                            >
-                                PENDING
-                            </span>
+                <!-- Active Class Sessions -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Active Class Sessions</p>
+                            <h3 class="text-3xl font-bold text-green-600 mt-2">12</h3>
+                            <p class="text-xs text-gray-500 mt-2">Currently running now</p>
                         </div>
-                        <a
-                            href="#"
-                            v-if="studentList.length > STUDENT_COUNT"
-                            @click.prevent="showAllStudents = !showAllStudents"
-                            class="mt-4 self-start text-sm font-medium text-indigo-600 transition duration-150 hover:text-indigo-800"
-                        >
-                            {{
-                                showAllStudents
-                                    ? 'Show less'
-                                    : 'View all student applications →'
-                            }}
-                        </a>
+                        <div class="bg-green-100 rounded-lg p-3">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rooms in Use -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Rooms in Use</p>
+                            <h3 class="text-3xl font-bold text-indigo-600 mt-2">8/15</h3>
+                            <p class="text-xs text-gray-500 mt-2">7 rooms idle</p>
+                        </div>
+                        <div class="bg-indigo-100 rounded-lg p-3">
+                            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5.581m0 0H9.11m3.409 0H15.5m-3.409 0H7m8-6.5h-5"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Attendance Rate -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Today's Attendance Rate</p>
+                            <h3 class="text-3xl font-bold text-amber-600 mt-2">94.2%</h3>
+                            <p class="text-xs text-gray-500 mt-2">↑ 2.1% from yesterday</p>
+                        </div>
+                        <div class="bg-amber-100 rounded-lg p-3">
+                            <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
+                            </svg>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <Department />
-            </div>    
+            <!-- Live Attendance Overview and Room Activity Panel -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Live Attendance Overview -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Live Attendance Overview</h2>
+                    <div class="space-y-3 max-h-80 overflow-y-auto">
+                        <!-- Session Card 1 -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Mathematics - Calculus I</h3>
+                                    <p class="text-sm text-gray-600">Prof. Johnson | Room A-201</p>
+                                </div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> Active
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600">
+                                    <span class="font-semibold text-green-600">45</span> Present |
+                                    <span class="font-semibold text-amber-600">3</span> Late |
+                                    <span class="font-semibold text-red-600">2</span> Absent
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="text-xs text-blue-600 font-medium">Geo-Fenced</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Session Card 2 -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">Physics - Mechanics</h3>
+                                    <p class="text-sm text-gray-600">Prof. Chen | Room B-105</p>
+                                </div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> Active
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600">
+                                    <span class="font-semibold text-green-600">38</span> Present |
+                                    <span class="font-semibold text-amber-600">1</span> Late |
+                                    <span class="font-semibold text-red-600">1</span> Absent
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="text-xs text-blue-600 font-medium">Geo-Fenced</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Session Card 3 -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">English - Literature</h3>
+                                    <p class="text-sm text-gray-600">Prof. Smith | Room C-312</p>
+                                </div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> Active
+                                </span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-600">
+                                    <span class="font-semibold text-green-600">42</span> Present |
+                                    <span class="font-semibold text-amber-600">2</span> Late |
+                                    <span class="font-semibold text-red-600">0</span> Absent
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="text-xs text-gray-500 font-medium">No Validation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Room Activity Panel -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Room Activity</h2>
+                    <div class="space-y-3">
+                        <!-- Room Occupied -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-500">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">Room A-201</p>
+                                <p class="text-xs text-gray-600">Calculus I (Active)</p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Occupied</span>
+                        </div>
+
+                        <!-- Room Occupied -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-500">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">Room B-105</p>
+                                <p class="text-xs text-gray-600">Mechanics (Active)</p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Occupied</span>
+                        </div>
+
+                        <!-- Room Idle -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">Room C-312</p>
+                                <p class="text-xs text-gray-600">Literature (Active)</p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Occupied</span>
+                        </div>
+
+                        <!-- Room Scheduled -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-blue-300">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">Room D-401</p>
+                                <p class="text-xs text-gray-600">Next: History (2:00 PM)</p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Scheduled</span>
+                        </div>
+
+                        <!-- Room Idle -->
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
+                            <div>
+                                <p class="font-semibold text-gray-800 text-sm">Room E-220</p>
+                                <p class="text-xs text-gray-600">No sessions today</p>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Idle</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Preview (only, logs removed) -->
+            <div class="grid grid-cols-1 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Analytics Preview</h2>
+                    <!-- Weekly Attendance Trend -->
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Weekly Attendance Trend</h3>
+                        <div class="flex items-end gap-2 h-24">
+                            <div class="flex-1 bg-blue-200 rounded-t-lg" style="height: 60%;"></div>
+                            <div class="flex-1 bg-blue-400 rounded-t-lg" style="height: 75%;"></div>
+                            <div class="flex-1 bg-blue-500 rounded-t-lg" style="height: 85%;"></div>
+                            <div class="flex-1 bg-blue-400 rounded-t-lg" style="height: 70%;"></div>
+                            <div class="flex-1 bg-blue-300 rounded-t-lg" style="height: 65%;"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-2">
+                            <span>Mon</span>
+                            <span>Tue</span>
+                            <span>Wed</span>
+                            <span>Thu</span>
+                            <span>Fri</span>
+                        </div>
+                    </div>
+
+                    <!-- Subject Performance -->
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3">Subject Performance</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-600">Mathematics</span>
+                                <span class="text-xs font-semibold text-green-600">96%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 96%;"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 mt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-600">Physics</span>
+                                <span class="text-xs font-semibold text-green-600">94%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 94%;"></div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 mt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-600">Chemistry</span>
+                                <span class="text-xs font-semibold text-amber-600">87%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-amber-500 h-2 rounded-full" style="width: 87%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>
