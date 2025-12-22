@@ -41,6 +41,10 @@ Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');
 
+Route::get('/sessions', function () {
+    return Inertia::render('session/Session');
+})->name('sessions');
+
 Route::get('/usermanagement', function () {
     return Inertia::render('management/UserManagement');
 })->middleware(['auth', 'verified'])->name('user.management');
