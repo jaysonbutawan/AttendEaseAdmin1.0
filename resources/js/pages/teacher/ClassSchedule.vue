@@ -15,19 +15,25 @@ import { route } from 'ziggy-js';
 import SubjectCombox from './SubjectCombox.vue';
 
 interface FormState {
-    subjectName: string;
-    assignedTeacher: string;
-    dayOfWeek: string[];
-    startTime: string;
-    endTime: string;
-    roomNumber: string;
+  subjectId: number | '';
+  teacherId: string;
+  dayOfWeek: string[];
+  startTime: string;
+  endTime: string;
+  roomId: number | '';
 }
 
 
-type TeacherApi = { name: string; daysAgo?: number };
+
+type TeacherApi = { name: string; daysAgo?: number ; teacher_id: string };
 
 const teachers = ref<TeacherApi[]>([]);
-const teacherOptions = computed(() => teachers.value.map((t) => t.name));
+const teacherOptions = computed(() =>
+  teachers.value.map(t => ({
+    label: t.name,
+    value: t.teacher_id
+  }))
+);
 
 
 type RoomApi = {
@@ -38,7 +44,12 @@ type RoomApi = {
 };
 
 const rooms = ref<RoomApi[]>([]);
-const roomOptions = computed(() => rooms.value.map((r) => r.room_name));
+const roomOptions = computed(() =>
+  rooms.value.map((r) => ({
+    label: r.room_name,
+    value: String(r.room_id),
+  }))
+);
 
 const DAYS_OF_WEEK: string[] = [
     'Monday',
@@ -135,75 +146,100 @@ const Input = defineComponent({
     },
 });
 
+type SelectOption = string | { label: string; value: string };
+
 const Select = defineComponent({
-    props: {
-        modelValue: { type: String, default: '' },
-        options: { type: Array as () => string[], required: true },
-        placeholder: { type: String, default: 'Select option' },
-        className: { type: String, default: '' },
-        name: { type: String, required: true },
-    },
-    setup(props, { emit }) {
-        const handleInput = (e: Event) => {
-            emit('update:modelValue', (e.target as HTMLSelectElement).value);
-        };
+  props: {
+    modelValue: { type: String, default: '' },
+    options: { type: Array as () => SelectOption[], required: true },
+    placeholder: { type: String, default: 'Select option' },
+    className: { type: String, default: '' },
+    name: { type: String, required: true },
+  },
+  setup(props, { emit }) {
+    const handleInput = (e: Event) => {
+      emit('update:modelValue', (e.target as HTMLSelectElement).value);
+    };
 
-        const classes = computed(() => {
-            const baseStyle =
-                'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
-            const darkStyle =
-                'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50 dark:placeholder:text-gray-500';
+    const classes = computed(() => {
+      const baseStyle =
+        'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
+      const darkStyle =
+        'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50 dark:placeholder:text-gray-500';
 
-            return `${baseStyle} ${darkStyle} ${props.className} appearance-none pr-8`;
-        });
+      return `${baseStyle} ${darkStyle} ${props.className} appearance-none pr-8`;
+    });
 
-        const optionsVNodes = computed(() => {
-            const nodes: VNode[] = [
-                h(
-                    'option',
-                    { value: '', disabled: true, selected: !props.modelValue },
-                    props.placeholder,
-                ),
-                ...props.options.map((option) =>
-                    h('option', { value: option, key: option }, option),
-                ),
-            ];
-            return nodes;
-        });
+    const optionsVNodes = computed(() => {
+      const nodes: VNode[] = [
+        h(
+          'option',
+          { value: '', disabled: true, selected: !props.modelValue },
+          props.placeholder,
+        ),
+        ...props.options.map((option) => {
+          const value = typeof option === 'string' ? option : option.value;
+          const label = typeof option === 'string' ? option : option.label;
 
-        return () =>
-            h('div', { class: 'relative' }, [
-                h(
-                    'select',
-                    {
-                        class: classes.value,
-                        name: props.name,
-                        value: props.modelValue,
-                        onChange: handleInput,
-                    },
-                    optionsVNodes.value,
-                ),
-                h(ChevronsUpDown, {
-                    class: 'h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400',
-                }),
-            ]);
-    },
+          return h('option', { value, key: value }, label);
+        }),
+      ];
+
+      return nodes;
+    });
+
+    return () =>
+      h('div', { class: 'relative' }, [
+        h(
+          'select',
+          {
+            class: classes.value,
+            name: props.name,
+            value: props.modelValue,
+            onChange: handleInput,
+          },
+          optionsVNodes.value,
+        ),
+        h(ChevronsUpDown, {
+          class:
+            'h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400',
+        }),
+      ]);
+  },
 });
 
-const subjects = ref<string[]>([]);
+type SubjectApi = { subject_id: number; subject_name: string };
+const subjects = ref<SubjectApi[]>([]);
+
 onMounted(async () => {
     try {
         const url = route ? route('subjects.index') : '/subjects';
         const { data } = await axios.get(url);
 
-        if (Array.isArray(data.subjects)) {
-            subjects.value = data.subjects;
-        } else {
-            subjects.value = [];
-        }
-    } catch (error) {
-        console.error('Error loading subjects, using fallback:', error);
+    if (Array.isArray(data.subjects)) {
+      subjects.value = data.subjects
+        .map((s: any) => {
+          // If API returns strings like "Math", we cannot use it (no id)
+          if (typeof s === 'string') return null;
+
+          // If API returns objects, normalize the shape
+          if (typeof s === 'object' && s !== null) {
+            return {
+              subject_id: Number(s.subject_id),
+              subject_name: String(s.subject_name),
+            };
+          }
+
+          return null;
+        })
+        .filter(Boolean) as SubjectApi[];
+    } else {
+      subjects.value = [];
     }
+  } catch (error) {
+    console.error('Error loading subjects, using fallback:', error);
+    subjects.value = [];
+  }
 
     try {
         const { data } = await axios.get('/room_polygon');
@@ -243,86 +279,107 @@ const toggleDay = (day: string) => {
 };
 
 const form = ref<FormState>({
-    subjectName: '',
-    assignedTeacher: '',
+    subjectId: '',
+    teacherId: '',
     dayOfWeek: [],
     startTime: '',
     endTime: '',
-    roomNumber: '',
+    roomId: '',
 });
 const statusMessage = ref<string>('');
 
-const handleFormChange = (name: keyof FormState, value: string) => {
-    form.value[name] = value as never;
-};
-const handleSubjectSelect = (subjectName: string) => {
-    handleFormChange('subjectName', subjectName);
+const handleFormChange = <K extends keyof FormState>(
+  name: K,
+  value: FormState[K]
+) => {
+  form.value[name] = value;
 };
 
 const handleSubjectCreate = async (subjectName: string) => {
-    try {
-        const response = await axios.post(
-            route ? route('subjects.store') : '/subjects',
-            { subject_name: subjectName },
-        );
+  try {
+    const response = await axios.post(
+      route ? route('subjects.store') : '/subjects',
+      { subject_name: subjectName },
+    );
 
-        const created = response.data.subject;
+    const created: SubjectApi = response.data.subject;
 
-        if (
-            !subjects.value.some(
-                (s) => s.toLowerCase() === created.subject_name.toLowerCase(),
-            )
-        ) {
-            subjects.value.push(created.subject_name);
-            subjects.value.sort((a, b) => a.localeCompare(b));
-        }
+    // prevent duplicates (by id OR name)
+    const exists = subjects.value.some(
+      (s) =>
+        s.subject_id === created.subject_id ||
+        s.subject_name.toLowerCase() === created.subject_name.toLowerCase(),
+    );
 
-        handleFormChange('subjectName', created.subject_name);
-        statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
-    } catch (error) {
-        console.error(error);
-        statusMessage.value =
-            'Error saving subject. Please try again or contact support.';
+    if (!exists) {
+      subjects.value.push(created);
+      subjects.value.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
     }
+
+    // set the selected subject id
+    handleFormChange('subjectId', created.subject_id);
+
+    statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
+  } catch (error) {
+    console.error(error);
+    statusMessage.value =
+      'Error saving subject. Please try again or contact support.';
+  }
 };
+
 
 const handleAssignTeacher = async () => {
   const f = form.value;
 
-  if (!f.subjectName || !f.assignedTeacher || f.dayOfWeek.length === 0 || !f.startTime || !f.endTime || !f.roomNumber) {
+  console.log('FORM BEFORE CHECK:', JSON.stringify(f, null, 2));
+
+  if (!f.subjectId || !f.teacherId || f.dayOfWeek.length === 0 || !f.startTime || !f.endTime || !f.roomId) {
+    console.log('BLOCKED: missing fields', {
+      subjectId: f.subjectId,
+      teacherId: f.teacherId,
+      roomId: f.roomId,
+      dayOfWeek: f.dayOfWeek,
+      startTime: f.startTime,
+      endTime: f.endTime,
+    });
     statusMessage.value = 'Please fill all fields before assigning.';
     return;
   }
 
-  try {
-    const payload = {
-      subject_name: f.subjectName,
-      teacher_id: f.assignedTeacher,        // if this is actually teacher_id; if it's a name, backend must map it
-      room_name: f.roomNumber,              // if this is room_name; backend must map it to room_id
-      start_time: f.startTime,
-      end_time: f.endTime,
-      session_days: f.dayOfWeek.map(d => d.toLowerCase()), // ["monday","tuesday"]
-    };
+  const payload = {
+    subject_id: f.subjectId,
+    teacher_id: f.teacherId,
+    room_id: f.roomId,
+    start_time: f.startTime,
+    end_time: f.endTime,
+    session_days: f.dayOfWeek.map(d => d.toLowerCase()),
+  };
 
-    await axios.post('/class_sessions', payload);
+  console.log('PAYLOAD TO SERVER:', payload);
+
+  try {
+    const res = await axios.post('/class_sessions', payload);
+    console.log('SUCCESS RESPONSE:', res.data);
 
     statusMessage.value = 'Schedule saved successfully.';
-    form.value = { subjectName:'', assignedTeacher:'', dayOfWeek:[], startTime:'', endTime:'', roomNumber:'' };
-  } catch (e) {
-    console.error(e);
-    statusMessage.value = 'Failed to save schedule.';
+    form.value = { subjectId:'', teacherId:'', dayOfWeek:[], startTime:'', endTime:'', roomId:'' };
+  } catch (e: any) {
+    console.error('FAILED STATUS:', e?.response?.status);
+    console.error('FAILED DATA:', e?.response?.data); 
+    statusMessage.value = e?.response?.data?.message ?? 'Failed to save schedule.';
   }
 };
 
 
+
 const handleCancel = () => {
     form.value = {
-        subjectName: '',
-        assignedTeacher: '',
+        subjectId: '',
+        teacherId: '',
         dayOfWeek: [],
         startTime: '',
         endTime: '',
-        roomNumber: '',
+        roomId: '',
     };
     statusMessage.value = 'Form reset.';
 };
@@ -340,9 +397,7 @@ const handleCancel = () => {
         <div
             class="rounded-xl border border-gray-100 bg-white p-6 shadow-2xl md:p-8 dark:border-gray-700/50 dark:bg-gray-800"
         >
-            <!-- Row 1: 3 columns -->
             <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
-                <!-- Subject Name -->
                 <div class="space-y-2">
                     <label
                         class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
@@ -350,14 +405,14 @@ const handleCancel = () => {
                         <BookOpen class="mr-2 h-4 w-4 text-blue-500" />
                         Subject Name
                     </label>
-                    <SubjectCombox
-                        :subjects="subjects"
-                        :currentSubject="form.subjectName"
-                        @subjectSelect="handleSubjectSelect"
-                        @subjectCreate="handleSubjectCreate"
-                    />
-                </div>
+                   <SubjectCombox
+  :subjects="subjects"
+  :modelValue="form.subjectId"
+  @update:modelValue="handleFormChange('subjectId', $event)"
+  @subjectCreate="handleSubjectCreate"
+/>
 
+                </div>
                 <!-- Assigned Teacher -->
                 <div class="space-y-2">
                     <label
@@ -366,11 +421,12 @@ const handleCancel = () => {
                         <User class="mr-2 h-4 w-4 text-blue-500" />
                         Assigned Teacher
                     </label>
+
                     <Select
-                        name="assignedTeacher"
-                        :modelValue="form.assignedTeacher"
+                        name="teacherId"
+                        :modelValue="form.teacherId"
                         @update:modelValue="
-                            handleFormChange('assignedTeacher', $event)
+                            handleFormChange('teacherId', $event)
                         "
                         :options="teacherOptions"
                         placeholder="Select a teacher"
@@ -385,15 +441,14 @@ const handleCancel = () => {
                         <Home class="mr-2 h-4 w-4 text-blue-500" />
                         Room Name
                     </label>
-                    <Select
-                        name="roomNumber"
-                        :modelValue="form.roomNumber"
-                        @update:modelValue="
-                            handleFormChange('roomNumber', $event)
-                        "
-                        :options="roomOptions"
-                        placeholder="Select Room"
-                    />
+                   <Select
+  name="roomId"
+  :modelValue="String(form.roomId)"
+  @update:modelValue="handleFormChange('roomId', Number($event))"
+  :options="roomOptions"
+  placeholder="Select Room"
+/>
+
                 </div>
             </div>
 

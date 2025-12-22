@@ -21,6 +21,7 @@ class SubjectController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'subject_id' => 'sometimes|integer|exists:subjects,subject_id',
             'subject_name' => 'required|string|max:255|unique:subjects,subject_name',
         ]);
 
