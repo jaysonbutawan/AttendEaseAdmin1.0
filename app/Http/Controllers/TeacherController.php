@@ -38,4 +38,18 @@ class TeacherController extends Controller
             'assigned_teachers' => $count,
         ]);
     }
+
+    /**
+     * Count teachers not assigned to any class session.
+     */
+    public function unassignedCount()
+    {
+        $assignedIds = DB::table('class_sessions')->distinct()->pluck('teacher_id');
+        $count = Teacher::whereNotIn('teacher_id', $assignedIds)->count();
+
+        return response()->json([
+            'success' => true,
+            'unassigned_teachers' => $count,
+        ]);
+    }
 }

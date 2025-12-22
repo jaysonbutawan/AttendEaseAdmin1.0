@@ -63,6 +63,8 @@ Route::get('/students_controller', [StudentController::class, 'index']);
 Route::prefix('api')->group(function () {
     Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
     Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
+    Route::get('/subjects/total', [SubjectController::class, 'totalCount'])->name('subjects.total');
+    Route::put('/subjects/{id}', [SubjectController::class, 'update'])->name('subjects.update');
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 });
 
@@ -70,6 +72,7 @@ Route::prefix('api')->group(function () {
 //course routes
 Route::post('/api/courses', [CourseController::class, 'store'])->name('courses.store');
 Route::get('/api/courses', [CourseController::class, 'index'])->name('courses.index');
+Route::put('/api/courses/{id}', [CourseController::class, 'update'])->name('courses.update');
 Route::delete('/api/courses/{id}', [CourseController::class, 'destroy']);
 
 // enrollment metrics routes
@@ -85,6 +88,7 @@ Route::post('/class_sessions', [ClassSessionController::class, 'store'])->name('
 
 // teachers metrics routes
 Route::get('/api/teachers/assigned-count', [TeacherController::class, 'assignedCount'])->name('teachers.assigned_count');
+Route::get('/api/teachers/unassigned-count', [TeacherController::class, 'unassignedCount'])->name('teachers.unassigned_count');
 
 
 

@@ -33,6 +33,31 @@ class CourseController extends Controller
         ]);
     }
 
+    public function update(Request $request, $id)
+    {
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Course not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'course_name' => 'required|string|max:255|unique:courses,course_name,' . $course->course_id . ',course_id',
+        ]);
+
+        $course->course_name = $validated['course_name'];
+        $course->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Course updated successfully.',
+            'course' => $course,
+        ]);
+    }
+
    public function destroy($id)
 {    $course = Course::find($id);
 

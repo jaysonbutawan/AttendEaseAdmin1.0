@@ -4,7 +4,7 @@ import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 import CourseCard from '@/pages/course/CourseCard.vue';
 
-type ApiCourse = { id: number; course_name: string };
+type ApiCourse = { course_id: number; course_name: string };
 type CardCourse = {
 	id: number;
 	name: string;
@@ -23,7 +23,10 @@ const loading = ref(false);
 const error = ref('');
 const courses = ref<ApiCourse[]>([]);
 const totalEnrollments = ref(0);
-const assignedTeachers = ref(0);
+const totalSubjects = ref(0);
+const unassignedTeachers = ref(0);
+const editingCourseId = ref<number | null>(null);
+const selectedCourseId = ref<number | 'all'>('all');
 
 const gradients = [
 	'from-blue-500 to-blue-600',
@@ -36,7 +39,7 @@ const gradients = [
 
 function toCardCourse(c: ApiCourse, index: number): CardCourse {
 	return {
-		id: c.id,
+		id: c.course_id,
 		name: c.course_name,
 		code: '',
 		status: '',
@@ -47,7 +50,20 @@ function toCardCourse(c: ApiCourse, index: number): CardCourse {
 	};
 }
 
-const cardCourses = computed(() => courses.value.map((c, i) => toCardCourse(c, i)));
+const filteredCourses = computed(() => {
+	if (selectedCourseId.value === 'all') return courses.value;
+	return courses.value.filter((c) => c.course_id === selectedCourseId.value);
+});
+
+const cardCourses = computed(() => filteredCourses.value.map((c, i) => toCardCourse(c, i)));
+
+function startEdit(id: number) {
+	const c = courses.value.find((item) => item.course_id === id);
+	if (!c) return;
+	editingCourseId.value = id;
+	newCourseName.value = c.course_name;
+	openCourseModal('edit');
+}
 
 function openCourseModal(mode = 'create') {
 	courseModalTitle.value = mode === 'create' ? 'Create New Course' : 'Edit Course';
@@ -58,6 +74,7 @@ function closeCourseModal() {
 	showCourseModal.value = false;
 	newCourseName.value = '';
 	error.value = '';
+	editingCourseId.value = null;
 }
 
 async function loadCourses() {
@@ -86,12 +103,23 @@ async function loadTotalEnrollments() {
 	}
 }
 
-async function loadAssignedTeachers() {
+async function loadTotalSubjects() {
 	try {
-		const res = await fetch('/api/teachers/assigned-count', { credentials: 'same-origin' });
-		if (!res.ok) throw new Error('Failed to fetch assigned teachers');
+		const res = await fetch('/api/subjects/total', { credentials: 'same-origin' });
+		if (!res.ok) throw new Error('Failed to fetch total subjects');
 		const data = await res.json();
-		assignedTeachers.value = Number(data?.assigned_teachers ?? 0);
+		totalSubjects.value = Number(data?.total_subjects ?? 0);
+	} catch (e) {
+		// silent
+	}
+}
+
+async function loadUnassignedTeachers() {
+	try {
+		const res = await fetch('/api/teachers/unassigned-count', { credentials: 'same-origin' });
+		if (!res.ok) throw new Error('Failed to fetch unassigned teachers');
+		const data = await res.json();
+		unassignedTeachers.value = Number(data?.unassigned_teachers ?? 0);
 	} catch (e) {
 		// silent
 	}
@@ -105,8 +133,11 @@ async function createCourse() {
 	}
 	try {
 		const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-		const res = await fetch('/api/courses', {
-			method: 'POST',
+		const isEdit = editingCourseId.value !== null;
+		const url = isEdit ? `/api/courses/${editingCourseId.value}` : '/api/courses';
+		const method = isEdit ? 'PUT' : 'POST';
+		const res = await fetch(url, {
+			method,
 			headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
 			body: JSON.stringify({ course_name: newCourseName.value.trim() }),
 			credentials: 'same-origin',
@@ -117,17 +148,27 @@ async function createCourse() {
 		}
 		const data = await res.json();
 		const created = data?.course as ApiCourse;
-		if (created?.id) {
-			courses.value.unshift(created);
+		if (created?.course_id) {
+			if (isEdit) {
+				const idx = courses.value.findIndex((c) => c.course_id === created.course_id);
+				if (idx !== -1) courses.value[idx] = created;
+			} else {
+				courses.value.unshift(created);
+			}
 		}
 		closeCourseModal();
 	} catch (e: any) {
-		error.value = e?.message ?? 'Unable to create course';
+		error.value = e?.message ?? 'Unable to save course';
 	}
 }
 
 onMounted(async () => {
-	await Promise.all([loadCourses(), loadTotalEnrollments(), loadAssignedTeachers()]);
+	await Promise.all([
+		loadCourses(),
+		loadTotalEnrollments(),
+		loadUnassignedTeachers(),
+		loadTotalSubjects(),
+	]);
 });
 </script>
 
@@ -178,13 +219,29 @@ onMounted(async () => {
 					</div>
 				</div>
 
-				<!-- Assigned Teachers -->
+				<!-- Total Subjects -->
 				<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 					<div class="flex items-start justify-between">
 						<div>
-							<p class="text-gray-600 text-sm font-medium">Assigned Teachers</p>
-							<h3 class="text-3xl font-bold text-amber-600 mt-2">{{ assignedTeachers }}</h3>
-							<p class="text-xs text-gray-500 mt-2">{{ assignedTeachers ? (Math.round((courses.length / assignedTeachers) * 100) / 100) : 0 }} courses per teacher</p>
+							<p class="text-gray-600 text-sm font-medium">Total Subjects</p>
+							<h3 class="text-3xl font-bold text-purple-600 mt-2">{{ totalSubjects }}</h3>
+							<p class="text-xs text-gray-500 mt-2">All subjects in system</p>
+						</div>
+						<div class="bg-purple-100 rounded-lg p-3">
+							<svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m-6-6h12"></path>
+							</svg>
+						</div>
+					</div>
+				</div>
+
+				<!-- Unassigned Teachers -->
+				<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+					<div class="flex items-start justify-between">
+						<div>
+							<p class="text-gray-600 text-sm font-medium">Unassigned Teachers</p>
+							<h3 class="text-3xl font-bold text-amber-600 mt-2">{{ unassignedTeachers }}</h3>
+							<p class="text-xs text-gray-500 mt-2">Available for scheduling</p>
 						</div>
 						<div class="bg-amber-100 rounded-lg p-3">
 							<svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,12 +265,10 @@ onMounted(async () => {
 						</div>
 					</div>
 
-					<!-- Filter by Status -->
-					<select class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-						<option value="">All Status</option>
-						<option value="active">Active</option>
-						<option value="inactive">Inactive</option>
-						<option value="archived">Archived</option>
+					<!-- Course Filter -->
+					<select v-model="selectedCourseId" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+						<option value="all">All Courses</option>
+						<option v-for="c in courses" :key="c.course_id" :value="c.course_id">{{ c.course_name }}</option>
 					</select>
 
 					<!-- Sort By -->
@@ -240,7 +295,7 @@ onMounted(async () => {
 					v-for="course in cardCourses"
 					:key="course.id"
 					:course="course"
-					:onEdit="() => openCourseModal('edit')"
+					:onEdit="() => startEdit(course.id)"
 					:onViewDetails="() => {}"
 				/>
 			</div>
