@@ -52,6 +52,8 @@ class TeacherController extends Controller
             'unassigned_teachers' => $count,
         ]);
     }
+
+    
     public function updateProfile(Request $request)
     {
         $request->validate([
@@ -72,7 +74,7 @@ class TeacherController extends Controller
 
         $teacher->firstname = $request->firstName;
         $teacher->lastname = $request->lastName;
-$teacher->contact_number = $request->contact_number ?: null;
+        $teacher->contact_number = $request->contact_number ?: null;
         $teacher->save();
 
         return response()->json([

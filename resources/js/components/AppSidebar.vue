@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import NavUser from '@/components//NavUser.vue';
 
 type NavLink = {
     label: string;
@@ -153,34 +154,8 @@ const logout = () => router.post('/logout');
             </div>
         </SidebarContent>
 
-        <SidebarFooter class="px-4 pb-6 pt-4 mt-auto border-t border-gray-200">
-            <div class="px-3 py-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div class="flex items-center gap-2 mb-3 min-w-0">
-                    <div
-                        class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    >
-                        {{ userInitials }}
-                    </div>
-                    <div class="hidden lg:block min-w-0">
-                        <p class="text-xs font-semibold text-gray-900 truncate">
-                            {{ user?.name ?? 'Administrator' }}
-                        </p>
-                        <p class="text-xs text-gray-500 truncate">Administrator</p>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    @click="logout"
-                    class="w-full px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded transition-all flex items-center justify-center gap-1"
-                    title="Logout"
-                >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    <span class="hidden lg:inline">Logout</span>
-                </button>
-            </div>
+        <SidebarFooter>
+            <NavUser />
         </SidebarFooter>
     </Sidebar>
     <slot />
