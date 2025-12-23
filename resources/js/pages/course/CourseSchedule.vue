@@ -12,7 +12,7 @@ import {
 import { computed, defineComponent, h, onMounted, ref, VNode } from 'vue';
 
 import { route } from 'ziggy-js';
-import SubjectCombox from './SubjectCombox.vue';
+import SubjectCombox from './CourseComboBox.vue';
 
 interface FormState {
   subjectId: number | '';

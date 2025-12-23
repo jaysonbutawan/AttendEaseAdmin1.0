@@ -3,6 +3,8 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 import CourseCard from '@/pages/course/CourseCard.vue';
+import SubjectManager from './CourseSchedule.vue';
+
 
 type ApiCourse = { course_id: number; course_name: string };
 type CardCourse = {
@@ -252,42 +254,10 @@ onMounted(async () => {
 				</div>
 			</div>
 
-			<!-- Search and Filter Panel -->
-			<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-				<div class="flex flex-col lg:flex-row gap-4">
-					<!-- Search Bar -->
-					<div class="flex-1">
-						<div class="relative">
-							<svg class="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"></path>
-							</svg>
-							<input type="text" placeholder="Search by course name or code..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-						</div>
-					</div>
-
-					<!-- Course Filter -->
-					<select v-model="selectedCourseId" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-						<option value="all">All Courses</option>
-						<option v-for="c in courses" :key="c.course_id" :value="c.course_id">{{ c.course_name }}</option>
-					</select>
-
-					<!-- Sort By -->
-					<select class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-						<option value="">Sort By</option>
-						<option value="name">Course Name (A-Z)</option>
-						<option value="enrollment">Enrollment (High to Low)</option>
-						<option value="recent">Recently Updated</option>
-					</select>
-
-					<!-- Add Course Button -->
-					<button @click="openCourseModal('create')" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium flex items-center gap-2 whitespace-nowrap">
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-						</svg>
-						Add Course
-					</button>
-				</div>
-			</div>
+		  <div class="flex h-full flex-1 flex-col gap-6 p-6 md:p-8">
+            <div class="w-full">
+                <div class="w-full"><SubjectManager /></div>
+            </div>
 
 			<!-- Courses Grid -->
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -299,6 +269,7 @@ onMounted(async () => {
 					:onViewDetails="() => {}"
 				/>
 			</div>
+		</div>
 		</div>
 
 		<!-- Create/Edit Course Modal -->

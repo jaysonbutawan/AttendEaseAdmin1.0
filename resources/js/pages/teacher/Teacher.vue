@@ -4,7 +4,6 @@ import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Search, Users } from 'lucide-vue-next';
 import { ref } from 'vue';
-import SubjectManager from './ClassSchedule.vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
 
 const teachersData: Teacher[] = [
@@ -66,15 +65,7 @@ const search = ref('');
 
 <template>
     <Head title="Teacher Management" />
-
     <AppLayout>
-        <div class="flex h-full flex-1 flex-col gap-6 p-6 md:p-8">
-            <div class="w-full">
-                <div class="w-full"><SubjectManager /></div>
-            </div>
-        </div>
-
-        <!-- ALL TEACHERS TABLE (WHITE CARD) -->
         <div
             class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800 "
         >
