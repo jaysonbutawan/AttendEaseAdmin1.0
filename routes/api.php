@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\TeacherController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -23,11 +24,15 @@ Route::prefix('auth')->group(function () {
     Route::get('/firebase-register', function () {
         return response()->json(['debug' => 'GET route works']);
     });
-
+//student routes
     Route::post('/firebase-register', [AuthController::class, 'firebaseRegister']);
     Route::post('/update-profile', [StudentController::class, 'updateProfile']);
     Route::post('/get-profile', [StudentController::class, 'getProfile']);
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+
+//teacher routes
+    Route::post('/teacher/update-profile', [TeacherController::class, 'updateProfile']);
+    Route::post('/teacher/get-profile', [TeacherController::class, 'getProfile']);
 });
 
 
