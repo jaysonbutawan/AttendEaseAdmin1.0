@@ -1,94 +1,73 @@
-<script setup lang="ts" generic="T extends { id: number; name: string; code: string; status: string; teacher: string; students: number; subjects: number; gradient: string }">
-interface Props {
-  course: T;
-  onEdit?: () => void;
-  onViewDetails?: () => void;
-}
+<script setup lang="ts">
+import { Clock, GraduationCap, MapPin, Pencil, ArrowRight } from 'lucide-vue-next';
 
-defineProps<Props>();
+
 </script>
-
 <template>
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
-    <div :class="`h-2 bg-gradient-to-r ${course.gradient}`"></div>
-    <div class="p-6">
-      <!-- Course Header -->
-      <div class="flex items-start justify-between mb-4">
-        <div>
-          <h3 class="text-lg font-bold text-gray-900">{{ course.name }}</h3>
-          <p class="text-xs text-gray-500 font-mono mt-1">{{ course.code }}</p>
+  <div class="flex items-center justify-center bg-transparent">
+    <div class="bg-white rounded-[2rem] shadow-xl shadow-blue-100/50 w-full max-w-2xl p-8 md:p-10 relative overflow-hidden">
+      
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-full">
+          <div class="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
+          <span class="text-indigo-600 text-xs font-bold tracking-wider uppercase">Active Class</span>
         </div>
-        <span
-          v-if="course.status"
-          :class="[
-            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-            course.status === 'Active'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-yellow-100 text-yellow-800',
-          ]"
-        >
-          {{ course.status }}
-        </span>
+        <span class="text-gray-400 text-sm font-medium">Monday, Oct 24</span>
       </div>
 
-      <!-- Course Info -->
-      <div class="space-y-3 mb-4">
-        <div class="flex items-center gap-2">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"
-            ></path>
-          </svg>
-          <p class="text-sm text-gray-600">{{ course.teacher }}</p>
-        </div>
-        <div class="flex items-center gap-2">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 6h3a1 1 0 0 1 1 1v3h-4V7a1 1 0 0 1 0-1z"
-            ></path>
-          </svg>
-          <p class="text-sm text-gray-600">
-            <span class="font-semibold text-gray-900">{{ course.students }}</span> Students Enrolled
-          </p>
-        </div>
-        <div class="flex items-center gap-2">
-          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747m0-13c5.5 0 10 4.745 10 10.747S17.5 27.747 12 27.747M12 6.253v13"
-            ></path>
-          </svg>
-          <p class="text-sm text-gray-600">
-            <span class="font-semibold text-gray-900">{{ course.subjects }}</span> Subjects
-          </p>
+      <div class="mb-8">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">
+          Advanced <span class="text-indigo-600">Calculus</span>
+        </h1>
+        <div class="flex items-center gap-2 text-gray-400 font-semibold">
+          <Clock class="w-5 h-5" />
+          <span>10:00 AM - 11:30 AM</span>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="flex gap-2 pt-4 border-t border-gray-200">
-        <button
-          @click="onEdit?.()"
-          class="flex-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
-        >
-          Edit
-        </button>
-        <button
-          @click="onViewDetails?.()"
-          class="flex-1 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition text-sm font-medium"
-        >
-          View Details
-        </button>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+        <div class="flex items-center gap-4 p-4 border border-gray-100 rounded-3xl">
+          <div class="bg-indigo-50 p-4 rounded-2xl text-indigo-600">
+            <GraduationCap class="w-6 h-6" />
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Teacher</p>
+            <p class="text-slate-900 font-bold text-lg">Prof. Albus D.</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-4 p-4 border border-gray-100 rounded-3xl">
+          <div class="bg-indigo-50 p-4 rounded-2xl text-indigo-600">
+            <MapPin class="w-6 h-6" />
+          </div>
+          <div>
+            <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Location</p>
+            <p class="text-slate-900 font-bold text-lg">Room 304, West Wing</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+  
+
+        <div class="flex items-center gap-3 w-full md:w-auto">
+          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border border-gray-100 rounded-full font-bold text-slate-800 hover:bg-gray-50 transition-colors">
+            <Pencil class="w-4 h-4" />
+            Edit
+          </button>
+          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">
+            View Details
+            <ArrowRight class="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+</style>
