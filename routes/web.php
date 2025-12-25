@@ -37,6 +37,10 @@ Route::get('/courses', function () {
     return Inertia::render('course/Course');
 })->name('courses');
 
+Route::get('/department', function () {
+    return Inertia::render('department/Department');
+})->name('department');
+
 Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');

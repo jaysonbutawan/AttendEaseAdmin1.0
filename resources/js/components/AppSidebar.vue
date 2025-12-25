@@ -40,6 +40,7 @@ const navSections: { title: string; items: NavLink[] }[] = [
     {
         title: 'Academic',
         items: [
+            { label: 'Departments', href: '/department', icon: 'M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1zm3 0v16m10-16v16M9 9h6m-6 4h6' },
             { label: 'Subjects', href: '/subjects', icon: 'M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.992 10-10.747 0-6.002-4.5-10.747-10-10.747z' },
             { label: 'Student Lists', href: '/students', icon: 'M17 20h5v-2a3 3 0 00-5.856-1.487M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
             { label: 'Teachers', href: '/teachers', icon: 'M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z' },
