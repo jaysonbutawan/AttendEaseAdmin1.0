@@ -3,6 +3,45 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
+interface DashboardProps {
+    totalStudents?: number;
+    activeSessions?: number;
+    roomsInUse?: {
+        inUse: number;
+        total: number;
+    };
+    liveAttendance?: Array<{
+        id: number;
+        subject: string;
+        course: string;
+        teacher: string;
+        room: string;
+        present: number;
+        late: number;
+        absent: number;
+        isGeoFenced: boolean;
+        status: string;
+    }>;
+    roomActivity?: Array<{
+        id: number;
+        name: string;
+        status: 'occupied' | 'scheduled' | 'idle';
+        currentSession?: string;
+        nextSession?: string;
+        nextSessionTime?: string;
+    }>;
+    weeklyAttendance?: Array<{
+        day: string;
+        percentage: number;
+    }>;
+    subjectPerformance?: Array<{
+        subject: string;
+        percentage: number;
+    }>;
+}
+
+const props = defineProps<DashboardProps>();
+
 const page = usePage();
 const userName = computed(() => page.props.auth?.user?.name ?? 'Administrator');
 
@@ -14,6 +53,93 @@ const formattedDate = computed(() => {
         year: 'numeric',
     }).format(now);
 });
+
+// Compute total enrolled students
+const totalEnrolledStudents = computed(() => {
+    return props.totalStudents ?? 0;
+});
+
+// Compute active class sessions
+const activeClassSessions = computed(() => {
+    return props.activeSessions ?? 0;
+});
+
+// Compute rooms in use
+const roomsInUse = computed(() => {
+    const inUse = props.roomsInUse?.inUse ?? 0;
+    const total = props.roomsInUse?.total ?? 0;
+    return {
+        inUse,
+        total,
+        idle: total - inUse,
+        display: `${inUse}/${total}`
+    };
+});
+
+// Live attendance sessions
+const liveAttendanceSessions = computed(() => {
+    return props.liveAttendance ?? [];
+});
+
+// Room activity list
+const roomActivityList = computed(() => {
+    return props.roomActivity ?? [];
+});
+
+// Weekly attendance data
+const weeklyAttendanceData = computed(() => {
+    return props.weeklyAttendance ?? [
+        { day: 'Mon', percentage: 60 },
+        { day: 'Tue', percentage: 75 },
+        { day: 'Wed', percentage: 85 },
+        { day: 'Thu', percentage: 70 },
+        { day: 'Fri', percentage: 65 },
+    ];
+});
+
+// Subject performance data
+const subjectPerformanceData = computed(() => {
+    return props.subjectPerformance ?? [
+        { subject: 'Mathematics', percentage: 96 },
+        { subject: 'Physics', percentage: 94 },
+        { subject: 'Chemistry', percentage: 87 },
+    ];
+});
+
+// Helper function to get status badge color
+const getStatusBadgeClass = (status: string) => {
+    switch (status.toLowerCase()) {
+        case 'occupied':
+            return 'bg-green-100 text-green-800';
+        case 'scheduled':
+            return 'bg-blue-100 text-blue-800';
+        case 'idle':
+            return 'bg-gray-100 text-gray-700';
+        default:
+            return 'bg-gray-100 text-gray-700';
+    }
+};
+
+// Helper function to get border color
+const getBorderColor = (status: string) => {
+    switch (status.toLowerCase()) {
+        case 'occupied':
+            return 'border-green-500';
+        case 'scheduled':
+            return 'border-blue-300';
+        case 'idle':
+            return 'border-gray-300';
+        default:
+            return 'border-gray-300';
+    }
+};
+
+// Helper function to get performance color
+const getPerformanceColor = (percentage: number) => {
+    if (percentage >= 90) return { bar: 'bg-green-500', text: 'text-green-600' };
+    if (percentage >= 80) return { bar: 'bg-amber-500', text: 'text-amber-600' };
+    return { bar: 'bg-red-500', text: 'text-red-600' };
+};
 </script>
 
 <template>

@@ -9,6 +9,7 @@ use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\RoomController;
+use App\Models\User;
 
 
 Route::get('/', function () {
@@ -50,7 +51,37 @@ Route::get('/sessions', function () {
 })->name('sessions');
 
 Route::get('/usermanagement', function () {
-    return Inertia::render('management/UserManagement');
+    $users = User::query()
+        ->select('id', 'name', 'email', 'created_at', 'updated_at')
+        ->paginate(9)
+        ->through(function ($user) {
+            $initials = collect(explode(' ', $user->name))
+                ->filter()
+                ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+                ->take(2)
+                ->implode('');
+
+            $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];
+            $color = $palette[$user->id % count($palette)];
+
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role ?? 'admin',
+                'assigned_to' => $user->assigned_to ?? null,
+                'last_activity' => optional($user->updated_at)->toIso8601String(),
+                'initials' => $initials ?: 'U',
+                'avatar_color' => $color,
+            ];
+        });
+
+    return Inertia::render('management/UserManagement', [
+        'users' => $users,
+        'totalUsers' => User::count(),
+        'totalTeachers' => 0,
+        'totalStudents' => 0,
+    ]);
 })->middleware(['auth', 'verified'])->name('user.management');
 
 Route::get('dashboard', function () {
