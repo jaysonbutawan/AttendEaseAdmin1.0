@@ -88,22 +88,19 @@ const roomActivityList = computed(() => {
 
 // Weekly attendance data
 const weeklyAttendanceData = computed(() => {
-    return props.weeklyAttendance ?? [
-        { day: 'Mon', percentage: 60 },
-        { day: 'Tue', percentage: 75 },
-        { day: 'Wed', percentage: 85 },
-        { day: 'Thu', percentage: 70 },
-        { day: 'Fri', percentage: 65 },
-    ];
+    return props.weeklyAttendance ?? [];
+});
+
+// Today's attendance rate
+const todayAttendanceRate = computed(() => {
+    const data = weeklyAttendanceData.value;
+    if (!data.length) return 0;
+    return data[data.length - 1]?.percentage ?? 0;
 });
 
 // Subject performance data
 const subjectPerformanceData = computed(() => {
-    return props.subjectPerformance ?? [
-        { subject: 'Mathematics', percentage: 96 },
-        { subject: 'Physics', percentage: 94 },
-        { subject: 'Chemistry', percentage: 87 },
-    ];
+    return props.subjectPerformance ?? [];
 });
 
 // Helper function to get status badge color
@@ -176,8 +173,8 @@ const getPerformanceColor = (percentage: number) => {
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Total Enrolled Students</p>
-                            <h3 class="text-3xl font-bold text-blue-600 mt-2">1,245</h3>
-                            <p class="text-xs text-gray-500 mt-2">↑ 12% from last month</p>
+                            <h3 class="text-3xl font-bold text-blue-600 mt-2">{{ totalEnrolledStudents.toLocaleString() }}</h3>
+                            <p class="text-xs text-gray-500 mt-2">Students currently registered</p>
                         </div>
                         <div class="bg-blue-100 rounded-lg p-3">
                             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,8 +189,8 @@ const getPerformanceColor = (percentage: number) => {
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Active Class Sessions</p>
-                            <h3 class="text-3xl font-bold text-green-600 mt-2">12</h3>
-                            <p class="text-xs text-gray-500 mt-2">Currently running now</p>
+                            <h3 class="text-3xl font-bold text-green-600 mt-2">{{ activeClassSessions }}</h3>
+                            <p class="text-xs text-gray-500 mt-2">Currently running</p>
                         </div>
                         <div class="bg-green-100 rounded-lg p-3">
                             <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,8 +205,8 @@ const getPerformanceColor = (percentage: number) => {
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Rooms in Use</p>
-                            <h3 class="text-3xl font-bold text-indigo-600 mt-2">8/15</h3>
-                            <p class="text-xs text-gray-500 mt-2">7 rooms idle</p>
+                            <h3 class="text-3xl font-bold text-indigo-600 mt-2">{{ roomsInUse.display }}</h3>
+                            <p class="text-xs text-gray-500 mt-2">{{ roomsInUse.idle }} rooms idle</p>
                         </div>
                         <div class="bg-indigo-100 rounded-lg p-3">
                             <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,8 +221,8 @@ const getPerformanceColor = (percentage: number) => {
                     <div class="flex items-start justify-between">
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Today's Attendance Rate</p>
-                            <h3 class="text-3xl font-bold text-amber-600 mt-2">94.2%</h3>
-                            <p class="text-xs text-gray-500 mt-2">↑ 2.1% from yesterday</p>
+                            <h3 class="text-3xl font-bold text-amber-600 mt-2">{{ todayAttendanceRate }}%</h3>
+                            <p class="text-xs text-gray-500 mt-2">Present percentage today</p>
                         </div>
                         <div class="bg-amber-100 rounded-lg p-3">
                             <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,76 +239,33 @@ const getPerformanceColor = (percentage: number) => {
                 <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h2 class="text-lg font-bold text-gray-800 mb-4">Live Attendance Overview</h2>
                     <div class="space-y-3 max-h-80 overflow-y-auto">
-                        <!-- Session Card 1 -->
-                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition">
+                        <div
+                            v-for="session in liveAttendanceSessions"
+                            :key="session.id"
+                            class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition"
+                        >
                             <div class="flex justify-between items-start mb-3">
                                 <div>
-                                    <h3 class="font-semibold text-gray-800">Mathematics - Calculus I</h3>
-                                    <p class="text-sm text-gray-600">Prof. Johnson | Room A-201</p>
+                                    <h3 class="font-semibold text-gray-800">{{ session.subject }} - {{ session.course }}</h3>
+                                    <p class="text-sm text-gray-600">{{ session.teacher }} | {{ session.room }}</p>
                                 </div>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> Active
+                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> {{ session.status }}
                                 </span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <div class="text-sm text-gray-600">
-                                    <span class="font-semibold text-green-600">45</span> Present |
-                                    <span class="font-semibold text-amber-600">3</span> Late |
-                                    <span class="font-semibold text-red-600">2</span> Absent
+                                    <span class="font-semibold text-green-600">{{ session.present }}</span> Present |
+                                    <span class="font-semibold text-amber-600">{{ session.late }}</span> Late |
+                                    <span class="font-semibold text-red-600">{{ session.absent }}</span> Absent
                                 </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2" v-if="session.isGeoFenced">
                                     <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                                     </svg>
                                     <span class="text-xs text-blue-600 font-medium">Geo-Fenced</span>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Session Card 2 -->
-                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">Physics - Mechanics</h3>
-                                    <p class="text-sm text-gray-600">Prof. Chen | Room B-105</p>
-                                </div>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> Active
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-semibold text-green-600">38</span> Present |
-                                    <span class="font-semibold text-amber-600">1</span> Late |
-                                    <span class="font-semibold text-red-600">1</span> Absent
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span class="text-xs text-blue-600 font-medium">Geo-Fenced</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Session Card 3 -->
-                        <div class="border border-gray-200 rounded-lg p-4 hover:border-green-300 hover:bg-green-50 transition">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h3 class="font-semibold text-gray-800">English - Literature</h3>
-                                    <p class="text-sm text-gray-600">Prof. Smith | Room C-312</p>
-                                </div>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <span class="w-2 h-2 mr-1 bg-green-600 rounded-full animate-pulse"></span> Active
-                                </span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-semibold text-green-600">42</span> Present |
-                                    <span class="font-semibold text-amber-600">2</span> Late |
-                                    <span class="font-semibold text-red-600">0</span> Absent
-                                </div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2" v-else>
                                     <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                                     </svg>
@@ -326,49 +280,19 @@ const getPerformanceColor = (percentage: number) => {
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h2 class="text-lg font-bold text-gray-800 mb-4">Room Activity</h2>
                     <div class="space-y-3">
-                        <!-- Room Occupied -->
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-500">
+                        <div
+                            v-for="room in roomActivityList"
+                            :key="room.id"
+                            class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                            :class="getBorderColor(room.status) + ' border-l-4'"
+                        >
                             <div>
-                                <p class="font-semibold text-gray-800 text-sm">Room A-201</p>
-                                <p class="text-xs text-gray-600">Calculus I (Active)</p>
+                                <p class="font-semibold text-gray-800 text-sm">{{ room.name }}</p>
+                                <p class="text-xs text-gray-600" v-if="room.status === 'occupied'">{{ room.currentSession }} (Active)</p>
+                                <p class="text-xs text-gray-600" v-else-if="room.status === 'scheduled'">Next: {{ room.nextSession }} ({{ room.nextSessionTime }})</p>
+                                <p class="text-xs text-gray-600" v-else>No sessions today</p>
                             </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Occupied</span>
-                        </div>
-
-                        <!-- Room Occupied -->
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-green-500">
-                            <div>
-                                <p class="font-semibold text-gray-800 text-sm">Room B-105</p>
-                                <p class="text-xs text-gray-600">Mechanics (Active)</p>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Occupied</span>
-                        </div>
-
-                        <!-- Room Idle -->
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
-                            <div>
-                                <p class="font-semibold text-gray-800 text-sm">Room C-312</p>
-                                <p class="text-xs text-gray-600">Literature (Active)</p>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Occupied</span>
-                        </div>
-
-                        <!-- Room Scheduled -->
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-blue-300">
-                            <div>
-                                <p class="font-semibold text-gray-800 text-sm">Room D-401</p>
-                                <p class="text-xs text-gray-600">Next: History (2:00 PM)</p>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Scheduled</span>
-                        </div>
-
-                        <!-- Room Idle -->
-                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-l-4 border-gray-300">
-                            <div>
-                                <p class="font-semibold text-gray-800 text-sm">Room E-220</p>
-                                <p class="text-xs text-gray-600">No sessions today</p>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Idle</span>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" :class="getStatusBadgeClass(room.status)">{{ room.status.charAt(0).toUpperCase() + room.status.slice(1) }}</span>
                         </div>
                     </div>
                 </div>
@@ -382,49 +306,30 @@ const getPerformanceColor = (percentage: number) => {
                     <div class="mb-6">
                         <h3 class="text-sm font-semibold text-gray-700 mb-3">Weekly Attendance Trend</h3>
                         <div class="flex items-end gap-2 h-24">
-                            <div class="flex-1 bg-blue-200 rounded-t-lg" style="height: 60%;"></div>
-                            <div class="flex-1 bg-blue-400 rounded-t-lg" style="height: 75%;"></div>
-                            <div class="flex-1 bg-blue-500 rounded-t-lg" style="height: 85%;"></div>
-                            <div class="flex-1 bg-blue-400 rounded-t-lg" style="height: 70%;"></div>
-                            <div class="flex-1 bg-blue-300 rounded-t-lg" style="height: 65%;"></div>
+                            <div
+                                v-for="item in weeklyAttendanceData"
+                                :key="item.day"
+                                class="flex-1 bg-blue-500/70 rounded-t-lg"
+                                :style="{ height: Math.max(item.percentage, 5) + '%' }"
+                            ></div>
                         </div>
                         <div class="flex justify-between text-xs text-gray-500 mt-2">
-                            <span>Mon</span>
-                            <span>Tue</span>
-                            <span>Wed</span>
-                            <span>Thu</span>
-                            <span>Fri</span>
+                            <span v-for="item in weeklyAttendanceData" :key="item.day">{{ item.day }}</span>
                         </div>
                     </div>
 
                     <!-- Subject Performance -->
                     <div>
                         <h3 class="text-sm font-semibold text-gray-700 mb-3">Subject Performance</h3>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-600">Mathematics</span>
-                                <span class="text-xs font-semibold text-green-600">96%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-green-500 h-2 rounded-full" style="width: 96%;"></div>
-                            </div>
-                        </div>
-                        <div class="space-y-2 mt-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-600">Physics</span>
-                                <span class="text-xs font-semibold text-green-600">94%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-green-500 h-2 rounded-full" style="width: 94%;"></div>
-                            </div>
-                        </div>
-                        <div class="space-y-2 mt-3">
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs text-gray-600">Chemistry</span>
-                                <span class="text-xs font-semibold text-amber-600">87%</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-amber-500 h-2 rounded-full" style="width: 87%;"></div>
+                        <div class="space-y-4">
+                            <div v-for="item in subjectPerformanceData" :key="item.subject">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-600">{{ item.subject }}</span>
+                                    <span :class="getPerformanceColor(item.percentage).text" class="text-xs font-semibold">{{ item.percentage }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div :class="getPerformanceColor(item.percentage).bar" class="h-2 rounded-full" :style="{ width: item.percentage + '%' }"></div>
+                                </div>
                             </div>
                         </div>
                     </div>

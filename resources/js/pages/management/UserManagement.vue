@@ -6,14 +6,14 @@ import { ref, computed } from 'vue';
 import UsersCard from './UsersCard.vue';
 
 interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: 'admin' | 'teacher' | 'student';
-    assigned_to?: string;
-    last_activity?: string;
-    initials: string;
-    avatar_color: string;
+	id: string | number;
+	name: string;
+	email: string;
+	role: 'admin' | 'teacher' | 'student';
+	assigned_to?: string | number | null;
+	last_activity?: string;
+	initials: string;
+	avatar_color: string;
 }
 
 interface UserManagementProps {
@@ -50,7 +50,7 @@ const totalStudents = computed(() => props.totalStudents ?? 0);
 const teachersAndStudents = computed(() => totalTeachers.value + totalStudents.value);
 
 // Selected users for bulk actions
-const selectedUsers = ref<number[]>([]);
+const selectedUsers = ref<Array<string | number>>([]);
 
 // Handle search
 const handleSearch = () => {
@@ -97,7 +97,7 @@ const toggleViewMode = (mode: 'table' | 'cards') => {
 };
 
 // Toggle user selection
-const toggleUserSelection = (userId: number) => {
+const toggleUserSelection = (userId: string | number) => {
     const index = selectedUsers.value.indexOf(userId);
     if (index > -1) {
         selectedUsers.value.splice(index, 1);
@@ -111,7 +111,7 @@ const toggleAllUsers = () => {
     if (selectedUsers.value.length === props.users.data.length) {
         selectedUsers.value = [];
     } else {
-        selectedUsers.value = props.users.data.map(user => user.id);
+		selectedUsers.value = props.users.data.map(user => user.id);
     }
 };
 
@@ -121,20 +121,34 @@ const allUsersSelected = computed(() => {
 });
 
 // User actions
-const editUser = (userId: number) => {
-    router.visit(`/management/users/${userId}/edit`);
+const editUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
+	const { id, role } = payload;
+	if (role === 'admin') {
+		router.visit('/settings');
+		return;
+	}
+	router.visit(`/management/users/${role}/${id}/edit`);
 };
 
-const viewUser = (userId: number) => {
-    router.visit(`/management/users/${userId}`);
+const viewUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
+	const { id, role } = payload;
+	if (role === 'admin') {
+		router.visit('/settings');
+		return;
+	}
+	router.visit(`/management/users/${role}/${id}`);
 };
 
-const deleteUser = (userId: number) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-        router.delete(`/management/users/${userId}`, {
-            preserveScroll: true,
-        });
-    }
+const deleteUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
+	const { id, role } = payload;
+	if (role === 'admin') {
+		alert('Admin account cannot be deleted.');
+		return;
+	}
+	if (confirm('Are you sure you want to delete this record?')) {
+		const endpoint = role === 'teacher' ? `/api/teachers/${id}` : `/api/students/${id}`;
+		router.delete(endpoint, { preserveScroll: true });
+	}
 };
 
 // Get role badge class
@@ -320,9 +334,9 @@ const formatLastActivity = (lastActivity?: string) => {
 						:user="user"
 						:is-selected="selectedUsers.includes(user.id)"
 						@toggle-selection="toggleUserSelection"
-						@edit="editUser"
-						@view="viewUser"
-						@delete="deleteUser"
+						@edit="(id) => editUser({ id, role: user.role })"
+						@view="(id) => viewUser({ id, role: user.role })"
+						@delete="(id) => deleteUser({ id, role: user.role })"
 					/>
 				</div>
 			</div>
@@ -408,7 +422,7 @@ const formatLastActivity = (lastActivity?: string) => {
 								<td class="px-6 py-4">
 									<div class="flex gap-2">
 										<button 
-											@click="editUser(user.id)"
+											@click="editUser({ id: user.id, role: user.role })"
 											class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition"
 											title="Edit user"
 										>
@@ -417,7 +431,7 @@ const formatLastActivity = (lastActivity?: string) => {
 											</svg>
 										</button>
 										<button 
-											@click="viewUser(user.id)"
+											@click="viewUser({ id: user.id, role: user.role })"
 											class="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition"
 											title="View details"
 										>
@@ -426,7 +440,7 @@ const formatLastActivity = (lastActivity?: string) => {
 											</svg>
 										</button>
 										<button 
-											@click="deleteUser(user.id)"
+											@click="deleteUser({ id: user.id, role: user.role })"
 											class="p-1.5 text-red-600 hover:bg-red-50 rounded transition"
 											title="Delete user"
 										>

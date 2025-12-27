@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { router } from '@inertiajs/vue3';
 import SelectSubject from './SelectSubject.vue';
 interface Student {
     id: number;
@@ -21,12 +22,36 @@ const students = ref<Student[]>([
 
 const selectedStudentCount = computed(() => students.value.filter(s => s.isSelected).length);
 
+// Reference to child to access selected subjects
+const selectSubjectRef = ref<InstanceType<typeof SelectSubject> | null>(null);
 
 
-const assignSubjects = () => {
-    const selectedStudents = students.value.filter(s => s.isSelected).map(s => s.id);
-    console.log('Attempting to assign subjects to student IDs:', selectedStudents);
-    alert(`Attempting to assign subjects to ${selectedStudentCount.value} student(s) (Mock Action)`);
+
+const assignSubjects = async () => {
+    const selectedStudents = students.value.filter(s => s.isSelected).map(s => s.studentId);
+    const selectedSubjects = selectSubjectRef.value?.getSelectedSubjects?.() || [];
+
+    if (selectedStudents.length === 0) {
+        alert('Please select at least one student.');
+        return;
+    }
+    if (selectedSubjects.length === 0) {
+        alert('Please select at least one subject and a time slot.');
+        return;
+    }
+
+    try {
+        await router.post('/api/student-subjects/assign', {
+            student_ids: selectedStudents,
+            subjects: selectedSubjects as Array<{ id: number; selectedTimeSlot: string }>,
+        }, {
+            preserveScroll: true,
+        });
+        alert('Assignment submitted. If conflicts exist, admin has been notified.');
+    } catch (e) {
+        console.error(e);
+        alert('Failed to submit assignment.');
+    }
 };
 
 </script>
@@ -45,7 +70,7 @@ const assignSubjects = () => {
     
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div class="lg:col-span-2">
-                    <SelectSubject />
+                    <SelectSubject ref="selectSubjectRef" />
                 </div>
             </div>
     </div>

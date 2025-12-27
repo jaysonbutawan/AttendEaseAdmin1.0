@@ -107,4 +107,44 @@ class StudentController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Update a student by student_id.
+     */
+    public function updateById(Request $request, string $id)
+    {
+        $data = $request->validate([
+            'firstname' => 'nullable|string|max:100',
+            'lastname' => 'nullable|string|max:100',
+            'email' => 'nullable|email',
+            'contact_number' => 'nullable|string|max:20',
+            'course_id' => 'nullable|integer',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        $student = Student::where('student_id', $id)->first();
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+
+        foreach ($data as $key => $value) {
+            $student->{$key} = $value;
+        }
+        $student->save();
+
+        return response()->json(['message' => 'Student updated', 'student_id' => $student->student_id]);
+    }
+
+    /**
+     * Delete a student by student_id.
+     */
+    public function deleteById(string $id)
+    {
+        $student = Student::where('student_id', $id)->first();
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+        $student->delete();
+        return response()->json(['message' => 'Student deleted', 'student_id' => $id]);
+    }
 }

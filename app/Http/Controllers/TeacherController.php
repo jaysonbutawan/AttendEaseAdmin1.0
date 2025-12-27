@@ -116,4 +116,43 @@ class TeacherController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Update a teacher by teacher_id.
+     */
+    public function updateById(Request $request, string $id)
+    {
+        $data = $request->validate([
+            'firstname' => 'nullable|string|max:100',
+            'lastname' => 'nullable|string|max:100',
+            'email' => 'nullable|email',
+            'contact_number' => 'nullable|string|max:20',
+            'status' => 'nullable|string|max:50',
+        ]);
+
+        $teacher = Teacher::where('teacher_id', $id)->first();
+        if (!$teacher) {
+            return response()->json(['message' => 'Teacher not found'], 404);
+        }
+
+        foreach ($data as $key => $value) {
+            $teacher->{$key} = $value;
+        }
+        $teacher->save();
+
+        return response()->json(['message' => 'Teacher updated', 'teacher_id' => $teacher->teacher_id]);
+    }
+
+    /**
+     * Delete a teacher by teacher_id.
+     */
+    public function deleteById(string $id)
+    {
+        $teacher = Teacher::where('teacher_id', $id)->first();
+        if (!$teacher) {
+            return response()->json(['message' => 'Teacher not found'], 404);
+        }
+        $teacher->delete();
+        return response()->json(['message' => 'Teacher deleted', 'teacher_id' => $id]);
+    }
 }

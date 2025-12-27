@@ -164,6 +164,14 @@ const studentsData = ref([
 const updateTimeSlot = (subject: SubjectRecord, newTime: string) => {
     subject.selectedTimeSlot = newTime;
 };
+
+// Expose selected subjects for parent component to submit
+const getSelectedSubjects = () =>
+    allSubjects.value
+        .filter((s) => s.isSelected)
+        .map((s) => ({ id: s.id, selectedTimeSlot: s.selectedTimeSlot || '' }));
+
+defineExpose({ getSelectedSubjects });
 </script>
 
 <template>

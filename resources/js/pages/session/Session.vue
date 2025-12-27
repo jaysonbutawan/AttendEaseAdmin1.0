@@ -1,6 +1,56 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+
+interface SessionCard {
+	id: number;
+	subject: string;
+	code: string;
+	teacher: string;
+	room: string;
+	status: 'active' | 'pending' | 'ended';
+	startTime?: string | null;
+	durationText?: string | null;
+	present: number;
+	late: number;
+	absent: number;
+	pending: number;
+	isLive: boolean;
+}
+
+interface Props {
+	activeCount: number;
+	studentsTracked: number;
+	avgAttendanceRate: number;
+	flaggedIssues: number;
+	sessions: SessionCard[];
+}
+
+const props = defineProps<Props>();
+
+// Filters
+const searchQuery = ref('');
+const statusFilter = ref('');
+const roomFilter = ref('');
+
+const rooms = computed(() => {
+	const set = new Set(props.sessions.map((s) => s.room).filter(Boolean));
+	return Array.from(set);
+});
+
+const filteredSessions = computed(() => {
+	return props.sessions.filter((s) => {
+		const matchesSearch = searchQuery.value
+			? [s.subject, s.teacher, s.room, s.code]
+					.filter(Boolean)
+					.some((v) => String(v).toLowerCase().includes(searchQuery.value.toLowerCase()))
+			: true;
+		const matchesStatus = statusFilter.value ? s.status === statusFilter.value : true;
+		const matchesRoom = roomFilter.value ? s.room === roomFilter.value : true;
+		return matchesSearch && matchesStatus && matchesRoom;
+	});
+});
 </script>
 
 <template>
@@ -21,7 +71,7 @@ import { Head } from '@inertiajs/vue3';
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Active Sessions</p>
-							<h3 class="text-3xl font-bold text-green-600 mt-2">12</h3>
+							<h3 class="text-3xl font-bold text-green-600 mt-2">{{ props.activeCount }}</h3>
 							<p class="text-xs text-gray-500 mt-2">Currently ongoing</p>
 						</div>
 						<div class="bg-green-100 rounded-lg p-3">
@@ -37,7 +87,7 @@ import { Head } from '@inertiajs/vue3';
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Students Tracked</p>
-							<h3 class="text-3xl font-bold text-blue-600 mt-2">456</h3>
+							<h3 class="text-3xl font-bold text-blue-600 mt-2">{{ props.studentsTracked }}</h3>
 							<p class="text-xs text-gray-500 mt-2">Across all sessions</p>
 						</div>
 						<div class="bg-blue-100 rounded-lg p-3">
@@ -53,7 +103,7 @@ import { Head } from '@inertiajs/vue3';
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Avg. Attendance Rate</p>
-							<h3 class="text-3xl font-bold text-purple-600 mt-2">94.2%</h3>
+							<h3 class="text-3xl font-bold text-purple-600 mt-2">{{ props.avgAttendanceRate }}%</h3>
 							<p class="text-xs text-gray-500 mt-2">↑ 2.1% from last week</p>
 						</div>
 						<div class="bg-purple-100 rounded-lg p-3">
@@ -69,7 +119,7 @@ import { Head } from '@inertiajs/vue3';
 					<div class="flex items-start justify-between">
 						<div>
 							<p class="text-gray-600 text-sm font-medium">Flagged Issues</p>
-							<h3 class="text-3xl font-bold text-red-600 mt-2">8</h3>
+							<h3 class="text-3xl font-bold text-red-600 mt-2">{{ props.flaggedIssues }}</h3>
 							<p class="text-xs text-gray-500 mt-2">Require review</p>
 						</div>
 						<div class="bg-red-100 rounded-lg p-3">
@@ -90,12 +140,12 @@ import { Head } from '@inertiajs/vue3';
 							<svg class="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"></path>
 							</svg>
-							<input type="text" placeholder="Search by course, teacher, or room..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+							<input v-model="searchQuery" type="text" placeholder="Search by subject, teacher, or room..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
 						</div>
 					</div>
 
 					<!-- Filter by Status -->
-					<select class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+					<select v-model="statusFilter" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
 						<option value="">All Status</option>
 						<option value="active">Active</option>
 						<option value="pending">Pending Start</option>
@@ -103,33 +153,31 @@ import { Head } from '@inertiajs/vue3';
 					</select>
 
 					<!-- Filter by Department -->
-					<select class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-						<option value="">All Departments</option>
-						<option value="engineering">Engineering</option>
-						<option value="science">Science</option>
-						<option value="arts">Arts</option>
-						<option value="commerce">Commerce</option>
+					<select v-model="roomFilter" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+						<option value="">All Rooms</option>
+						<option v-for="r in rooms" :key="r" :value="r">{{ r }}</option>
 					</select>
 				</div>
 			</div>
 
 			<!-- Active Sessions List -->
 			<div class="space-y-4">
-				<!-- Session Card 1 -->
-				<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+				<div v-for="s in filteredSessions" :key="s.id" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
 					<div class="p-6">
 						<!-- Session Header -->
 						<div class="flex items-start justify-between mb-4">
 							<div>
-								<h3 class="text-lg font-bold text-gray-900">Mathematics 101 - Lecture</h3>
-								<p class="text-xs text-gray-500 mt-1">MAT-101-001</p>
+								<h3 class="text-lg font-bold text-gray-900">{{ s.subject }}</h3>
+								<p class="text-xs text-gray-500 mt-1">{{ s.code }}</p>
 							</div>
 							<div class="flex items-center gap-2">
-								<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+								<span v-if="s.isLive" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
 									<span class="w-2 h-2 mr-1.5 bg-green-600 rounded-full animate-pulse"></span>
 									Live
 								</span>
-								<span class="text-xs text-gray-500 font-mono">Started 10:32 AM</span>
+								<span v-else-if="s.status === 'pending'" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Scheduled</span>
+								<span v-else class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Ended</span>
+								<span class="text-xs text-gray-500 font-mono" v-if="s.startTime">Started {{ s.startTime }}</span>
 							</div>
 						</div>
 
@@ -139,44 +187,44 @@ import { Head } from '@inertiajs/vue3';
 								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 0 0-5.856-1.487M15 10h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
 								</svg>
-								<span class="text-sm text-gray-600">Prof. Sarah Martinez</span>
+								<span class="text-sm text-gray-600">{{ s.teacher }}</span>
 							</div>
 							<div class="flex items-center gap-2">
 								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5.581m0 0H9.11m3.409 0H15.5m-3.409 0H7m8-6.5h-5"></path>
 								</svg>
-								<span class="text-sm text-gray-600">Room A-101</span>
+								<span class="text-sm text-gray-600">{{ s.room }}</span>
 							</div>
 							<div class="flex items-center gap-2">
 								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
 								</svg>
-								<span class="text-sm text-gray-600">Duration: 1hr 50min</span>
+								<span class="text-sm text-gray-600">Duration: {{ s.durationText ?? '—' }}</span>
 							</div>
 							<div class="flex items-center gap-2">
 								<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 1 1-8 0 4 4 0 0 1 8 0zM3 20a6 6 0 0 1 12 0v1H3v-1z"></path>
 								</svg>
-								<span class="text-sm text-gray-600">32 Enrolled</span>
+								<span class="text-sm text-gray-600">Scanned: {{ s.present + s.late + s.absent }}</span>
 							</div>
 						</div>
 
 						<!-- Attendance Live Counters -->
 						<div class="grid grid-cols-4 gap-3 mb-4 p-4 bg-gray-50 rounded-lg">
 							<div class="text-center">
-								<div class="text-2xl font-bold text-green-600">28</div>
+								<div class="text-2xl font-bold text-green-600">{{ s.present }}</div>
 								<p class="text-xs text-gray-600 mt-1">Present</p>
 							</div>
 							<div class="text-center">
-								<div class="text-2xl font-bold text-amber-600">3</div>
+								<div class="text-2xl font-bold text-amber-600">{{ s.late }}</div>
 								<p class="text-xs text-gray-600 mt-1">Late</p>
 							</div>
 							<div class="text-center">
-								<div class="text-2xl font-bold text-red-600">1</div>
+								<div class="text-2xl font-bold text-red-600">{{ s.absent }}</div>
 								<p class="text-xs text-gray-600 mt-1">Absent</p>
 							</div>
 							<div class="text-center">
-								<div class="text-2xl font-bold text-blue-600">0</div>
+								<div class="text-2xl font-bold text-blue-600">{{ s.pending }}</div>
 								<p class="text-xs text-gray-600 mt-1">Pending</p>
 							</div>
 						</div>

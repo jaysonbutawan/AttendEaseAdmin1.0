@@ -10,6 +10,12 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\RoomController;
 use App\Models\User;
+use App\Models\Teacher;
+use App\Models\Student;
+use Illuminate\Pagination\LengthAwarePaginator;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ManagementUserController;
+use App\Http\Controllers\StudentSubjectAssignmentController;
 
 
 Route::get('/', function () {
@@ -46,47 +52,101 @@ Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');
 
-Route::get('/sessions', function () {
-    return Inertia::render('session/Session');
-})->name('sessions');
+use App\Http\Controllers\SessionsController;
+
+Route::get('/sessions', [SessionsController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('sessions');
 
 Route::get('/usermanagement', function () {
-    $users = User::query()
-        ->select('id', 'name', 'email', 'created_at', 'updated_at')
-        ->paginate(9)
-        ->through(function ($user) {
-            $initials = collect(explode(' ', $user->name))
-                ->filter()
-                ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
-                ->take(2)
-                ->implode('');
+    $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];
 
-            $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];
-            $color = $palette[$user->id % count($palette)];
+    $teachers = Teacher::query()->get()->map(function ($t) use ($palette) {
+        $name = trim(($t->firstname ?? '') . ' ' . ($t->lastname ?? '')) ?: ($t->email ?? 'Teacher');
+        $initials = collect(explode(' ', $name))
+            ->filter()
+            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+            ->take(2)
+            ->implode('') ?: 'T';
+        $color = $palette[crc32($t->teacher_id) % count($palette)];
+        return [
+            'id' => $t->teacher_id,
+            'name' => $name,
+            'email' => $t->email,
+            'role' => 'teacher',
+            'assigned_to' => null,
+            'last_activity' => optional($t->created_at)->toIso8601String(),
+            'initials' => $initials,
+            'avatar_color' => $color,
+        ];
+    });
 
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role ?? 'admin',
-                'assigned_to' => $user->assigned_to ?? null,
-                'last_activity' => optional($user->updated_at)->toIso8601String(),
-                'initials' => $initials ?: 'U',
-                'avatar_color' => $color,
-            ];
-        });
+    $students = Student::query()->get()->map(function ($s) use ($palette) {
+        $name = trim(($s->firstname ?? '') . ' ' . ($s->lastname ?? '')) ?: ($s->email ?? 'Student');
+        $initials = collect(explode(' ', $name))
+            ->filter()
+            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+            ->take(2)
+            ->implode('') ?: 'S';
+        $color = $palette[crc32($s->student_id) % count($palette)];
+        return [
+            'id' => $s->student_id,
+            'name' => $name,
+            'email' => $s->email,
+            'role' => 'student',
+            'assigned_to' => $s->course_id ?? null,
+            'last_activity' => optional($s->created_at)->toIso8601String(),
+            'initials' => $initials,
+            'avatar_color' => $color,
+        ];
+    });
+
+    $combined = $teachers->merge($students)->values();
+
+    // Simple pagination for combined collection
+    $page = (int) request('page', 1);
+    $perPage = 9;
+    $total = $combined->count();
+    $items = $combined->slice(($page - 1) * $perPage, $perPage)->values();
+    $paginator = new LengthAwarePaginator($items, $total, $perPage, $page, [
+        'path' => request()->url(),
+        'query' => request()->query(),
+    ]);
+
+    $totalTeachers = Teacher::count();
+    $totalStudents = Student::count();
+    $adminCount = 1; // single admin
 
     return Inertia::render('management/UserManagement', [
-        'users' => $users,
-        'totalUsers' => User::count(),
-        'totalTeachers' => 0,
-        'totalStudents' => 0,
+        'users' => $paginator,
+        'totalUsers' => $totalTeachers + $totalStudents + $adminCount,
+        'totalTeachers' => $totalTeachers,
+        'totalStudents' => $totalStudents,
+        'filters' => [
+            'search' => request('search'),
+            'role' => request('role'),
+            'view' => request('view', 'cards'),
+        ],
     ]);
 })->middleware(['auth', 'verified'])->name('user.management');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+// Management edit/view pages
+Route::get('/management/users/{role}/{id}/edit', [ManagementUserController::class, 'edit'])
+    ->middleware(['auth', 'verified'])
+    ->name('management.users.edit');
+Route::get('/management/users/{role}/{id}', [ManagementUserController::class, 'show'])
+    ->middleware(['auth', 'verified'])
+    ->name('management.users.show');
+
+// Update endpoints by id
+Route::put('/api/teachers/{id}', [TeacherController::class, 'updateById'])->name('teachers.update_by_id');
+Route::put('/api/students/{id}', [StudentController::class, 'updateById'])->name('students.update_by_id');
+Route::delete('/api/teachers/{id}', [TeacherController::class, 'deleteById'])->name('teachers.delete_by_id');
+Route::delete('/api/students/{id}', [StudentController::class, 'deleteById'])->name('students.delete_by_id');
+
+Route::get('dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 // Move subject JSON endpoints under /api to avoid conflicts with Inertia page
 Route::get('/teachers_controller', [TeacherController::class, 'index']);
 Route::get('/teachers_controller', [TeacherController::class, 'index'])->name('teachers.index');
@@ -101,6 +161,11 @@ Route::prefix('api')->group(function () {
     Route::get('/subjects/total', [SubjectController::class, 'totalCount'])->name('subjects.total');
     Route::put('/subjects/{id}', [SubjectController::class, 'update'])->name('subjects.update');
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
+
+    // Student subject assignment (no persistence): detects conflicts and notifies admin
+        Route::post('/student-subjects/assign', [StudentSubjectAssignmentController::class, 'assign'])
+            ->middleware(['auth', 'verified'])
+            ->name('studentSubjects.assign');
 });
 
 
