@@ -15,7 +15,7 @@ class ClassSession extends Model
         'teacher_id',
         'start_time',
         'end_time',
-        'session_days',
+        'session_date',
         'session_status',
         'qr_code',
         'qr_valid',
@@ -23,7 +23,23 @@ class ClassSession extends Model
     ];
 
     protected $casts = [
-        'session_days' => 'array',
+        'session_date' => 'date',
         'qr_valid' => 'boolean',
     ];
+
+    // Relationships
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class, 'subject_id', 'subject_id');
+    }
+
+    public function teacher()
+    {
+        return $this->belongsTo(Teacher::class, 'teacher_id', 'teacher_id');
+    }
+
+    public function room()
+    {
+        return $this->belongsTo(Room::class, 'room_id', 'room_id');
+    }
 }

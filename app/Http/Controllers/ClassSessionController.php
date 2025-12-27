@@ -14,15 +14,12 @@ class ClassSessionController extends Controller
             'subject_id' => ['required', 'integer', 'exists:subjects,subject_id'],
             'teacher_id' => ['required', 'string', 'max:50', 'exists:teachers,teacher_id'],
             'room_id'    => ['required', 'integer', 'exists:rooms,room_id'],
-
-            'start_time' => ['required', 'date_format:H:i'],
-            'end_time'   => ['required', 'date_format:H:i', 'after:start_time'],
-
-            'session_days' => ['required', 'array', 'min:1', 'max:3'],
-            'session_days.*' => ['required', 'string', Rule::in([
-                'monday','tuesday','wednesday','thursday','friday','saturday','sunday'
-            ])],
-
+            'start_time' => ['required', 'date_format:H:i:s'],
+            'end_time'   => ['required', 'date_format:H:i:s', 'after:start_time'],
+            'session_date' => ['required', 'date'],
+            'session_status' => ['nullable', 'string', Rule::in(['active', 'ended', 'pending'])],
+            'qr_code' => ['nullable', 'string', 'max:255'],
+            'qr_valid' => ['nullable', 'boolean'],
             'allowance_time' => ['nullable', 'integer', 'min:0', 'max:1440'],
         ]);
 
@@ -32,15 +29,74 @@ class ClassSessionController extends Controller
             'room_id'    => $validated['room_id'],
             'start_time' => $validated['start_time'],
             'end_time'   => $validated['end_time'],
-            'session_days' => $validated['session_days'], 
-            'session_status' => 'pending',
-            'qr_valid' => false,
+            'session_date' => $validated['session_date'],
+            'session_status' => $validated['session_status'] ?? 'pending',
+            'qr_code' => $validated['qr_code'] ?? null,
+            'qr_valid' => $validated['qr_valid'] ?? false,
             'allowance_time' => $validated['allowance_time'] ?? null,
         ]);
 
         return response()->json([
-            'message' => 'Schedule saved.',
-            'session_id' => $session->session_id,
+            'success' => true,
+            'message' => 'Class session created successfully.',
+            'session' => $session,
         ], 201);
+    }
+
+    public function index()
+    {
+        $sessions = ClassSession::with(['subject', 'teacher', 'room'])->get();
+        
+        return response()->json([
+            'success' => true,
+            'sessions' => $sessions,
+        ]);
+    }
+
+    public function show($id)
+    {
+        $session = ClassSession::with(['subject', 'teacher', 'room'])->findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'session' => $session,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $session = ClassSession::findOrFail($id);
+
+        $validated = $request->validate([
+            'subject_id' => ['sometimes', 'integer', 'exists:subjects,subject_id'],
+            'teacher_id' => ['sometimes', 'string', 'max:50', 'exists:teachers,teacher_id'],
+            'room_id'    => ['sometimes', 'integer', 'exists:rooms,room_id'],
+            'start_time' => ['sometimes', 'date_format:H:i:s'],
+            'end_time'   => ['sometimes', 'date_format:H:i:s', 'after:start_time'],
+            'session_date' => ['sometimes', 'date'],
+            'session_status' => ['sometimes', 'string', Rule::in(['active', 'ended', 'pending'])],
+            'qr_code' => ['nullable', 'string', 'max:255'],
+            'qr_valid' => ['nullable', 'boolean'],
+            'allowance_time' => ['nullable', 'integer', 'min:0', 'max:1440'],
+        ]);
+
+        $session->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Class session updated successfully.',
+            'session' => $session,
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $session = ClassSession::findOrFail($id);
+        $session->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Class session deleted successfully.',
+        ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\ClassSessionController;
 
 Route::get('/health', function () {
     return response()->json([
@@ -34,6 +35,13 @@ Route::prefix('auth')->group(function () {
     Route::post('/teacher/update-profile', [TeacherController::class, 'updateProfile']);
     Route::post('/teacher/get-profile', [TeacherController::class, 'getProfile']);
 });
+
+// Class Sessions routes
+Route::get('/class-sessions', [ClassSessionController::class, 'index']);
+Route::post('/class-sessions', [ClassSessionController::class, 'store']);
+Route::get('/class-sessions/{id}', [ClassSessionController::class, 'show']);
+Route::put('/class-sessions/{id}', [ClassSessionController::class, 'update']);
+Route::delete('/class-sessions/{id}', [ClassSessionController::class, 'destroy']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
