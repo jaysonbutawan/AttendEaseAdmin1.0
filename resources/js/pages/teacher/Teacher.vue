@@ -2,8 +2,8 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
-import { Filter, Search, Users } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { Filter, Grid3x3, List, Search, Users } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
 
 const teachersData: Teacher[] = [
@@ -61,13 +61,75 @@ const teachersData: Teacher[] = [
 ];
 
 const search = ref('');
+const viewMode = ref<'table' | 'cards'>('table');
+const selectedTeachers = ref<number[]>([]);
+
+const filteredTeachers = computed(() => {
+    if (!search.value.trim()) return teachersData;
+    const term = search.value.toLowerCase();
+    return teachersData.filter(
+        (teacher) =>
+            teacher.name.toLowerCase().includes(term) ||
+            teacher.email.toLowerCase().includes(term) ||
+            teacher.department.toLowerCase().includes(term),
+    );
+});
+
+const allTeachersSelected = computed(() => {
+    return (
+        filteredTeachers.value.length > 0 &&
+        selectedTeachers.value.length === filteredTeachers.value.length
+    );
+});
+
+const toggleViewMode = (mode: 'table' | 'cards') => {
+    viewMode.value = mode;
+};
+
+const toggleTeacherSelection = (teacherId: number) => {
+    const index = selectedTeachers.value.indexOf(teacherId);
+    if (index > -1) {
+        selectedTeachers.value.splice(index, 1);
+    } else {
+        selectedTeachers.value.push(teacherId);
+    }
+};
+
+const toggleAllTeachers = () => {
+    if (selectedTeachers.value.length === filteredTeachers.value.length) {
+        selectedTeachers.value = [];
+    } else {
+        selectedTeachers.value = filteredTeachers.value.map((t) => t.id);
+    }
+};
+
+const getDepartmentClass = (department: string) => {
+    const classes = {
+        Science:
+            'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400',
+        Mathematics:
+            'bg-indigo-100 text-indigo-800 dark:bg-indigo-800/20 dark:text-indigo-400',
+        English:
+            'bg-pink-100 text-pink-800 dark:bg-pink-800/20 dark:text-pink-400',
+    };
+    return (
+        classes[department as keyof typeof classes] ||
+        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+    );
+};
+
+const getStatusClass = (status: string) => {
+    return status === 'Active'
+        ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400'
+        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400';
+};
 </script>
 
 <template>
     <Head title="Teacher Management" />
     <AppLayout>
         <div
-            class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800 "
+            class="rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800"
         >
             <div class="mb-6 flex items-center justify-between">
                 <h2
@@ -94,6 +156,40 @@ const search = ref('');
                         />
                     </div>
 
+                    <!-- View Toggle -->
+                    <div
+                        class="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700"
+                    >
+                        <button
+                            @click="toggleViewMode('cards')"
+                            :class="
+                                viewMode === 'cards'
+                                    ? 'bg-white shadow-sm dark:bg-gray-600'
+                                    : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                            "
+                            class="rounded-md px-3 py-2 transition"
+                            title="Card View"
+                        >
+                            <Grid3x3
+                                class="h-4 w-4 text-gray-700 dark:text-gray-300"
+                            />
+                        </button>
+                        <button
+                            @click="toggleViewMode('table')"
+                            :class="
+                                viewMode === 'table'
+                                    ? 'bg-white shadow-sm dark:bg-gray-600'
+                                    : 'hover:bg-gray-200 dark:hover:bg-gray-600'
+                            "
+                            class="rounded-md px-3 py-2 transition"
+                            title="Table View"
+                        >
+                            <List
+                                class="h-4 w-4 text-gray-700 dark:text-gray-300"
+                            />
+                        </button>
+                    </div>
+
                     <!-- Filter Button -->
                     <button
                         class="flex items-center space-x-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition duration-150"
@@ -108,13 +204,21 @@ const search = ref('');
                 </div>
             </div>
 
-            <!-- Teacher List Table -->
-            <div class="overflow-x-auto">
+            <!-- Table View -->
+            <div v-if="viewMode === 'table'" class="overflow-x-auto">
                 <table
                     class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
                 >
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
+                            <th scope="col" class="px-6 py-3 text-left">
+                                <input
+                                    type="checkbox"
+                                    :checked="allTeachersSelected"
+                                    @change="toggleAllTeachers"
+                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+                                />
+                            </th>
                             <th
                                 scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
@@ -151,10 +255,20 @@ const search = ref('');
                         class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800"
                     >
                         <tr
-                            v-for="teacher in teachersData"
+                            v-for="teacher in filteredTeachers"
                             :key="teacher.id"
                             class="transition hover:bg-gray-50 dark:hover:bg-gray-700/50"
                         >
+                            <td class="px-6 py-4">
+                                <input
+                                    type="checkbox"
+                                    :checked="
+                                        selectedTeachers.includes(teacher.id)
+                                    "
+                                    @change="toggleTeacherSelection(teacher.id)"
+                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+                                />
+                            </td>
                             <!-- Teacher Name -->
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center space-x-3">
@@ -186,15 +300,9 @@ const search = ref('');
                             >
                                 <span
                                     class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                                    :class="{
-                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400':
-                                            teacher.department === 'Science',
-                                        'bg-indigo-100 text-indigo-800 dark:bg-indigo-800/20 dark:text-indigo-400':
-                                            teacher.department ===
-                                            'Mathematics',
-                                        'bg-pink-100 text-pink-800 dark:bg-pink-800/20 dark:text-pink-400':
-                                            teacher.department === 'English',
-                                    }"
+                                    :class="
+                                        getDepartmentClass(teacher.department)
+                                    "
                                 >
                                     {{ teacher.department }}
                                 </span>
@@ -215,12 +323,7 @@ const search = ref('');
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span
                                     class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                                    :class="{
-                                        'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400':
-                                            teacher.status === 'Active',
-                                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400':
-                                            teacher.status === 'On Leave',
-                                    }"
+                                    :class="getStatusClass(teacher.status)"
                                 >
                                     {{ teacher.status }}
                                 </span>
@@ -243,14 +346,147 @@ const search = ref('');
                                 </div>
                             </td>
                         </tr>
+
+                        <!-- Empty State -->
+                        <tr v-if="filteredTeachers.length === 0">
+                            <td colspan="6" class="px-6 py-12 text-center">
+                                <div class="text-gray-500 dark:text-gray-400">
+                                    <Users
+                                        class="mx-auto mb-3 h-12 w-12 text-gray-400"
+                                    />
+                                    <p class="text-sm font-medium">
+                                        No teachers found
+                                    </p>
+                                    <p class="mt-1 text-xs">
+                                        Try adjusting your search
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
 
+            <!-- Cards View -->
+            <div
+                v-if="viewMode === 'cards'"
+                class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
+            >
+                <div
+                    v-for="teacher in filteredTeachers"
+                    :key="teacher.id"
+                    class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-lg dark:border-gray-600 dark:bg-gray-700"
+                >
+                    <!-- Card Header -->
+                    <div class="mb-4 flex items-start justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div
+                                class="flex size-12 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                                :style="{
+                                    backgroundColor: `rgba(${PRIMARY_COLOR_RGB}, 0.8)`,
+                                }"
+                            >
+                                {{ teacher.initials }}
+                            </div>
+                            <div>
+                                <h3
+                                    class="text-sm font-semibold text-gray-900 dark:text-white"
+                                >
+                                    {{ teacher.name }}
+                                </h3>
+                                <p
+                                    class="text-xs text-gray-500 dark:text-gray-400"
+                                >
+                                    ID: #{{ teacher.id }}
+                                </p>
+                            </div>
+                        </div>
+                        <input
+                            type="checkbox"
+                            :checked="selectedTeachers.includes(teacher.id)"
+                            @change="toggleTeacherSelection(teacher.id)"
+                            class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+                        />
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-4">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ teacher.email }}
+                        </p>
+                    </div>
+
+                    <!-- Department & Status -->
+                    <div class="mb-4 flex items-center justify-between">
+                        <span
+                            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
+                            :class="getDepartmentClass(teacher.department)"
+                        >
+                            {{ teacher.department }}
+                        </span>
+                        <span
+                            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
+                            :class="getStatusClass(teacher.status)"
+                        >
+                            {{ teacher.status }}
+                        </span>
+                    </div>
+
+                    <!-- Assigned Subjects -->
+                    <div class="mb-4">
+                        <p
+                            class="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300"
+                        >
+                            Assigned Subjects:
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                v-for="subject in teacher.assignedSubjects"
+                                :key="subject.id"
+                                class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-600 dark:text-gray-200"
+                            >
+                                {{ subject.name }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div
+                        class="flex gap-2 border-t border-gray-200 pt-4 dark:border-gray-600"
+                    >
+                        <button
+                            class="flex-1 rounded-lg border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            class="flex-1 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Empty State for Cards -->
+                <div v-if="filteredTeachers.length === 0" class="col-span-full">
+                    <div
+                        class="py-12 text-center text-gray-500 dark:text-gray-400"
+                    >
+                        <Users class="mx-auto mb-4 h-16 w-16 text-gray-400" />
+                        <p class="text-lg font-medium">No teachers found</p>
+                        <p class="mt-2 text-sm">Try adjusting your search</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
             <div
                 class="mt-6 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400"
             >
-                <div>Showing 1 to {{ teachersData.length }} of 24 teachers</div>
+                <div>
+                    Showing 1 to {{ filteredTeachers.length }} of
+                    {{ teachersData.length }} teachers
+                </div>
                 <div class="flex space-x-2">
                     <button
                         class="rounded-lg border border-gray-300 px-3 py-1 transition hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
@@ -282,8 +518,6 @@ const search = ref('');
                     </button>
                 </div>
             </div>
-
-            <Card />
         </div>
     </AppLayout>
 </template>
