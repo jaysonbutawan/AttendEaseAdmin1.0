@@ -219,10 +219,7 @@ onMounted(async () => {
     if (Array.isArray(data.subjects)) {
       subjects.value = data.subjects
         .map((s: any) => {
-          // If API returns strings like "Math", we cannot use it (no id)
           if (typeof s === 'string') return null;
-
-          // If API returns objects, normalize the shape
           if (typeof s === 'object' && s !== null) {
             return {
               subject_id: Number(s.subject_id),
@@ -303,8 +300,6 @@ const handleSubjectCreate = async (subjectName: string) => {
     );
 
     const created: SubjectApi = response.data.subject;
-
-    // prevent duplicates (by id OR name)
     const exists = subjects.value.some(
       (s) =>
         s.subject_id === created.subject_id ||
@@ -315,8 +310,6 @@ const handleSubjectCreate = async (subjectName: string) => {
       subjects.value.push(created);
       subjects.value.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
     }
-
-    // set the selected subject id
     handleFormChange('subjectId', created.subject_id);
 
     statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;

@@ -52,11 +52,11 @@ Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');
 
-use App\Http\Controllers\SessionsController;
+// use App\Http\Controllers\ClassSessionController
 
-Route::get('/sessions', [SessionsController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('sessions');
+// Route::get('/sessions', [ClassSessionController::class, 'index'])
+//     ->middleware(['auth', 'verified'])
+//     ->name('sessions');
 
 Route::get('/usermanagement', function () {
     $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];

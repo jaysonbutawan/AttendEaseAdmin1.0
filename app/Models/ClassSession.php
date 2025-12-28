@@ -15,7 +15,7 @@ class ClassSession extends Model
         'teacher_id',
         'start_time',
         'end_time',
-        'session_date',
+        'session_days',
         'session_status',
         'qr_code',
         'qr_valid',
@@ -23,11 +23,10 @@ class ClassSession extends Model
     ];
 
     protected $casts = [
-        'session_date' => 'date',
+        'session_days' => 'array',
         'qr_valid' => 'boolean',
     ];
 
-    // Relationships
     public function subject()
     {
         return $this->belongsTo(Subject::class, 'subject_id', 'subject_id');

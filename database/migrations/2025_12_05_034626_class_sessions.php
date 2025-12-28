@@ -34,15 +34,6 @@ return new class extends Migration
             $table->foreign('room_id')->references('room_id')->on('rooms');
             $table->foreign('teacher_id')->references('teacher_id')->on('teachers');
 
-            $table->unique(
-                ['teacher_id', 'start_time', 'end_time'],
-                'teacher_schedule_unique'
-            );
-
-            $table->unique(
-                ['room_id','start_time', 'end_time'],
-                'room_schedule_unique'
-            );
         });
     }
 

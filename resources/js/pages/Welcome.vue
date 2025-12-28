@@ -55,7 +55,6 @@ withDefaults(
                 tracking, teacher management, and subject organization.
             </p>
 
-            <!-- CALL TO ACTION BUTTONS (Updated to Login and Register) -->
             <div
                 class="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row"
             >
