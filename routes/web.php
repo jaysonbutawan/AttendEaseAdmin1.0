@@ -185,6 +185,8 @@ Route::delete('/room_polygon/{id}', [RoomController::class, 'destroy']);
 
 //class session routes
 Route::post('/class_sessions', [ClassSessionController::class, 'store'])->name('class_sessions.store');
+Route::get('/class_sessions', [ClassSessionController::class, 'getReadableSessions']);
+
 
 // teachers metrics routes
 Route::get('/api/teachers/assigned-count', [TeacherController::class, 'assignedCount'])->name('teachers.assigned_count');

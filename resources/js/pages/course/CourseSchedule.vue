@@ -441,6 +441,11 @@ const handleCancel = () => {
                             handleFormChange('subjectId', $event);
                             errors.subjectId = undefined;
                         "
+                         :className="
+                            errors.subjectId
+                                ? 'border-red-500 focus:ring-red-500'
+                                : ''
+                        "
                         @subjectCreate="handleSubjectCreate"
                     />
                     <p v-if="errors.subjectId" class="text-sm text-red-600">

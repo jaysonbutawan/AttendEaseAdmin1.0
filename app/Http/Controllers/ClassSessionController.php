@@ -113,4 +113,39 @@ class ClassSessionController extends Controller
             'message' => 'Class session deleted successfully.',
         ]);
     }
+
+    public function getReadableSessions()
+{
+    $sessions = ClassSession::with(['subject', 'teacher', 'room'])->get();
+
+    $data = $sessions->map(function ($session) {
+        return [
+            'session_id'   => $session->session_id,
+
+            'subject_id'   => $session->subject_id,
+            'subject_name' => $session->subject?->subject_name,
+
+            'teacher_id'   => $session->teacher_id,
+            'teacher_name' => $session->teacher?->name,
+
+            'room_id'      => $session->room_id,
+            'room_name'    => $session->room?->room_name,
+
+            'session_days' => collect($session->session_days)
+                ->map(fn ($d) => ucfirst($d))
+                ->values(),
+
+            'start_time'   => $session->start_time,
+            'end_time'     => $session->end_time,
+
+            'session_status' => $session->session_status,
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'sessions' => $data,
+    ]);
+}
+
 }
