@@ -31,11 +31,11 @@ const formatTime = (startTime: string, endTime: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center bg-transparent gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
     <div 
       v-for="session in sessions" 
       :key="session.session_id"
-      class="bg-white rounded-[2rem] shadow-xl shadow-blue-100/50 w-full max-w-2xl p-8 md:p-10 relative overflow-hidden"
+      class="bg-white rounded-[2rem] shadow-xl shadow-blue-100/50 w-full p-8 md:p-10 relative overflow-hidden"
     >
       
       <div class="flex justify-between items-center mb-6">
@@ -98,7 +98,7 @@ const formatTime = (startTime: string, endTime: string) => {
     </div>
     
     <!-- Show message if no sessions -->
-    <div v-if="sessions.length === 0" class="text-gray-400 text-center py-8">
+    <div v-if="sessions.length === 0" class="col-span-full text-gray-400 text-center py-8">
       No class sessions available
     </div>
   </div>
