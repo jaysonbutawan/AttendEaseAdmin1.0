@@ -14,27 +14,45 @@ import { computed, defineComponent, h, onMounted, ref, VNode } from 'vue';
 import { route } from 'ziggy-js';
 import SubjectCombox from './CourseComboBox.vue';
 
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+const errors = ref<FormErrors>({});
+
 interface FormState {
-  subjectId: number | '';
-  teacherId: string;
-  dayOfWeek: string[];
-  startTime: string;
-  endTime: string;
-  roomId: number | '';
+    subjectId: number | '';
+    teacherId: string;
+    dayOfWeek: string[];
+    startTime: string;
+    endTime: string;
+    roomId: number | '';
 }
 
+const validateForm = (): boolean => {
+    const f = form.value;
+    const newErrors: FormErrors = {};
 
+    if (!f.subjectId) newErrors.subjectId = 'Please select a subject.';
+    if (!f.teacherId) newErrors.teacherId = 'Please select a teacher.';
+    if (!f.roomId) newErrors.roomId = 'Please select a room.';
+    if (!f.startTime) newErrors.startTime = 'Please select a start time.';
+    if (!f.endTime) newErrors.endTime = 'Please select an end time.';
+    if (f.dayOfWeek.length === 0)
+        newErrors.dayOfWeek = 'Please select at least one day.';
 
-type TeacherApi = { name: string; daysAgo?: number ; teacher_id: string };
+    errors.value = newErrors;
+
+    return Object.keys(newErrors).length === 0;
+};
+
+type TeacherApi = { name: string; daysAgo?: number; teacher_id: string };
 
 const teachers = ref<TeacherApi[]>([]);
 const teacherOptions = computed(() =>
-  teachers.value.map(t => ({
-    label: t.name,
-    value: t.teacher_id
-  }))
+    teachers.value.map((t) => ({
+        label: t.name,
+        value: t.teacher_id,
+    })),
 );
-
 
 type RoomApi = {
     room_id: number;
@@ -45,10 +63,10 @@ type RoomApi = {
 
 const rooms = ref<RoomApi[]>([]);
 const roomOptions = computed(() =>
-  rooms.value.map((r) => ({
-    label: r.room_name,
-    value: String(r.room_id),
-  }))
+    rooms.value.map((r) => ({
+        label: r.room_name,
+        value: String(r.room_id),
+    })),
 );
 
 const DAYS_OF_WEEK: string[] = [
@@ -149,63 +167,64 @@ const Input = defineComponent({
 type SelectOption = string | { label: string; value: string };
 
 const Select = defineComponent({
-  props: {
-    modelValue: { type: String, default: '' },
-    options: { type: Array as () => SelectOption[], required: true },
-    placeholder: { type: String, default: 'Select option' },
-    className: { type: String, default: '' },
-    name: { type: String, required: true },
-  },
-  setup(props, { emit }) {
-    const handleInput = (e: Event) => {
-      emit('update:modelValue', (e.target as HTMLSelectElement).value);
-    };
+    props: {
+        modelValue: { type: String, default: '' },
+        options: { type: Array as () => SelectOption[], required: true },
+        placeholder: { type: String, default: 'Select option' },
+        className: { type: String, default: '' },
+        name: { type: String, required: true },
+    },
+    setup(props, { emit }) {
+        const handleInput = (e: Event) => {
+            emit('update:modelValue', (e.target as HTMLSelectElement).value);
+        };
 
-    const classes = computed(() => {
-      const baseStyle =
-        'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
-      const darkStyle =
-        'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50 dark:placeholder:text-gray-500';
+        const classes = computed(() => {
+            const baseStyle =
+                'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
+            const darkStyle =
+                'dark:border-gray-700 dark:bg-gray-900 dark:text-gray-50 dark:placeholder:text-gray-500';
 
-      return `${baseStyle} ${darkStyle} ${props.className} appearance-none pr-8`;
-    });
+            return `${baseStyle} ${darkStyle} ${props.className} appearance-none pr-8`;
+        });
 
-    const optionsVNodes = computed(() => {
-      const nodes: VNode[] = [
-        h(
-          'option',
-          { value: '', disabled: true, selected: !props.modelValue },
-          props.placeholder,
-        ),
-        ...props.options.map((option) => {
-          const value = typeof option === 'string' ? option : option.value;
-          const label = typeof option === 'string' ? option : option.label;
+        const optionsVNodes = computed(() => {
+            const nodes: VNode[] = [
+                h(
+                    'option',
+                    { value: '', disabled: true, selected: !props.modelValue },
+                    props.placeholder,
+                ),
+                ...props.options.map((option) => {
+                    const value =
+                        typeof option === 'string' ? option : option.value;
+                    const label =
+                        typeof option === 'string' ? option : option.label;
 
-          return h('option', { value, key: value }, label);
-        }),
-      ];
+                    return h('option', { value, key: value }, label);
+                }),
+            ];
 
-      return nodes;
-    });
+            return nodes;
+        });
 
-    return () =>
-      h('div', { class: 'relative' }, [
-        h(
-          'select',
-          {
-            class: classes.value,
-            name: props.name,
-            value: props.modelValue,
-            onChange: handleInput,
-          },
-          optionsVNodes.value,
-        ),
-        h(ChevronsUpDown, {
-          class:
-            'h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400',
-        }),
-      ]);
-  },
+        return () =>
+            h('div', { class: 'relative' }, [
+                h(
+                    'select',
+                    {
+                        class: classes.value,
+                        name: props.name,
+                        value: props.modelValue,
+                        onChange: handleInput,
+                    },
+                    optionsVNodes.value,
+                ),
+                h(ChevronsUpDown, {
+                    class: 'h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400',
+                }),
+            ]);
+    },
 });
 
 type SubjectApi = { subject_id: number; subject_name: string };
@@ -216,27 +235,27 @@ onMounted(async () => {
         const url = route ? route('subjects.index') : '/subjects';
         const { data } = await axios.get(url);
 
-    if (Array.isArray(data.subjects)) {
-      subjects.value = data.subjects
-        .map((s: any) => {
-          if (typeof s === 'string') return null;
-          if (typeof s === 'object' && s !== null) {
-            return {
-              subject_id: Number(s.subject_id),
-              subject_name: String(s.subject_name),
-            };
-          }
+        if (Array.isArray(data.subjects)) {
+            subjects.value = data.subjects
+                .map((s: any) => {
+                    if (typeof s === 'string') return null;
+                    if (typeof s === 'object' && s !== null) {
+                        return {
+                            subject_id: Number(s.subject_id),
+                            subject_name: String(s.subject_name),
+                        };
+                    }
 
-          return null;
-        })
-        .filter(Boolean) as SubjectApi[];
-    } else {
-      subjects.value = [];
+                    return null;
+                })
+                .filter(Boolean) as SubjectApi[];
+        } else {
+            subjects.value = [];
+        }
+    } catch (error) {
+        console.error('Error loading subjects, using fallback:', error);
+        subjects.value = [];
     }
-  } catch (error) {
-    console.error('Error loading subjects, using fallback:', error);
-    subjects.value = [];
-  }
 
     try {
         const { data } = await axios.get('/room_polygon');
@@ -247,14 +266,13 @@ onMounted(async () => {
     }
 
     try {
-  const url = route ? route('teachers.index') : '/teachers_controller';
-  const { data } = await axios.get(url);
-  teachers.value = Array.isArray(data) ? data : [];
-} catch (error) {
-  console.error('Error loading teachers:', error);
-  teachers.value = [];
-}
-
+        const url = route ? route('teachers.index') : '/teachers_controller';
+        const { data } = await axios.get(url);
+        teachers.value = Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Error loading teachers:', error);
+        teachers.value = [];
+    }
 });
 
 const MAX_DAYS = 3;
@@ -286,84 +304,102 @@ const form = ref<FormState>({
 const statusMessage = ref<string>('');
 
 const handleFormChange = <K extends keyof FormState>(
-  name: K,
-  value: FormState[K]
+    name: K,
+    value: FormState[K],
 ) => {
-  form.value[name] = value;
+    form.value[name] = value;
 };
 
 const handleSubjectCreate = async (subjectName: string) => {
-  try {
-    const response = await axios.post(
-      route ? route('subjects.store') : '/subjects',
-      { subject_name: subjectName },
-    );
+    try {
+        const response = await axios.post(
+            route ? route('subjects.store') : '/subjects',
+            { subject_name: subjectName },
+        );
 
-    const created: SubjectApi = response.data.subject;
-    const exists = subjects.value.some(
-      (s) =>
-        s.subject_id === created.subject_id ||
-        s.subject_name.toLowerCase() === created.subject_name.toLowerCase(),
-    );
+        const created: SubjectApi = response.data.subject;
+        const exists = subjects.value.some(
+            (s) =>
+                s.subject_id === created.subject_id ||
+                s.subject_name.toLowerCase() ===
+                    created.subject_name.toLowerCase(),
+        );
 
-    if (!exists) {
-      subjects.value.push(created);
-      subjects.value.sort((a, b) => a.subject_name.localeCompare(b.subject_name));
+        if (!exists) {
+            subjects.value.push(created);
+            subjects.value.sort((a, b) =>
+                a.subject_name.localeCompare(b.subject_name),
+            );
+        }
+        handleFormChange('subjectId', created.subject_id);
+
+        statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
+    } catch (error) {
+        console.error(error);
+        statusMessage.value =
+            'Error saving subject. Please try again or contact support.';
     }
-    handleFormChange('subjectId', created.subject_id);
-
-    statusMessage.value = `Subject "${created.subject_name}" saved successfully.`;
-  } catch (error) {
-    console.error(error);
-    statusMessage.value =
-      'Error saving subject. Please try again or contact support.';
-  }
 };
-
 
 const handleAssignTeacher = async () => {
-  const f = form.value;
+    if (!validateForm()) {
+        return;
+    }
+    const f = form.value;
 
-  console.log('FORM BEFORE CHECK:', JSON.stringify(f, null, 2));
+    console.log('FORM BEFORE CHECK:', JSON.stringify(f, null, 2));
 
-  if (!f.subjectId || !f.teacherId || f.dayOfWeek.length === 0 || !f.startTime || !f.endTime || !f.roomId) {
-    console.log('BLOCKED: missing fields', {
-      subjectId: f.subjectId,
-      teacherId: f.teacherId,
-      roomId: f.roomId,
-      dayOfWeek: f.dayOfWeek,
-      startTime: f.startTime,
-      endTime: f.endTime,
-    });
-    statusMessage.value = 'Please fill all fields before assigning.';
-    return;
-  }
+    if (
+        !f.subjectId ||
+        !f.teacherId ||
+        f.dayOfWeek.length === 0 ||
+        !f.startTime ||
+        !f.endTime ||
+        !f.roomId
+    ) {
+        console.log('BLOCKED: missing fields', {
+            subjectId: f.subjectId,
+            teacherId: f.teacherId,
+            roomId: f.roomId,
+            dayOfWeek: f.dayOfWeek,
+            startTime: f.startTime,
+            endTime: f.endTime,
+        });
+        statusMessage.value = 'Please fill all fields before assigning.';
+        return;
+    }
 
-  const payload = {
-    subject_id: f.subjectId,
-    teacher_id: f.teacherId,
-    room_id: f.roomId,
-    start_time: f.startTime,
-    end_time: f.endTime,
-    session_days: f.dayOfWeek.map(d => d.toLowerCase()),
-  };
+    const payload = {
+        subject_id: f.subjectId,
+        teacher_id: f.teacherId,
+        room_id: f.roomId,
+        start_time: f.startTime,
+        end_time: f.endTime,
+        session_days: f.dayOfWeek.map((d) => d.toLowerCase()),
+    };
 
-  console.log('PAYLOAD TO SERVER:', payload);
+    console.log('PAYLOAD TO SERVER:', payload);
 
-  try {
-    const res = await axios.post('/class_sessions', payload);
-    console.log('SUCCESS RESPONSE:', res.data);
+    try {
+        const res = await axios.post('/class_sessions', payload);
+        console.log('SUCCESS RESPONSE:', res.data);
 
-    statusMessage.value = 'Schedule saved successfully.';
-    form.value = { subjectId:'', teacherId:'', dayOfWeek:[], startTime:'', endTime:'', roomId:'' };
-  } catch (e: any) {
-    console.error('FAILED STATUS:', e?.response?.status);
-    console.error('FAILED DATA:', e?.response?.data); 
-    statusMessage.value = e?.response?.data?.message ?? 'Failed to save schedule.';
-  }
+        statusMessage.value = 'Schedule saved successfully.';
+        form.value = {
+            subjectId: '',
+            teacherId: '',
+            dayOfWeek: [],
+            startTime: '',
+            endTime: '',
+            roomId: '',
+        };
+    } catch (e: any) {
+        console.error('FAILED STATUS:', e?.response?.status);
+        console.error('FAILED DATA:', e?.response?.data);
+        statusMessage.value =
+            e?.response?.data?.message ?? 'Failed to save schedule.';
+    }
 };
-
-
 
 const handleCancel = () => {
     form.value = {
@@ -398,13 +434,18 @@ const handleCancel = () => {
                         <BookOpen class="mr-2 h-4 w-4 text-blue-500" />
                         Subject Name
                     </label>
-                   <SubjectCombox
-  :subjects="subjects"
-  :modelValue="form.subjectId"
-  @update:modelValue="handleFormChange('subjectId', $event)"
-  @subjectCreate="handleSubjectCreate"
-/>
-
+                    <SubjectCombox
+                        :subjects="subjects"
+                        :modelValue="form.subjectId"
+                        @update:modelValue="
+                            handleFormChange('subjectId', $event);
+                            errors.subjectId = undefined;
+                        "
+                        @subjectCreate="handleSubjectCreate"
+                    />
+                    <p v-if="errors.subjectId" class="text-sm text-red-600">
+                        {{ errors.subjectId }}
+                    </p>
                 </div>
                 <!-- Assigned Teacher -->
                 <div class="space-y-2">
@@ -419,11 +460,20 @@ const handleCancel = () => {
                         name="teacherId"
                         :modelValue="form.teacherId"
                         @update:modelValue="
-                            handleFormChange('teacherId', $event)
+                            handleFormChange('teacherId', $event);
+                            errors.teacherId = undefined;
+                        "
+                        :className="
+                            errors.teacherId
+                                ? 'border-red-500 focus:ring-red-500'
+                                : ''
                         "
                         :options="teacherOptions"
                         placeholder="Select a teacher"
                     />
+                    <p v-if="errors.teacherId" class="text-sm text-red-600">
+                        {{ errors.teacherId }}
+                    </p>
                 </div>
 
                 <!-- Room Number -->
@@ -434,14 +484,24 @@ const handleCancel = () => {
                         <Home class="mr-2 h-4 w-4 text-blue-500" />
                         Room Name
                     </label>
-                   <Select
-  name="roomId"
-  :modelValue="String(form.roomId)"
-  @update:modelValue="handleFormChange('roomId', Number($event))"
-  :options="roomOptions"
-  placeholder="Select Room"
-/>
-
+                    <Select
+                        name="roomId"
+                        :modelValue="String(form.roomId)"
+                        @update:modelValue="
+                            handleFormChange('roomId', Number($event));
+                            errors.subjectId = undefined;
+                        "
+                        :className="
+                            errors.roomId
+                                ? 'border-red-500 focus:ring-red-500'
+                                : ''
+                        "
+                        :options="roomOptions"
+                        placeholder="Select Room"
+                    />
+                    <p v-if="errors.subjectId" class="text-sm text-red-600">
+                        {{ errors.subjectId }}
+                    </p>
                 </div>
             </div>
 
@@ -467,9 +527,16 @@ const handleCancel = () => {
                                 :checked="form.dayOfWeek.includes(day)"
                                 @change="toggleDay(day)"
                             />
+
                             <span>{{ day }}</span>
                         </label>
                     </div>
+                    <p
+                        v-if="errors.dayOfWeek"
+                        class="mt-2 text-sm text-red-600"
+                    >
+                        {{ errors.dayOfWeek }}
+                    </p>
                 </div>
 
                 <!-- Start Time -->
@@ -485,9 +552,18 @@ const handleCancel = () => {
                         type="time"
                         :modelValue="form.startTime"
                         @update:modelValue="
-                            handleFormChange('startTime', $event)
+                            handleFormChange('startTime', $event);
+                            errors.startTime = undefined;
+                        "
+                        :className="
+                            errors.startTime
+                                ? 'border-red-500 focus:ring-red-500'
+                                : ''
                         "
                     />
+                    <p v-if="errors.startTime" class="text-sm text-red-600">
+                        {{ errors.startTime }}
+                    </p>
                 </div>
 
                 <!-- End Time -->
@@ -502,19 +578,33 @@ const handleCancel = () => {
                         name="endTime"
                         type="time"
                         :modelValue="form.endTime"
-                        @update:modelValue="handleFormChange('endTime', $event)"
+                        @update:modelValue="
+                            handleFormChange('endTime', $event);
+                            errors.startTime = undefined;
+                        "
+                        :className="
+                            errors.startTime
+                                ? 'border-red-500 focus:ring-red-500'
+                                : ''
+                        "
                     />
+                    <p v-if="errors.startTime" class="text-sm text-red-600">
+                        {{ errors.startTime }}
+                    </p>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
             <div
                 class="mt-8 flex items-center justify-end border-t border-gray-100 pt-6 dark:border-gray-700/50"
             >
                 <Button @click="handleCancel" variant="ghost" class="mr-3">
                     Cancel
                 </Button>
-                <Button @click="handleAssignTeacher" variant="primary">
+                <Button
+                    @click="handleAssignTeacher"
+                    variant="primary"
+                    className="transition duration-300 hover:scale-105"
+                >
                     <PlusCircle class="mr-2 h-4 w-4" />
                     Assign Schedule
                 </Button>

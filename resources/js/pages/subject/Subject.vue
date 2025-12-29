@@ -724,7 +724,7 @@ onMounted(async () => {
                     <!-- Subject Name -->
                     <div>
                         <label
-                            class="mb-2 block flex items-center gap-2 text-sm font-semibold text-gray-700"
+                            class="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700"
                         >
                             <svg
                                 class="h-4 w-4 text-blue-600"

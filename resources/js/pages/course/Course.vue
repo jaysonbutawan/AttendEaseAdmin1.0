@@ -164,44 +164,6 @@ async function createCourse() {
 	}
 }
 
-async function createClassSession(sessionData: {
-	subject_id: number;
-	teacher_id: string;
-	room_id: number;
-	start_time: string;
-	end_time: string;
-	session_date: string;
-	session_status?: 'active' | 'ended' | 'pending';
-	qr_code?: string;
-	qr_valid?: boolean;
-	allowance_time?: number;
-}) {
-	try {
-		const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
-		const res = await fetch('/api/class-sessions', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Accept': 'application/json',
-				'X-CSRF-TOKEN': csrf
-			},
-			body: JSON.stringify(sessionData),
-			credentials: 'same-origin',
-		});
-
-		if (!res.ok) {
-			const err = await res.json().catch(() => ({}));
-			throw new Error(err?.message ?? 'Failed to create class session');
-		}
-
-		const data = await res.json();
-		return data;
-	} catch (e: any) {
-		console.error('Error creating class session:', e);
-		throw e;
-	}
-}
-
 onMounted(async () => {
 	await Promise.all([
 		loadCourses(),
