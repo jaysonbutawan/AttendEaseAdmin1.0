@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Check, ChevronDown, Search } from 'lucide-vue-next'; // Using Check for the checkbox icon
-import { computed, ref } from 'vue';
+import axios from 'axios';
+import { Check, ChevronDown, Search } from 'lucide-vue-next';
+import { computed, ref, onMounted} from 'vue';
 
-// Interface for a subject record, extended to include selected state and time slot
 interface SubjectRecord {
     id: number;
     code: string;
@@ -10,10 +10,16 @@ interface SubjectRecord {
     units: number;
     department: string;
     isSelected: boolean;
-    selectedTimeSlot?: string; // Optional: Stores the selected time for the subject
+    selectedTimeSlot?: string; 
+}
+interface Student {
+    id: string;
+    name: string;
+    department: string;
+    initials: string;
+    selected: boolean;
 }
 
-// Mock data for all available subjects, adjusted to match the image content
 const allSubjects = ref<SubjectRecord[]>([
     {
         id: 1,
@@ -58,10 +64,8 @@ const allSubjects = ref<SubjectRecord[]>([
     },
 ]);
 
-// Reactive state for the search input
 const searchQuery = ref('');
 
-// Dummy data for dropdown filters (not fully implemented with filtering logic for brevity)
 const subjectCategories = [
     'All Categories',
     'Mathematics',
@@ -81,17 +85,15 @@ const creditValues = [
 const selectedCategory = ref(subjectCategories[0]);
 const selectedCreditValue = ref(creditValues[0]);
 
-// Dummy data for time slots
 const timeSlots = [
     '9:00 AM - 10:00 AM',
     '10:00 AM - 11:00 AM',
     '11:00 AM - 12:00 PM',
-    '12:00 PM - 1:00 PM', // Matches the image's default
+    '12:00 PM - 1:00 PM', 
     '1:00 PM - 2:00 PM',
     '2:00 PM - 3:00 PM',
 ];
 
-// Computed property to filter subjects based on search query (and potentially other filters)
 const filteredSubjects = computed(() => {
     return allSubjects.value.filter(
         (subject) =>
@@ -116,7 +118,7 @@ const toggleSubjectSelection = (subjectId: number) => {
     }
 };
 
-const studentDepartments = [
+const courses = [
     'All',
     'Computer Science',
     'Business Admin',
@@ -136,36 +138,37 @@ const toggleStudentSelection = (studentId: string) => {
     }
 };
 
-const studentsData = ref([
-    {
-        id: '12345',
-        name: 'Alex Johnson',
-        department: 'Computer Science',
-        initials: 'AJ',
-        selected: true,
-    },
-    {
-        id: '12346',
-        name: 'Maria Garcia',
-        department: 'Business Admin',
-        initials: 'MG',
-        selected: false,
-    },
-    {
-        id: '12347',
-        name: 'David Smith',
-        department: 'Engineering',
-        initials: 'DS',
-        selected: false,
-    },
-]);
 
-// Function to update the selected time slot for a subject
+const studentsData = ref<Student[]>([]);
+
+const fetchStudents = async () => {
+    try {
+        console.log('[Students] Fetching students from backend...');
+
+        const response = await axios.get('/students_controller');
+
+        if (Array.isArray(response.data) && response.data.length > 0) {
+            console.log(
+                `[Students] Fetched ${response.data.length} students successfully`,
+                response.data
+            );
+        } else {
+            console.warn('[Students] Backend returned an empty list', response.data);
+        }
+
+        studentsData.value = response.data;
+    } catch (error) {
+        console.error('[Students] Failed to load students from backend', error);
+    }
+};
+
+
+onMounted(fetchStudents);
+
 const updateTimeSlot = (subject: SubjectRecord, newTime: string) => {
     subject.selectedTimeSlot = newTime;
 };
 
-// Expose selected subjects for parent component to submit
 const getSelectedSubjects = () =>
     allSubjects.value
         .filter((s) => s.isSelected)
@@ -354,7 +357,7 @@ defineExpose({ getSelectedSubjects });
                                     Department: All
                                 </option>
                                 <option
-                                    v-for="dept in studentDepartments"
+                                    v-for="dept in courses"
                                     :key="dept"
                                     :value="dept"
                                 >

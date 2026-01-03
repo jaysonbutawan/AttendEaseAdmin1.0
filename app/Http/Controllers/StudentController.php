@@ -7,27 +7,36 @@ use Illuminate\Http\Request;
 
 class StudentController extends Controller
 {
-    public function index()
-    {
-        $students = Student::where(function ($query) {
-            $query->whereNull('status')
-                ->orWhere('status', '');
-        })
-            ->get()
-            ->map(function ($student) {
-                return [
-                    'name' => $student->firstname . ' ' . $student->lastname,
-                    'daysAgo' => now()->diffInDays($student->created_at),
-                ];
-            });
+public function index()
+{
+    $students = Student::select(
+        'student_id',
+        'firstname',
+        'lastname',
+        'course_id',
+        'year'
+    )
+    ->where(function ($query) {
+        $query->whereNull('status')
+              ->orWhere('status', '');
+    })
+    ->get()
+    ->map(function ($student) {
+        return [
+            'id' => (string) $student->student_id,
+            'name' => $student->firstname . ' ' . $student->lastname,
+            'department' => $student->course_id ?? 'N/A',
+            'initials' =>
+                strtoupper(substr($student->firstname, 0, 1)) .
+                strtoupper(substr($student->lastname, 0, 1)),
+            'selected' => false,
+        ];
+    });
 
-        return response()->json($students);
-    }
+    return response()->json($students);
+}
 
-    /**
-     * Total enrollments across all courses.
-     * Counts students with a non-null course_id.
-     */
+
     public function totalEnrollments()
     {
         $total = Student::whereNotNull('course_id')->count();
@@ -37,7 +46,6 @@ class StudentController extends Controller
             'total_enrollments' => $total,
         ]);
     }
-//mobile app profile update and get profile
     public function updateProfile(Request $request)
     {
         $request->validate([
@@ -107,10 +115,7 @@ class StudentController extends Controller
             ]
         ]);
     }
-
-    /**
-     * Update a student by student_id.
-     */
+    
     public function updateById(Request $request, string $id)
     {
         $data = $request->validate([
@@ -135,9 +140,6 @@ class StudentController extends Controller
         return response()->json(['message' => 'Student updated', 'student_id' => $student->student_id]);
     }
 
-    /**
-     * Delete a student by student_id.
-     */
     public function deleteById(string $id)
     {
         $student = Student::where('student_id', $id)->first();

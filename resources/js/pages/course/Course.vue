@@ -39,7 +39,6 @@ async function loadUnassignedTeachers() {
         const data = await res.json();
         unassignedTeachers.value = Number(data?.unassigned_teachers ?? 0);
     } catch (e) {
-        // silent
     }
 }
 
@@ -55,8 +54,6 @@ onMounted(async () => {
 <template>
     <AppLayout>
         <Head title="Courses - AttendEase" />
-
-        <div class="space-y-6 p-4 sm:p-6 lg:p-8">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-800">
                     Courses Management
@@ -207,6 +204,5 @@ onMounted(async () => {
                 </div>
                 <CourseCard />
             </div>
-        </div>
     </AppLayout>
 </template>
