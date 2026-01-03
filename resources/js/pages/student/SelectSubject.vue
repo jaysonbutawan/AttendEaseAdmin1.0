@@ -1,180 +1,174 @@
 <script setup lang="ts">
-import axios from 'axios';
-import { Check, ChevronDown, Search } from 'lucide-vue-next';
-import { computed, ref, onMounted} from 'vue';
+import axios from 'axios'
+import { computed, onMounted, ref } from 'vue'
+import { Search, Check, ChevronDown } from 'lucide-vue-next'
 
-interface SubjectRecord {
-    id: number;
-    code: string;
-    name: string;
-    units: number;
-    department: string;
-    isSelected: boolean;
-    selectedTimeSlot?: string; 
-}
-interface Student {
-    id: string;
-    name: string;
-    department: string;
-    initials: string;
-    selected: boolean;
+/* =======================
+   TYPES
+======================= */
+
+type ClassSession = {
+    session_id: number
+    start_time: string
+    end_time: string
+    session_days: string[]
+    session_status: string
 }
 
-const allSubjects = ref<SubjectRecord[]>([
-    {
-        id: 1,
-        code: 'MATH101',
-        name: 'Mathematics',
-        units: 3,
-        department: 'Mathematics',
-        isSelected: true,
-        selectedTimeSlot: '12:00 PM - 1:00 PM',
-    },
-    {
-        id: 2,
-        code: 'PHY202',
-        name: 'Physics',
-        units: 4,
-        department: 'Physics',
-        isSelected: false,
-    },
-    {
-        id: 3,
-        code: 'CS101',
-        name: 'Computer Science',
-        units: 3,
-        department: 'Computer Science',
-        isSelected: false,
-    },
-    {
-        id: 4,
-        code: 'ENGL210',
-        name: 'English Literature',
-        units: 3,
-        department: 'English',
-        isSelected: false,
-    },
-    {
-        id: 5,
-        code: 'ART101',
-        name: 'Creative Arts',
-        units: 2,
-        department: 'Fine Arts',
-        isSelected: false,
-    },
-]);
+type Subject = {
+    subject_id: number
+    subject_name: string
+    subject_code?: string
+    units?: number
+    sessions: ClassSession[]
+    isSelected?: boolean
+    selectedTimeSlot?: number | null
+}
 
-const searchQuery = ref('');
+type Student = {
+    id: string
+    name: string
+    department: string
+    initials: string
+    selected: boolean
+}
 
-const subjectCategories = [
-    'All Categories',
-    'Mathematics',
-    'Physics',
-    'Computer Science',
-    'English',
-    'Fine Arts',
-];
-const creditValues = [
-    'All Credits',
-    '1 Credit',
-    '2 Credits',
-    '3 Credits',
-    '4 Credits',
-];
+type Course = {
+    id: number
+    course_name: string
+}
 
-const selectedCategory = ref(subjectCategories[0]);
-const selectedCreditValue = ref(creditValues[0]);
+/* =======================
+   SUBJECTS & SESSIONS
+======================= */
 
-const timeSlots = [
-    '9:00 AM - 10:00 AM',
-    '10:00 AM - 11:00 AM',
-    '11:00 AM - 12:00 PM',
-    '12:00 PM - 1:00 PM', 
-    '1:00 PM - 2:00 PM',
-    '2:00 PM - 3:00 PM',
-];
+const subjects = ref<Subject[]>([])
+const searchQuery = ref('')
+
+const loadSubjects = async () => {
+    try {
+        const { data } = await axios.get('/subjects-with-sessions')
+        subjects.value = (data.subjects || []).map((subject: any) => ({
+            ...subject,
+            isSelected: false,
+            selectedTimeSlot: subject.sessions?.[0]?.session_id || null
+        }))
+        console.log('[Subjects] Loaded', subjects.value)
+    } catch (error) {
+        console.error('[Subjects] Failed to load', error)
+    }
+}
 
 const filteredSubjects = computed(() => {
-    return allSubjects.value.filter(
-        (subject) =>
-            subject.name
-                .toLowerCase()
-                .includes(searchQuery.value.toLowerCase()) ||
-            subject.code
-                .toLowerCase()
-                .includes(searchQuery.value.toLowerCase()),
-    );
-});
+    if (!searchQuery.value.trim()) {
+        return subjects.value
+    }
+    
+    const query = searchQuery.value.toLowerCase()
+    return subjects.value.filter(subject => 
+        subject.subject_name.toLowerCase().includes(query) ||
+        subject.subject_code?.toLowerCase().includes(query)
+    )
+})
 
-// Function to toggle subject selection
 const toggleSubjectSelection = (subjectId: number) => {
-    const subject = allSubjects.value.find((s) => s.id === subjectId);
+    const subject = subjects.value.find(s => s.subject_id === subjectId)
     if (subject) {
-        subject.isSelected = !subject.isSelected;
-        // If selected, ensure a default time slot is set if none exists
-        if (subject.isSelected && !subject.selectedTimeSlot) {
-            subject.selectedTimeSlot = timeSlots[3]; // Default to 12:00 PM - 1:00 PM
+        subject.isSelected = !subject.isSelected
+        if (subject.isSelected && !subject.selectedTimeSlot && subject.sessions.length > 0) {
+            subject.selectedTimeSlot = subject.sessions[0].session_id
         }
     }
-};
+}
 
-const courses = [
-    'All',
-    'Computer Science',
-    'Business Admin',
-    'Engineering',
-];
-const studentYearLevels = [
-    'All',
-    '1st Year',
-    '2nd Year',
-    '3rd Year',
-    '4th Year',
-];
-const toggleStudentSelection = (studentId: string) => {
-    const student = studentsData.value.find((s) => s.id === studentId);
-    if (student) {
-        student.selected = !student.selected;
+const updateTimeSlot = (subject: Subject, sessionId: string) => {
+    subject.selectedTimeSlot = parseInt(sessionId)
+}
+
+const getAvailableTimeSlotsForSubject = (subjectId: number) => {
+    const subject = subjects.value.find(s => s.subject_id === subjectId)
+    if (!subject) return []
+    
+    return subject.sessions.map(session => ({
+        session_id: session.session_id,
+        label: `${session.start_time} - ${session.end_time}`,
+        days: session.session_days,
+        status: session.session_status
+    }))
+}
+
+/* =======================
+   COURSES
+======================= */
+
+const courses = ref<Course[]>([])
+const loadingCourses = ref(false)
+const courseError = ref('')
+
+const loadCourses = async () => {
+    loadingCourses.value = true
+    courseError.value = ''
+
+    try {
+        const res = await fetch('/api/courses', { credentials: 'same-origin' })
+        if (!res.ok) throw new Error('Unable to load courses')
+
+        const data = await res.json()
+        courses.value = data?.courses ?? []
+
+        console.log('[Courses] Loaded', courses.value)
+    } catch (err: any) {
+        courseError.value = err?.message || 'Failed to load courses'
+        console.error('[Courses] Error', err)
+    } finally {
+        loadingCourses.value = false
     }
-};
+}
 
+/* =======================
+   STUDENTS
+======================= */
 
-const studentsData = ref<Student[]>([]);
+const studentsData = ref<Student[]>([])
+const studentYearLevels = ref(['1st Year', '2nd Year', '3rd Year', '4th Year'])
 
 const fetchStudents = async () => {
     try {
-        console.log('[Students] Fetching students from backend...');
-
-        const response = await axios.get('/students_controller');
-
-        if (Array.isArray(response.data) && response.data.length > 0) {
-            console.log(
-                `[Students] Fetched ${response.data.length} students successfully`,
-                response.data
-            );
-        } else {
-            console.warn('[Students] Backend returned an empty list', response.data);
-        }
-
-        studentsData.value = response.data;
+        const { data } = await axios.get('/students_controller')
+        studentsData.value = (data || []).map((student: any) => ({
+            ...student,
+            selected: false,
+            initials: student.initials || getInitials(student.name)
+        }))
+        console.log('[Students] Loaded', studentsData.value)
     } catch (error) {
-        console.error('[Students] Failed to load students from backend', error);
+        console.error('[Students] Failed to load', error)
     }
-};
+}
 
+const getInitials = (name: string) => {
+    return name
+        .split(' ')
+        .map(n => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2)
+}
 
-onMounted(fetchStudents);
+const toggleStudentSelection = (studentId: string) => {
+    const student = studentsData.value.find(s => s.id === studentId)
+    if (student) student.selected = !student.selected
+}
 
-const updateTimeSlot = (subject: SubjectRecord, newTime: string) => {
-    subject.selectedTimeSlot = newTime;
-};
+/* =======================
+   LIFECYCLE
+======================= */
 
-const getSelectedSubjects = () =>
-    allSubjects.value
-        .filter((s) => s.isSelected)
-        .map((s) => ({ id: s.id, selectedTimeSlot: s.selectedTimeSlot || '' }));
-
-defineExpose({ getSelectedSubjects });
+onMounted(() => {
+    loadSubjects()
+    loadCourses()
+    fetchStudents()
+})
 </script>
 
 <template>
@@ -184,7 +178,7 @@ defineExpose({ getSelectedSubjects });
                 <div
                     class="h-full rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800"
                 >
-                    <h1 class="mb-6 text-2xl font-bold text-gray-900">
+                    <h1 class="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
                         Select Subjects
                     </h1>
 
@@ -196,73 +190,38 @@ defineExpose({ getSelectedSubjects });
                             type="text"
                             v-model="searchQuery"
                             placeholder="Search by subject name or code..."
-                            class="w-full rounded-lg border border-gray-200 py-3 pr-4 pl-10 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            class="w-full rounded-lg border border-gray-200 py-3 pr-4 pl-10 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         />
                     </div>
-
-                    <div class="mb-6 flex space-x-3">
-                        <div class="relative">
-                            <select
-                                v-model="selectedCategory"
-                                class="cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2 pr-8 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            >
-                                <option
-                                    v-for="category in subjectCategories"
-                                    :key="category"
-                                    :value="category"
-                                >
-                                    {{ category }}
-                                </option>
-                            </select>
-                            <ChevronDown
-                                class="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-500"
-                            />
-                        </div>
-
-                        <div class="relative">
-                            <select
-                                v-model="selectedCreditValue"
-                                class="cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2 pr-8 text-sm font-medium text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            >
-                                <option
-                                    v-for="credit in creditValues"
-                                    :key="credit"
-                                    :value="credit"
-                                >
-                                    {{ credit }}
-                                </option>
-                            </select>
-                            <ChevronDown
-                                class="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-gray-500"
-                            />
-                        </div>
-                    </div>
+                    
                     <div class="max-h-96 overflow-y-auto pr-2">
+                        <div v-if="subjects.length === 0" class="text-center py-8 text-gray-500">
+                            No subjects available
+                        </div>
+                        
                         <div class="space-y-4">
                             <div
                                 v-for="subject in filteredSubjects"
-                                :key="subject.id"
+                                :key="subject.subject_id"
                                 class="rounded-xl border p-4 transition-all duration-200"
                                 :class="{
-                                    'border-blue-500 bg-blue-50 shadow-md':
+                                    'border-blue-500 bg-blue-50 shadow-md dark:bg-blue-900/20':
                                         subject.isSelected,
-                                    'border-gray-200 hover:border-gray-300':
+                                    'border-gray-200 hover:border-gray-300 dark:border-gray-700':
                                         !subject.isSelected,
                                 }"
                             >
                                 <div class="flex items-center justify-between">
                                     <div
                                         class="flex w-full cursor-pointer items-center select-none"
-                                        @click="
-                                            toggleSubjectSelection(subject.id)
-                                        "
+                                        @click="toggleSubjectSelection(subject.subject_id)"
                                     >
                                         <div
                                             class="mr-3 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded transition-colors"
                                             :class="
                                                 subject.isSelected
                                                     ? 'border-blue-600 bg-blue-600'
-                                                    : 'border border-gray-300 bg-white'
+                                                    : 'border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-700'
                                             "
                                         >
                                             <Check
@@ -272,26 +231,22 @@ defineExpose({ getSelectedSubjects });
                                         </div>
 
                                         <div>
-                                            <p
-                                                class="font-semibold text-gray-900"
-                                            >
-                                                {{ subject.name }}
+                                            <p class="font-semibold text-gray-900 dark:text-white">
+                                                {{ subject.subject_name }}
                                             </p>
-                                            <p class="text-sm text-gray-600">
-                                                {{ subject.code }} -
-                                                {{ subject.units }} Credits
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                <span v-if="subject.subject_code">{{ subject.subject_code }}</span>
+                                                <span v-if="subject.units"> - {{ subject.units }} Credits</span>
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div
-                                    v-if="subject.isSelected"
-                                    class="mt-4 border-t border-blue-200/70 pt-3"
+                                    v-if="subject.isSelected && subject.sessions.length > 0"
+                                    class="mt-4 border-t border-blue-200/70 pt-3 dark:border-blue-800"
                                 >
-                                    <p
-                                        class="mb-2 text-sm font-medium text-gray-700"
-                                    >
+                                    <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Select Time Slot
                                     </p>
                                     <div class="relative">
@@ -301,25 +256,32 @@ defineExpose({ getSelectedSubjects });
                                                 (event) =>
                                                     updateTimeSlot(
                                                         subject,
-                                                        (
-                                                            event.target as HTMLSelectElement
-                                                        ).value,
+                                                        (event.target as HTMLSelectElement).value,
                                                     )
                                             "
-                                            class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-2.5 pr-10 pl-3 text-base text-gray-800 shadow-sm focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                            class="w-full cursor-pointer appearance-none rounded-lg border border-gray-300 bg-white py-2.5 pr-10 pl-3 text-base text-gray-800 shadow-sm focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                         >
                                             <option
-                                                v-for="slot in timeSlots"
-                                                :key="slot"
-                                                :value="slot"
+                                                v-for="slot in getAvailableTimeSlotsForSubject(subject.subject_id)"
+                                                :key="slot.session_id"
+                                                :value="slot.session_id"
                                             >
-                                                {{ slot }}
+                                                {{ slot.label }} ({{ slot.days.join(', ') }})
                                             </option>
                                         </select>
                                         <ChevronDown
                                             class="pointer-events-none absolute top-1/2 right-3 h-5 w-5 -translate-y-1/2 text-gray-500"
                                         />
                                     </div>
+                                </div>
+                                
+                                <div
+                                    v-else-if="subject.isSelected && subject.sessions.length === 0"
+                                    class="mt-4 border-t border-blue-200/70 pt-3 dark:border-blue-800"
+                                >
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                                        No time slots available for this subject
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -331,9 +293,7 @@ defineExpose({ getSelectedSubjects });
                 <div
                     class="h-full rounded-xl border border-gray-200 bg-white p-6 shadow-xl md:p-8 dark:border-gray-700 dark:bg-gray-800"
                 >
-                    <h2
-                        class="mb-6 text-xl font-semibold text-gray-900 dark:text-white"
-                    >
+                    <h2 class="mb-6 text-xl font-semibold text-gray-900 dark:text-white">
                         Manage Student Selection
                     </h2>
 
@@ -345,27 +305,27 @@ defineExpose({ getSelectedSubjects });
                             <input
                                 type="text"
                                 placeholder="Search by student name or ID..."
-                                class="w-full rounded-lg border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                class="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
 
                         <div class="flex space-x-3">
                             <select
-                                class="w-1/2 rounded-lg border-gray-300 py-2.5 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                class="w-1/2 rounded-lg border border-gray-300 py-2.5 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             >
                                 <option disabled selected>
                                     Department: All
                                 </option>
                                 <option
-                                    v-for="dept in courses"
-                                    :key="dept"
-                                    :value="dept"
+                                    v-for="course in courses"
+                                    :key="course.id"
+                                    :value="course.id"
                                 >
-                                    {{ dept }}
+                                    {{ course.course_name }}
                                 </option>
                             </select>
                             <select
-                                class="w-1/2 rounded-lg border-gray-300 py-2.5 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                class="w-1/2 rounded-lg border border-gray-300 py-2.5 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             >
                                 <option disabled selected>
                                     Year Level: All
@@ -396,21 +356,23 @@ defineExpose({ getSelectedSubjects });
                             </label>
                         </div>
 
+                        <div v-if="studentsData.length === 0" class="text-center py-8 text-gray-500">
+                            No students available
+                        </div>
+
                         <div
                             v-for="student in studentsData"
                             :key="student.id"
-                            class="flex items-center justify-between rounded-lg border border-gray-200 p-3 transition duration-150 dark:border-gray-700"
+                            class="flex items-center justify-between rounded-lg border border-gray-200 p-3 transition duration-150 cursor-pointer dark:border-gray-700"
                             :class="{
                                 'border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/20':
                                     student.selected,
                                 'hover:bg-gray-50 dark:hover:bg-gray-700/50':
                                     !student.selected,
                             }"
+                            @click="toggleStudentSelection(student.id)"
                         >
-                            <div
-                                class="flex items-center space-x-3"
-                                @click="toggleStudentSelection(student.id)"
-                            >
+                            <div class="flex items-center space-x-3">
                                 <input
                                     type="checkbox"
                                     :checked="student.selected"
@@ -422,22 +384,16 @@ defineExpose({ getSelectedSubjects });
                                     {{ student.initials }}
                                 </div>
                                 <div>
-                                    <div
-                                        class="text-sm font-medium text-gray-900 dark:text-white"
-                                    >
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ student.name }}
                                     </div>
-                                    <div
-                                        class="text-xs text-gray-500 dark:text-gray-400"
-                                    >
-                                        ID: {{ student.id }} |
-                                        {{ student.department }}
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        ID: {{ student.id }} | {{ student.department }}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>

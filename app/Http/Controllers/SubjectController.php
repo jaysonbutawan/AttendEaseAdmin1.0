@@ -68,4 +68,17 @@ class SubjectController extends Controller
             'subject' => $subject,
         ]);
     }
+
+        public function indexWithSessions()
+    {
+        $subjects = Subject::with([
+            'sessions' => function ($query) {
+                $query->orderBy('start_time');
+            }
+        ])->get();
+
+        return response()->json([
+            'subjects' => $subjects
+        ]);
+    }
 }

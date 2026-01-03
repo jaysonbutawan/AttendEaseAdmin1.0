@@ -162,12 +162,12 @@ Route::prefix('api')->group(function () {
     Route::put('/subjects/{id}', [SubjectController::class, 'update'])->name('subjects.update');
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 
-    // Student subject assignment (no persistence): detects conflicts and notifies admin
         Route::post('/student-subjects/assign', [StudentSubjectAssignmentController::class, 'assign'])
             ->middleware(['auth', 'verified'])
             ->name('studentSubjects.assign');
 });
-
+//assign subjects to students route
+Route::get('/subjects-with-sessions', [SubjectController::class, 'indexWithSessions']);
 
 //course routes
 Route::post('/api/courses', [CourseController::class, 'store'])->name('courses.store');

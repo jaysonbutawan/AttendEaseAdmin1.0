@@ -13,4 +13,9 @@ class Subject extends Model
     protected $fillable = [
         'subject_name',
     ];
+
+     public function sessions()
+    {
+        return $this->hasMany(ClassSession::class, 'subject_id', 'subject_id');
+    }
 }
