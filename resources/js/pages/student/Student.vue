@@ -1,12 +1,12 @@
 <script setup>
 import AppLayout from '@/layouts/AppLayout.vue';
-import SubjectAssignment from './SubjectAssignment.vue';
 import StudentsTable from './StudentsTable.vue';
+import SelectSubject from './SelectSubject.vue';
 </script>
 
 <template>
     <AppLayout> 
-        <SubjectAssignment />
+        <SelectSubject />
         <StudentsTable />
     </AppLayout>
 </template>

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -40,5 +41,14 @@ class ClassSession extends Model
     public function room()
     {
         return $this->belongsTo(Room::class, 'room_id', 'room_id');
+    }
+    public function students()
+    {
+        return $this->belongsToMany(
+            Student::class,
+            'student_class_sessions',
+            'session_id',
+            'student_id'
+        )->withPivot(['enrollment_status', 'enrolled_at']);
     }
 }

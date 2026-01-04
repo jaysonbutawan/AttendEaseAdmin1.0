@@ -36,4 +36,15 @@ class Student extends Model
     {
         return $this->belongsTo(Course::class, 'course_id', 'course_id');
     }
+
+    public function classSessions()
+{
+    return $this->belongsToMany(
+        ClassSession::class,
+        'student_class_sessions',
+        'student_id',
+        'session_id'
+    )->withPivot(['enrollment_status', 'enrolled_at']);
+}
+
 }

@@ -16,6 +16,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManagementUserController;
 use App\Http\Controllers\StudentSubjectAssignmentController;
+use App\Http\Controllers\StudentClassSessionController;
 
 
 Route::get('/', function () {
@@ -65,7 +66,7 @@ Route::get('/usermanagement', function () {
         $name = trim(($t->firstname ?? '') . ' ' . ($t->lastname ?? '')) ?: ($t->email ?? 'Teacher');
         $initials = collect(explode(' ', $name))
             ->filter()
-            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+            ->map(fn($part) => strtoupper(substr($part, 0, 1)))
             ->take(2)
             ->implode('') ?: 'T';
         $color = $palette[crc32($t->teacher_id) % count($palette)];
@@ -85,7 +86,7 @@ Route::get('/usermanagement', function () {
         $name = trim(($s->firstname ?? '') . ' ' . ($s->lastname ?? '')) ?: ($s->email ?? 'Student');
         $initials = collect(explode(' ', $name))
             ->filter()
-            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+            ->map(fn($part) => strtoupper(substr($part, 0, 1)))
             ->take(2)
             ->implode('') ?: 'S';
         $color = $palette[crc32($s->student_id) % count($palette)];
@@ -162,12 +163,15 @@ Route::prefix('api')->group(function () {
     Route::put('/subjects/{id}', [SubjectController::class, 'update'])->name('subjects.update');
     Route::delete('/subjects/{id}', [SubjectController::class, 'destroy']);
 
-        Route::post('/student-subjects/assign', [StudentSubjectAssignmentController::class, 'assign'])
-            ->middleware(['auth', 'verified'])
-            ->name('studentSubjects.assign');
+    Route::post('/student-subjects/assign', [StudentSubjectAssignmentController::class, 'assign'])
+        ->middleware(['auth', 'verified'])
+        ->name('studentSubjects.assign');
 });
+
 //assign subjects to students route
 Route::get('/subjects-with-sessions', [SubjectController::class, 'indexWithSessions']);
+Route::post('/assign-students-to-sessions', [StudentClassSessionController::class, 'store']
+);
 
 //course routes
 Route::post('/api/courses', [CourseController::class, 'store'])->name('courses.store');
@@ -197,4 +201,4 @@ Route::get('/api/teachers/unassigned-count', [TeacherController::class, 'unassig
 
 
 
-require __DIR__.'/settings.php';
+require __DIR__ . '/settings.php';
