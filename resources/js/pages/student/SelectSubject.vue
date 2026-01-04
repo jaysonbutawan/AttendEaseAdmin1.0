@@ -29,6 +29,7 @@ type Student = {
     id: string
     name: string
     department: string
+    year_level?: string
     initials: string
     selected: boolean
 }
@@ -50,6 +51,13 @@ const loadSubjects = async () => {
         const { data } = await axios.get('/subjects-with-sessions')
         subjects.value = (data.subjects || []).map((subject: any) => ({
             ...subject,
+            sessions: subject.sessions?.map((session: any) => ({
+                ...session,
+                // Parse session_days if it's a string
+                session_days: typeof session.session_days === 'string' 
+                    ? JSON.parse(session.session_days) 
+                    : (Array.isArray(session.session_days) ? session.session_days : [])
+            })) || [],
             isSelected: false,
             selectedTimeSlot: subject.sessions?.[0]?.session_id || null
         }))
@@ -85,14 +93,51 @@ const updateTimeSlot = (subject: Subject, sessionId: string) => {
     subject.selectedTimeSlot = parseInt(sessionId)
 }
 
+const dayAbbreviationMap: Record<string, string> = {
+    Monday: 'M',
+    Tuesday: 'T',
+    Wednesday: 'W',
+    Thursday: 'Th',
+    Friday: 'F',
+    Saturday: 'S',
+    Sunday: 'Su',
+}
+
+const normalizeDay = (day: string) =>
+    day.trim().toLowerCase()
+
+const formatSessionDays = (days: string[]) => {
+    if (!Array.isArray(days) || days.length === 0) return ''
+
+    return days
+        .map(day => {
+            const normalized = normalizeDay(day)
+            return dayAbbreviationMap[
+                normalized.charAt(0).toUpperCase() + normalized.slice(1)
+            ] ?? ''
+        })
+        .filter(Boolean)
+        .join('')
+}
+
+const formatPHTime = (time: string) => {
+    if (!time) return ''
+
+    const [hours, minutes] = time.split(':').map(Number)
+
+    const period = hours >= 12 ? 'PM' : 'AM'
+    const hour12 = hours % 12 || 12
+
+    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`
+}
+
 const getAvailableTimeSlotsForSubject = (subjectId: number) => {
     const subject = subjects.value.find(s => s.subject_id === subjectId)
     if (!subject) return []
-    
+
     return subject.sessions.map(session => ({
         session_id: session.session_id,
-        label: `${session.start_time} - ${session.end_time}`,
-        days: session.session_days,
+        label: `${formatPHTime(session.start_time)} - ${formatPHTime(session.end_time)} ${formatSessionDays(session.session_days)}`,
         status: session.session_status
     }))
 }
@@ -132,6 +177,11 @@ const loadCourses = async () => {
 const studentsData = ref<Student[]>([])
 const studentYearLevels = ref(['1st Year', '2nd Year', '3rd Year', '4th Year'])
 
+// Student filters
+const studentSearchQuery = ref('')
+const selectedDepartment = ref<number | 'all'>('all')
+const selectedYearLevel = ref<string | 'all'>('all')
+
 const fetchStudents = async () => {
     try {
         const { data } = await axios.get('/students_controller')
@@ -153,6 +203,50 @@ const getInitials = (name: string) => {
         .join('')
         .toUpperCase()
         .substring(0, 2)
+}
+
+// Filtered students based on search and filters
+const filteredStudents = computed(() => {
+    let filtered = studentsData.value
+
+    // Apply search filter
+    if (studentSearchQuery.value.trim()) {
+        const query = studentSearchQuery.value.toLowerCase()
+        filtered = filtered.filter(student => 
+            student.name.toLowerCase().includes(query) ||
+            student.id.toLowerCase().includes(query)
+        )
+    }
+
+    // Apply department filter
+    if (selectedDepartment.value !== 'all') {
+        filtered = filtered.filter(student => {
+            const course = courses.value.find(c => c.id === selectedDepartment.value)
+            return course && student.department === course.course_name
+        })
+    }
+
+    // Apply year level filter
+    if (selectedYearLevel.value !== 'all') {
+        filtered = filtered.filter(student => 
+            student.year_level === selectedYearLevel.value
+        )
+    }
+
+    return filtered
+})
+
+// Select all functionality
+const allStudentsSelected = computed(() => {
+    if (filteredStudents.value.length === 0) return false
+    return filteredStudents.value.every(student => student.selected)
+})
+
+const toggleSelectAll = () => {
+    const newValue = !allStudentsSelected.value
+    filteredStudents.value.forEach(student => {
+        student.selected = newValue
+    })
 }
 
 const toggleStudentSelection = (studentId: string) => {
@@ -266,7 +360,7 @@ onMounted(() => {
                                                 :key="slot.session_id"
                                                 :value="slot.session_id"
                                             >
-                                                {{ slot.label }} ({{ slot.days.join(', ') }})
+                                                {{ slot.label }}
                                             </option>
                                         </select>
                                         <ChevronDown
@@ -304,6 +398,7 @@ onMounted(() => {
                             />
                             <input
                                 type="text"
+                                v-model="studentSearchQuery"
                                 placeholder="Search by student name or ID..."
                                 class="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
@@ -311,9 +406,10 @@ onMounted(() => {
 
                         <div class="flex space-x-3">
                             <select
+                                v-model="selectedDepartment"
                                 class="w-1/2 rounded-lg border border-gray-300 py-2.5 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             >
-                                <option disabled selected>
+                                <option value="all">
                                     Department: All
                                 </option>
                                 <option
@@ -325,9 +421,10 @@ onMounted(() => {
                                 </option>
                             </select>
                             <select
+                                v-model="selectedYearLevel"
                                 class="w-1/2 rounded-lg border border-gray-300 py-2.5 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             >
-                                <option disabled selected>
+                                <option value="all">
                                     Year Level: All
                                 </option>
                                 <option
@@ -346,22 +443,24 @@ onMounted(() => {
                     >
                         <div class="flex items-center justify-between p-2">
                             <label
-                                class="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                                class="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                                @click="toggleSelectAll"
                             >
                                 <input
                                     type="checkbox"
+                                    :checked="allStudentsSelected"
                                     class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-indigo-500"
                                 />
-                                <span>Select All</span>
+                                <span>Select All ({{ filteredStudents.length }})</span>
                             </label>
                         </div>
 
-                        <div v-if="studentsData.length === 0" class="text-center py-8 text-gray-500">
-                            No students available
+                        <div v-if="filteredStudents.length === 0" class="text-center py-8 text-gray-500">
+                            No students found
                         </div>
 
                         <div
-                            v-for="student in studentsData"
+                            v-for="student in filteredStudents"
                             :key="student.id"
                             class="flex items-center justify-between rounded-lg border border-gray-200 p-3 transition duration-150 cursor-pointer dark:border-gray-700"
                             :class="{
@@ -389,6 +488,7 @@ onMounted(() => {
                                     </div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400">
                                         ID: {{ student.id }} | {{ student.department }}
+                                        <span v-if="student.year_level"> | {{ student.year_level }}</span>
                                     </div>
                                 </div>
                             </div>
