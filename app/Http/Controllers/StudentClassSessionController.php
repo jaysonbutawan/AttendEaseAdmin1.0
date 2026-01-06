@@ -21,8 +21,6 @@ class StudentClassSessionController extends Controller
         DB::transaction(function () use ($data) {
             foreach ($data['session_ids'] as $sessionId) {
                 $session = ClassSession::find($sessionId);
-                //asasasasa
-
                 $session->students()->syncWithoutDetaching(
                     collect($data['student_ids'])->mapWithKeys(function ($studentId) {
                         return [
