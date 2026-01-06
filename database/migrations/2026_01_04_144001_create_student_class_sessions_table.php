@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('student_class_sessions', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedInteger('session_id');
+            $table->string('session_id');
             $table->unsignedInteger('student_id');
 
             $table->enum('enrollment_status', ['enrolled', 'dropped'])->default('enrolled');
