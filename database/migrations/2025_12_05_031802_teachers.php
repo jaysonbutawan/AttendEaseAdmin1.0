@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('firstname', 100);
             $table->string('lastname', 100);
             $table->timestamp('created_at')->useCurrent();
-            $table->string('status', 50)->nullable();
+            $table->string('status', 50)->default('pending');
             $table->timestamp('approved_at')->useCurrent();
         });
     }
