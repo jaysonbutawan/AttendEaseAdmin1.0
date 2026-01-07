@@ -14,6 +14,8 @@ interface User {
 	last_activity?: string;
 	initials: string;
 	avatar_color: string;
+    approval_status?: 'pending' | 'approved' | 'rejected';
+    approved_at?: string;
 }
 
 interface UserManagementProps {
@@ -32,6 +34,7 @@ interface UserManagementProps {
     filters?: {
         search?: string;
         role?: string;
+		status?: string;
 		view?: 'table' | 'cards';
     };
 }
@@ -41,6 +44,7 @@ const props = defineProps<UserManagementProps>();
 // Search and filter states
 const searchQuery = ref(props.filters?.search ?? '');
 const selectedRole = ref(props.filters?.role ?? '');
+const selectedStatus = ref(props.filters?.status ?? '');
 const viewMode = ref<'table' | 'cards'>(props.filters?.view ?? 'cards');
 
 // Statistics
@@ -57,6 +61,7 @@ const handleSearch = () => {
     router.get('/management/users', {
         search: searchQuery.value,
         role: selectedRole.value,
+		status: selectedStatus.value,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -73,6 +78,7 @@ const handleRoleFilter = (role: string) => {
 const clearFilters = () => {
     searchQuery.value = '';
     selectedRole.value = '';
+	selectedStatus.value = '';
     router.get('/management/users', {}, {
         preserveState: true,
         preserveScroll: true,
@@ -85,6 +91,7 @@ const goToPage = (page: number) => {
         page,
         search: searchQuery.value,
         role: selectedRole.value,
+		status: selectedStatus.value,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -151,6 +158,29 @@ const deleteUser = (payload: { id: string | number; role: 'teacher' | 'student' 
 	}
 };
 
+// Approve user
+const approveUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
+	const { id, role } = payload;
+	if (role === 'admin') {
+		alert('Admin accounts are managed in Settings.');
+		return;
+	}
+	const endpoint = role === 'teacher' ? `/api/teachers/${id}/approve` : `/api/students/${id}/approve`;
+	router.post(endpoint, {}, { preserveScroll: true });
+};
+
+// Reject user
+const rejectUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
+	const { id, role } = payload;
+	if (role === 'admin') {
+		alert('Admin accounts are managed in Settings.');
+		return;
+	}
+	if (!confirm('Reject this user?')) return;
+	const endpoint = role === 'teacher' ? `/api/teachers/${id}/reject` : `/api/students/${id}/reject`;
+	router.post(endpoint, {}, { preserveScroll: true });
+};
+
 // Get role badge class
 const getRoleBadgeClass = (role: string) => {
     switch (role) {
@@ -163,6 +193,20 @@ const getRoleBadgeClass = (role: string) => {
         default:
             return 'bg-gray-100 text-gray-800';
     }
+};
+
+// Get approval status badge class
+const getStatusBadgeClass = (status?: string) => {
+	switch (status) {
+		case 'approved':
+			return 'bg-green-100 text-green-800';
+		case 'rejected':
+			return 'bg-red-100 text-red-800';
+		case 'pending':
+			return 'bg-yellow-100 text-yellow-800';
+		default:
+			return 'bg-gray-100 text-gray-800';
+	}
 };
 
 // Format last activity
@@ -290,6 +334,38 @@ const formatLastActivity = (lastActivity?: string) => {
 						</button>
 					</div>
 
+					<!-- Approval Status Filter -->
+					<div class="flex gap-2">
+						<button 
+							@click="selectedStatus = ''; handleSearch()"
+							:class="selectedStatus === '' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+							class="px-4 py-2.5 rounded-lg text-sm font-medium transition"
+						>
+							All Status
+						</button>
+						<button 
+							@click="selectedStatus = 'pending'; handleSearch()"
+							:class="selectedStatus === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+							class="px-4 py-2.5 rounded-lg text-sm font-medium transition"
+						>
+							Pending
+						</button>
+						<button 
+							@click="selectedStatus = 'approved'; handleSearch()"
+							:class="selectedStatus === 'approved' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+							class="px-4 py-2.5 rounded-lg text-sm font-medium transition"
+						>
+							Approved
+						</button>
+						<button 
+							@click="selectedStatus = 'rejected'; handleSearch()"
+							:class="selectedStatus === 'rejected' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+							class="px-4 py-2.5 rounded-lg text-sm font-medium transition"
+						>
+							Rejected
+						</button>
+					</div>
+
 					<!-- View Toggle -->
 					<div class="flex gap-1 bg-gray-100 p-1 rounded-lg">
 						<button 
@@ -337,6 +413,8 @@ const formatLastActivity = (lastActivity?: string) => {
 						@edit="(id) => editUser({ id, role: user.role })"
 						@view="(id) => viewUser({ id, role: user.role })"
 						@delete="(id) => deleteUser({ id, role: user.role })"
+						@approve="(id) => approveUser({ id, role: user.role })"
+						@reject="(id) => rejectUser({ id, role: user.role })"
 					/>
 				</div>
 			</div>
@@ -368,8 +446,7 @@ const formatLastActivity = (lastActivity?: string) => {
 								</th>
 								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">User</th>
 								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Email</th>
-								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Role</th>
-								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Assigned To</th>
+								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Role</th>							<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Status</th>								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Assigned To</th>
 								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Last Activity</th>
 								<th class="px-6 py-3 text-left text-xs font-semibold text-gray-700">Actions</th>
 							</tr>
@@ -414,6 +491,14 @@ const formatLastActivity = (lastActivity?: string) => {
 									</span>
 								</td>
 								<td class="px-6 py-4">
+									<span 
+										class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize"
+										:class="getStatusBadgeClass(user.approval_status)"
+									>
+										{{ user.approval_status ?? 'pending' }}
+									</span>
+								</td>
+								<td class="px-6 py-4">
 									<p class="text-sm text-gray-600">{{ user.assigned_to ?? '—' }}</p>
 								</td>
 								<td class="px-6 py-4">
@@ -421,6 +506,26 @@ const formatLastActivity = (lastActivity?: string) => {
 								</td>
 								<td class="px-6 py-4">
 									<div class="flex gap-2">
+										<button 
+											v-if="user.role !== 'admin'"
+											@click="approveUser({ id: user.id, role: user.role })"
+											class="p-1.5 text-green-600 hover:bg-green-50 rounded transition"
+											title="Approve user"
+										>
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+											</svg>
+										</button>
+										<button 
+											v-if="user.role !== 'admin'"
+											@click="rejectUser({ id: user.id, role: user.role })"
+											class="p-1.5 text-red-600 hover:bg-red-50 rounded transition"
+											title="Reject user"
+										>
+											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+											</svg>
+										</button>
 										<button 
 											@click="editUser({ id: user.id, role: user.role })"
 											class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition"
@@ -454,7 +559,7 @@ const formatLastActivity = (lastActivity?: string) => {
 
 							<!-- Empty State -->
 							<tr v-if="users.data.length === 0">
-								<td colspan="7" class="px-6 py-12 text-center">
+								<td colspan="8" class="px-6 py-12 text-center">
 									<div class="text-gray-500">
 										<svg class="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 1 1-12 0 6 6 0 0 1 12 0z"></path>

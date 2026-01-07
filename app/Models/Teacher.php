@@ -28,6 +28,8 @@ class Teacher extends Model
         'lastname',
         'password',
         'status',
+        'approval_status',
+        'approved_at',
     ];
 
     /**

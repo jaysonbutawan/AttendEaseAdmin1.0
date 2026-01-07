@@ -23,6 +23,8 @@ class Student extends Model
         'lastname',
         'year',
         'status',
+        'approval_status',
+        'approved_at',
     ];
 
        protected $casts = [

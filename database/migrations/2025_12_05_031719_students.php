@@ -21,7 +21,8 @@ return new class extends Migration
             $table->string('lastname', 100);
             $table->integer('year')->nullable();
             $table->timestamp('created_at')->useCurrent();
-            $table->string('status', 50)->nullable();
+            $table->timestamp('status')->useCurrent();
+            $table->timestamp('approved_at')->useCurrent();
 
             $table->foreign('course_id')->references('course_id')->on('courses') ->onDelete('set null');
         });

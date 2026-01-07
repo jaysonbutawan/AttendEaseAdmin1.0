@@ -155,4 +155,34 @@ class TeacherController extends Controller
         $teacher->delete();
         return response()->json(['message' => 'Teacher deleted', 'teacher_id' => $id]);
     }
+
+    /**
+     * Approve a teacher by teacher_id.
+     */
+    public function approve(string $id)
+    {
+        $teacher = Teacher::where('teacher_id', $id)->first();
+        if (!$teacher) {
+            return response()->json(['message' => 'Teacher not found'], 404);
+        }
+        $teacher->approval_status = 'approved';
+        $teacher->approved_at = now();
+        $teacher->save();
+        return response()->json(['message' => 'Teacher approved', 'teacher_id' => $id]);
+    }
+
+    /**
+     * Reject a teacher by teacher_id.
+     */
+    public function reject(string $id)
+    {
+        $teacher = Teacher::where('teacher_id', $id)->first();
+        if (!$teacher) {
+            return response()->json(['message' => 'Teacher not found'], 404);
+        }
+        $teacher->approval_status = 'rejected';
+        // Do not modify approved_at on reject
+        $teacher->save();
+        return response()->json(['message' => 'Teacher rejected', 'teacher_id' => $id]);
+    }
 }

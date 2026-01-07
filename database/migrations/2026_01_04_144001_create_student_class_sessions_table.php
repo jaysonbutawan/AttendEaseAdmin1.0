@@ -7,11 +7,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        // Ensure a clean state if a previous failed migration partially created the table
+        Schema::dropIfExists('student_class_sessions');
+
         Schema::create('student_class_sessions', function (Blueprint $table) {
             $table->id();
 
-            $table->string('session_id');
-            $table->unsignedInteger('student_id');
+            $table->unsignedInteger('session_id');
+            $table->string('student_id');
 
             $table->enum('enrollment_status', ['enrolled', 'dropped'])->default('enrolled');
             $table->timestamp('enrolled_at')->useCurrent();
@@ -19,9 +22,9 @@ return new class extends Migration {
             $table->unique(['session_id', 'student_id']);
 
             $table->foreign('session_id')
-                  ->references('session_id')
-                  ->on('class_sessions')
-                  ->onDelete('cascade');
+                ->references('session_id')
+                ->on('class_sessions')
+                ->onDelete('cascade');
 
             $table->foreign('student_id')
                   ->references('student_id')

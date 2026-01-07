@@ -149,4 +149,34 @@ public function index()
         $student->delete();
         return response()->json(['message' => 'Student deleted', 'student_id' => $id]);
     }
+
+    /**
+     * Approve a student by student_id.
+     */
+    public function approve(string $id)
+    {
+        $student = Student::where('student_id', $id)->first();
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+        $student->approval_status = 'approved';
+        $student->approved_at = now();
+        $student->save();
+        return response()->json(['message' => 'Student approved', 'student_id' => $id]);
+    }
+
+    /**
+     * Reject a student by student_id.
+     */
+    public function reject(string $id)
+    {
+        $student = Student::where('student_id', $id)->first();
+        if (!$student) {
+            return response()->json(['message' => 'Student not found'], 404);
+        }
+        $student->approval_status = 'rejected';
+        // Leave approved_at as-is or null; we do not modify it on reject
+        $student->save();
+        return response()->json(['message' => 'Student rejected', 'student_id' => $id]);
+    }
 }

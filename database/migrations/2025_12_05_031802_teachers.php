@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('lastname', 100);
             $table->timestamp('created_at')->useCurrent();
             $table->string('status', 50)->nullable();
+            $table->timestamp('approved_at')->useCurrent();
         });
     }
 

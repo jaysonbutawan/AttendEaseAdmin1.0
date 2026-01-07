@@ -12,6 +12,8 @@ interface User {
   avatar_color: string;
   contact_number?: string;
   status?: string;
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  approved_at?: string;
 }
 
 const props = defineProps<{ 
@@ -24,6 +26,8 @@ const emit = defineEmits<{
   (e: 'edit', userId: string | number): void;
   (e: 'view', userId: string | number): void;
   (e: 'delete', userId: string | number): void;
+  (e: 'approve', userId: string | number): void;
+  (e: 'reject', userId: string | number): void;
 }>();
 
 const roleBadgeClass = computed(() => {
@@ -54,6 +58,28 @@ const formattedLastActivity = computed(() => {
   if (hours < 24) return `${hours}h ago`;
   if (days === 1) return 'Yesterday';
   return date.toLocaleDateString();
+});
+
+const statusBadgeClass = computed(() => {
+  switch (props.user.approval_status) {
+    case 'approved':
+      return 'bg-green-100 text-green-800';
+    case 'rejected':
+      return 'bg-red-100 text-red-800';
+    case 'pending':
+    default:
+      return 'bg-yellow-100 text-yellow-800';
+  }
+});
+
+const approvedDateText = computed(() => {
+  if (!props.user.approved_at) return '—';
+  try {
+    const d = new Date(props.user.approved_at);
+    return d.toLocaleDateString();
+  } catch {
+    return String(props.user.approved_at);
+  }
 });
 </script>
 
@@ -92,6 +118,18 @@ const formattedLastActivity = computed(() => {
           {{ user.role }}
         </span>
       </div>
+      <div class="flex justify-between items-center text-xs text-gray-600">
+        <div class="flex items-center gap-2">
+          <span class="font-medium">Approval:</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize" :class="statusBadgeClass">
+            {{ user.approval_status ?? 'pending' }}
+          </span>
+        </div>
+        <div>
+          <span class="font-medium">Approved:</span>
+          <span>{{ approvedDateText }}</span>
+        </div>
+      </div>
       <div class="text-xs text-gray-600">
         <span class="font-medium">Assigned:</span>
         <span>{{ user.assigned_to ?? '—' }}</span>
@@ -110,6 +148,26 @@ const formattedLastActivity = computed(() => {
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+      </button>
+      <button 
+        v-if="user.role !== 'admin'"
+        @click="emit('approve', user.id)"
+        class="px-2.5 py-1.5 text-green-600 hover:bg-green-50 rounded transition text-xs"
+        title="Approve user"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </button>
+      <button 
+        v-if="user.role !== 'admin'"
+        @click="emit('reject', user.id)"
+        class="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded transition text-xs"
+        title="Reject user"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
       <button 

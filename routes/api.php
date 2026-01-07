@@ -65,6 +65,19 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
+// Management routes for Students and Teachers (approve/reject/delete)
+Route::prefix('students')->group(function () {
+    Route::delete('/{id}', [StudentController::class, 'deleteById']);
+    Route::post('/{id}/approve', [StudentController::class, 'approve']);
+    Route::post('/{id}/reject', [StudentController::class, 'reject']);
+});
+
+Route::prefix('teachers')->group(function () {
+    Route::delete('/{id}', [TeacherController::class, 'deleteById']);
+    Route::post('/{id}/approve', [TeacherController::class, 'approve']);
+    Route::post('/{id}/reject', [TeacherController::class, 'reject']);
+});
+
 Route::fallback(function () {
     return response()->json([
         'success' => false,
