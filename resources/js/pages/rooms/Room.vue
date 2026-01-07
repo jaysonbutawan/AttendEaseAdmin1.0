@@ -40,17 +40,12 @@ const newRoom = ref({
 });
 
 const editRoom = (room: Room) => {
-    // open modal in edit mode
     isEditMode.value = true;
     editingRoomId.value = room.id;
 
     newRoom.value.name = room.name;
     newRoom.value.capacity = room.capacity;
     newRoom.value.color = room.color;
-
-    // IMPORTANT:
-    // Editing should not depend on the activePolygon you draw.
-    // You can optionally allow polygon editing later by making stored polygons editable.
     showRoomPrompt.value = true;
 };
 
@@ -67,7 +62,6 @@ const updateRoom = async () => {
             room_name: newRoom.value.name,
             capacity: newRoom.value.capacity,
             color: newRoom.value.color,
-            // polygon optional (only send if you support polygon editing)
         };
 
         const res = await axios.put(
@@ -87,8 +81,6 @@ const updateRoom = async () => {
                 color: res.data.room.color,
             };
         }
-
-        // update polygon color/name on map (no need to redraw points)
         const poly = roomPolygons[editingRoomId.value];
         if (poly) {
             poly.setOptions({
@@ -294,7 +286,8 @@ onMounted(async () => {
     googleRef = google;
 
     map = new google.maps.Map(mapEl.value!, {
-        center: { lat: 14.5995, lng: 120.9842 },
+        center: {     lat: 7.457697110755575,
+        lng: 125.7923471118688},
         zoom: 18,
         mapTypeId: 'satellite',
         disableDefaultUI: false,
