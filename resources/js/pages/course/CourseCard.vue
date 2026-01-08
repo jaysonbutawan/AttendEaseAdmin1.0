@@ -19,15 +19,65 @@ const sessions = ref<ClassSession[]>([])
 onMounted(async () => {
   const { data } = await axios.get('/class_sessions')
   sessions.value = data.sessions
+
+   sessions.value.forEach(session => {
+    if (session.teacher_name) {
+      console.log(
+        `Session ${session.session_id} → Teacher: ${session.teacher_name}`
+      )
+    }
+  })
 })
 
-const formatDays = (days: string[]) => {
-  return days.join(', ')
-}
+const formatDays = (days: string[] | string) => {
+  let parsed: string[] = [];
+
+  try {
+    parsed = Array.isArray(days)
+      ? days
+      : JSON.parse(days);
+  } catch {
+    // fallback if parsing fails
+    return String(days);
+  }
+
+  const DAY_ABBREVIATIONS: Record<string, string> = {
+    monday: 'Mon',
+    tuesday: 'Tue',
+    wednesday: 'Wed',
+    thursday: 'Thu',
+    friday: 'Fri',
+    saturday: 'Sat',
+    sunday: 'Sun',
+  };
+
+  return parsed
+    .map(d => DAY_ABBREVIATIONS[d.toLowerCase()] ?? d)
+    .join(', ');
+};
+const formatStatus = (status: string) => {
+  if (!status) return '';
+
+  return status.toLowerCase() === 'pending'
+    ? 'Not Active'
+    : status;
+};
+
+const formatPHTime = (time: string) => {
+  if (!time) return '';
+
+  const [hours, minutes] = time.split(':').map(Number);
+
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
+
+  return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
 
 const formatTime = (startTime: string, endTime: string) => {
-  return `${startTime} - ${endTime}`
-}
+  return `${formatPHTime(startTime)} - ${formatPHTime(endTime)}`;
+};
+
 </script>
 
 <template>
@@ -35,14 +85,14 @@ const formatTime = (startTime: string, endTime: string) => {
     <div 
       v-for="session in sessions" 
       :key="session.session_id"
-      class="bg-white rounded-[2rem] shadow-xl shadow-blue-100/50 w-full p-8 md:p-10 relative overflow-hidden"
+      class="bg-white rounded-[2rem] shadow-xl shadow-blue-100/50 w-full p-8 md:p-10 relative overflow-hidden transition duration-300 hover:scale-105"
     >
       
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-full">
           <div class="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
           <span class="text-indigo-600 text-xs font-bold tracking-wider uppercase">
-            {{ session.session_status }}
+            {{formatStatus(session.session_status) }}
           </span>
         </div>
 
@@ -68,7 +118,7 @@ const formatTime = (startTime: string, endTime: string) => {
           </div>
           <div>
             <p class="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-0.5">Teacher</p>
-            <p class="text-slate-900 font-bold text-lg">{{ session.teacher_name }}</p>
+            <p class="text-slate-900 font-bold text-lg">{{ session.teacher_name ?? 'wawa' }}</p>
           </div>
         </div>
 
@@ -85,11 +135,11 @@ const formatTime = (startTime: string, endTime: string) => {
 
       <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div class="flex items-center gap-3 w-full md:w-auto">
-          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border border-gray-100 rounded-full font-bold text-slate-800 hover:bg-gray-50 transition-colors">
+          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border border-gray-100 rounded-full font-bold text-slate-800 hover:bg-gray-50 transition duration-300 hover:scale-105">
             <Pencil class="w-4 h-4" />
             Edit
           </button>
-          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all">
+          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition duration-300 hover:scale-105">
             View Details
             <ArrowRight class="w-4 h-4" />
           </button>
@@ -97,7 +147,6 @@ const formatTime = (startTime: string, endTime: string) => {
       </div>
     </div>
     
-    <!-- Show message if no sessions -->
     <div v-if="sessions.length === 0" class="col-span-full text-gray-400 text-center py-8">
       No class sessions available
     </div>

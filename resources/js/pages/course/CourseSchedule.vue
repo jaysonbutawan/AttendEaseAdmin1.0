@@ -120,6 +120,7 @@ const Button = defineComponent({
             h(
                 'button',
                 {
+                    type: 'button',
                     class: classes.value,
                     disabled: props.disabled,
                     onClick: handleClick,
@@ -340,8 +341,12 @@ const handleSubjectCreate = async (subjectName: string) => {
             'Error saving subject. Please try again or contact support.';
     }
 };
+const isSubmitting = ref(false);
 
 const handleAssignTeacher = async () => {
+    if (isSubmitting.value) return;
+
+  isSubmitting.value = true;
     if (!validateForm()) {
         return;
     }

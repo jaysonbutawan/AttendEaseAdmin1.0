@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\ClassSession;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class ClassSessionController extends Controller
 {
     public function store(Request $request)
     {
+        Log::info('STORE REQUEST RECEIVED', [
+            'payload' => $request->all(),
+            'timestamp' => now()->toDateTimeString(),
+        ]);
         $validated = $request->validate([
             'subject_id' => ['required', 'integer', 'exists:subjects,subject_id'],
             'teacher_id' => ['required', 'string', 'max:50', 'exists:teachers,teacher_id'],
@@ -43,7 +48,7 @@ class ClassSessionController extends Controller
             'room_id'    => $validated['room_id'],
             'start_time' => $validated['start_time'],
             'end_time'   => $validated['end_time'],
-            'session_days' => json_encode($validated['session_days']),
+            'session_days' => $validated['session_days'],
             'session_status' => $validated['session_status'] ?? 'pending',
             'qr_code' => $validated['qr_code'] ?? null,
             'qr_valid' => $validated['qr_valid'] ?? false,
@@ -115,37 +120,38 @@ class ClassSessionController extends Controller
     }
 
     public function getReadableSessions()
-{
-    $sessions = ClassSession::with(['subject', 'teacher', 'room'])->get();
+    {
+        $sessions = ClassSession::with(['subject', 'teacher', 'room'])->get();
 
-    $data = $sessions->map(function ($session) {
-        return [
-            'session_id'   => $session->session_id,
+        $data = $sessions->map(function ($session) {
+            return [
+                'session_id'   => $session->session_id,
 
-            'subject_id'   => $session->subject_id,
-            'subject_name' => $session->subject?->subject_name,
+                'subject_id'   => $session->subject_id,
+                'subject_name' => $session->subject?->subject_name,
 
-            'teacher_id'   => $session->teacher_id,
-            'teacher_name' => $session->teacher?->name,
+                'teacher_id'   => $session->teacher_id,
+                'teacher_name' => $session->teacher
+                    ? trim($session->teacher->firstname . ' ' . $session->teacher->lastname)
+                    : null,
+                    
+                'room_id'      => $session->room_id,
+                'room_name'    => $session->room?->room_name,
 
-            'room_id'      => $session->room_id,
-            'room_name'    => $session->room?->room_name,
+                'session_days' => collect($session->session_days)
+                    ->map(fn($d) => ucfirst($d))
+                    ->values(),
 
-            'session_days' => collect($session->session_days)
-                ->map(fn ($d) => ucfirst($d))
-                ->values(),
+                'start_time'   => $session->start_time,
+                'end_time'     => $session->end_time,
 
-            'start_time'   => $session->start_time,
-            'end_time'     => $session->end_time,
+                'session_status' => $session->session_status,
+            ];
+        });
 
-            'session_status' => $session->session_status,
-        ];
-    });
-
-    return response()->json([
-        'success' => true,
-        'sessions' => $data,
-    ]);
-}
-
+        return response()->json([
+            'success' => true,
+            'sessions' => $data,
+        ]);
+    }
 }
