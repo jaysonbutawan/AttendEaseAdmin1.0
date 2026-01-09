@@ -10,22 +10,34 @@ class StudentController extends Controller
 public function index()
 {
     $students = Student::select(
-        'student_id',
-        'firstname',
-        'lastname',
-        'course_id',
-        'year'
+        'students.student_id',
+        'students.firstname',
+        'students.lastname',
+        'students.course_id',
+        'students.year',
+        'students.email',
+        'students.contact_number',
+        'courses.course_name'
     )
-    ->where(function ($query) {
-        $query->whereNull('status')
-              ->orWhere('status', '');
-    })
+    ->leftJoin('courses', 'students.course_id', '=', 'courses.course_id')
     ->get()
     ->map(function ($student) {
+        // Map year number to year level string
+        $yearLevel = match($student->year) {
+            1 => '1st Year',
+            2 => '2nd Year',
+            3 => '3rd Year',
+            4 => '4th Year',
+            default => null,
+        };
+
         return [
             'id' => (string) $student->student_id,
-            'name' => $student->firstname . ' ' . $student->lastname,
-            'department' => $student->course_id ?? 'N/A',
+            'name' => trim($student->firstname . ' ' . $student->lastname),
+            'department' => $student->course_name ?? 'N/A',
+            'year_level' => $yearLevel,
+            'email' => $student->email,
+            'contact' => $student->contact_number,
             'initials' =>
                 strtoupper(substr($student->firstname, 0, 1)) .
                 strtoupper(substr($student->lastname, 0, 1)),

@@ -195,14 +195,19 @@ const selectedYearLevel = ref<string | 'all'>('all');
 const fetchStudents = async () => {
     try {
         const { data } = await axios.get('/students_controller');
+        console.log('[Students] Raw API response:', data);
+        console.log('[Students] Response length:', data?.length || 0);
+        
         studentsData.value = (data || []).map((student: any) => ({
             ...student,
             selected: false,
             initials: student.initials || getInitials(student.name),
         }));
-        console.log('[Students] Loaded', studentsData.value);
+        
+        console.log('[Students] Loaded students:', studentsData.value.length);
+        console.log('[Students] Sample student:', studentsData.value[0]);
     } catch (error) {
-        console.error('[Students] Failed to load', error);
+        console.error('[Students] Failed to load:', error);
     }
 };
 
@@ -400,15 +405,15 @@ const submitAssignments = async () => {
         student_ids: selectedStudentIds.value,
     };
 
-    console.log('Submitting payload:', payload);
-    console.log('Student IDs types:', selectedStudentIds.value.map(id => typeof id));
-    console.log('Session IDs types:', selectedSessionIds.value.map(id => typeof id));
+    console.log('[SUBMIT] Payload:', payload);
+    console.log('[SUBMIT] Session IDs:', selectedSessionIds.value);
+    console.log('[SUBMIT] Student IDs:', selectedStudentIds.value);
 
     isSubmitting.value = true;
 
     try {
         const response = await axios.post('/assign-students-to-sessions', payload);
-        console.log('Success:', response.data);
+        console.log('[SUBMIT] Success:', response.data);
         
         // Show detailed success message
         if (response.data.data) {
@@ -434,9 +439,10 @@ const submitAssignments = async () => {
             student.selected = false;
         });
     } catch (error: any) {
-        console.error('Failed to save assignments:', error);
-        const errorMessage = error.response?.data?.message || 'Failed to save assignments. Please try again.';
-        alert('Error: ' + errorMessage);
+        console.error('[SUBMIT] Failed:', error);
+        console.error('[SUBMIT] Error response:', error.response?.data);
+        const errorMessage = error.response?.data?.message || error.response?.data?.errors || 'Failed to save assignments. Please try again.';
+        alert('Error: ' + JSON.stringify(errorMessage, null, 2));
     } finally {
         isSubmitting.value = false;
     }

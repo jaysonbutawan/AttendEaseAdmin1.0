@@ -13,11 +13,28 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->command->info('🌱 Starting database seeding...');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Seed in order of dependencies
+        $this->call([
+            CourseSeeder::class,
+            TeacherSeeder::class,
+            StudentSeeder::class,
+            SubjectSeeder::class,
+            RoomSeeder::class,
+            ClassSessionSeeder::class,
+            StudentClassSessionSeeder::class,
         ]);
+
+        // Create admin user if needed
+        if (!User::where('email', 'admin@attendease.edu')->exists()) {
+            User::factory()->create([
+                'name' => 'Admin User',
+                'email' => 'admin@attendease.edu',
+            ]);
+            $this->command->info('✓ Created admin user');
+        }
+
+        $this->command->info('✅ Database seeding completed!');
     }
 }

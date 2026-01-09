@@ -266,10 +266,6 @@ Route::prefix('api')->group(function () {
 
 //assign subjects to students route
 Route::get('/subjects-with-sessions', [SubjectController::class, 'indexWithSessions']);
-Route::post(
-    '/assign-students-to-sessions',
-    [StudentClassSessionController::class, 'store']
-);
 
 //course routes
 Route::post('/api/courses', [CourseController::class, 'store'])->name('courses.store');
@@ -289,6 +285,12 @@ Route::delete('/room_polygon/{id}', [RoomController::class, 'destroy']);
 Route::post('/class_sessions', [ClassSessionController::class, 'store'])->name('class_sessions.store');
 Route::get('/class_sessions', [ClassSessionController::class, 'getReadableSessions']);
 Route::get('/class_sessions/{id}/students', [ClassSessionController::class, 'getSessionStudents']);
+
+// student enrollment routes
+Route::get('/class_sessions/{sessionId}/available-students', [StudentClassSessionController::class, 'getAvailableStudents']);
+Route::post('/assign-students-to-sessions', [StudentClassSessionController::class, 'store']);
+Route::delete('/class_sessions/{sessionId}/students/{studentId}', [StudentClassSessionController::class, 'destroy']);
+
 
 
 // teachers metrics routes
