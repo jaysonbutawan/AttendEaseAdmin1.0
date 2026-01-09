@@ -388,6 +388,8 @@ const selectedStudentIds = computed(() => {
 });
 
 const isSubmitting = ref(false);
+const conflictErrors = ref<any[]>([]);
+const showConflictModal = ref(false);
 
 const submitAssignments = async () => {
     if (selectedSessionIds.value.length === 0) {
@@ -410,6 +412,7 @@ const submitAssignments = async () => {
     console.log('[SUBMIT] Student IDs:', selectedStudentIds.value);
 
     isSubmitting.value = true;
+    conflictErrors.value = [];
 
     try {
         const response = await axios.post('/assign-students-to-sessions', payload);
@@ -441,11 +444,23 @@ const submitAssignments = async () => {
     } catch (error: any) {
         console.error('[SUBMIT] Failed:', error);
         console.error('[SUBMIT] Error response:', error.response?.data);
-        const errorMessage = error.response?.data?.message || error.response?.data?.errors || 'Failed to save assignments. Please try again.';
-        alert('Error: ' + JSON.stringify(errorMessage, null, 2));
+        
+        // Check if it's a schedule conflict error
+        if (error?.response?.status === 422 && error?.response?.data?.conflicts) {
+            conflictErrors.value = error.response.data.conflicts;
+            showConflictModal.value = true;
+        } else {
+            const errorMessage = error.response?.data?.message || error.response?.data?.errors || 'Failed to save assignments. Please try again.';
+            alert('Error: ' + JSON.stringify(errorMessage, null, 2));
+        }
     } finally {
         isSubmitting.value = false;
     }
+};
+
+const closeConflictModal = () => {
+    showConflictModal.value = false;
+    conflictErrors.value = [];
 };
 
 /* =======================
@@ -771,5 +786,153 @@ onMounted(() => {
                 </div>
             </div>
         </div>
+
+        <!-- Schedule Conflict Modal -->
+        <transition name="fade">
+            <div 
+                v-if="showConflictModal"
+                class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                @click="closeConflictModal"
+            >
+                <transition name="slide-up">
+                    <div 
+                        v-if="showConflictModal"
+                        class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col dark:bg-gray-800"
+                        @click.stop
+                    >
+                        <!-- Modal Header -->
+                        <div class="bg-gradient-to-r from-red-600 to-red-700 px-8 py-6 flex items-center justify-between">
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">⚠️ Schedule Conflicts Detected</h2>
+                                <p class="text-red-100 text-sm mt-1">
+                                    {{ conflictErrors.length }} conflict(s) found - Students already have classes at these times
+                                </p>
+                            </div>
+                            <button 
+                                @click="closeConflictModal"
+                                class="p-2 hover:bg-red-500 rounded-lg transition"
+                            >
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Modal Body -->
+                        <div class="overflow-y-auto flex-1 p-8">
+                            <div class="space-y-6">
+                                <div 
+                                    v-for="(conflict, index) in conflictErrors" 
+                                    :key="index"
+                                    class="border-l-4 border-red-500 bg-red-50 p-6 rounded-lg dark:bg-red-900/20 dark:border-red-400"
+                                >
+                                    <div class="flex items-start gap-4">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+                                                <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-bold text-red-900 dark:text-red-200 mb-3">
+                                                {{ conflict.student_name }} ({{ conflict.student_id }})
+                                            </h3>
+                                            
+                                            <div class="grid md:grid-cols-2 gap-4">
+                                                <!-- New Session -->
+                                                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                                                    <div class="text-xs font-semibold text-red-600 dark:text-red-400 mb-2">
+                                                        ⚡ NEW ASSIGNMENT (Attempting)
+                                                    </div>
+                                                    <div class="space-y-1">
+                                                        <div class="font-semibold text-gray-900 dark:text-white">
+                                                            {{ conflict.new_subject }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                            📅 {{ conflict.new_days }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                            🕐 {{ conflict.new_time }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Conflicting Session -->
+                                                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-red-200 dark:border-red-800">
+                                                    <div class="text-xs font-semibold text-orange-600 dark:text-orange-400 mb-2">
+                                                        ⛔ ALREADY ENROLLED
+                                                    </div>
+                                                    <div class="space-y-1">
+                                                        <div class="font-semibold text-gray-900 dark:text-white">
+                                                            {{ conflict.conflicting_subject }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                            📅 {{ conflict.conflicting_days }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                            🕐 {{ conflict.conflicting_time }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                <div class="flex gap-3">
+                                    <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <div>
+                                        <p class="font-semibold text-yellow-900 dark:text-yellow-200">What to do?</p>
+                                        <p class="text-sm text-yellow-800 dark:text-yellow-300 mt-1">
+                                            Please adjust your selections to avoid time conflicts, or manually unenroll students from conflicting sessions before assigning new ones.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="border-t border-gray-200 px-8 py-4 flex justify-end gap-3 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
+                            <button 
+                                @click="closeConflictModal"
+                                class="px-6 py-2.5 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </transition>
     </div>
 </template>
+
+<style scoped>
+/* Fade transition for overlay */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide up transition for modal */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(30px);
+  opacity: 0;
+}
+</style>

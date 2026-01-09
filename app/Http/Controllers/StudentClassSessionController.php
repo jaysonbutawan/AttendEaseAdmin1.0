@@ -54,6 +54,17 @@ class StudentClassSessionController extends Controller
             'student_ids.*' => ['string', 'exists:students,student_id'],
         ]);
 
+        // Check for schedule conflicts
+        $conflicts = $this->checkScheduleConflicts($data['student_ids'], $data['session_ids']);
+        
+        if (!empty($conflicts)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Schedule conflicts detected',
+                'conflicts' => $conflicts,
+            ], 422);
+        }
+
         $enrollmentData = [];
         $newEnrollments = 0;
         $existingEnrollments = 0;
@@ -120,6 +131,103 @@ class StudentClassSessionController extends Controller
                 'enrollments' => $enrollmentData,
             ]
         ]);
+    }
+
+    /**
+     * Check for schedule conflicts when assigning students to sessions
+     */
+    private function checkScheduleConflicts(array $studentIds, array $sessionIds)
+    {
+        $conflicts = [];
+        
+        // Get the sessions being assigned
+        $newSessions = ClassSession::with('subject')
+            ->whereIn('session_id', $sessionIds)
+            ->get()
+            ->keyBy('session_id');
+
+        foreach ($studentIds as $studentId) {
+            // Get student info
+            $student = Student::find($studentId);
+            if (!$student) continue;
+
+            $studentName = trim($student->firstname . ' ' . $student->lastname);
+
+            // Get all sessions the student is currently enrolled in
+            $enrolledSessions = ClassSession::with('subject')
+                ->whereHas('students', function ($query) use ($studentId) {
+                    $query->where('student_class_sessions.student_id', $studentId);
+                })
+                ->get();
+
+            // Check each new session against enrolled sessions
+            foreach ($newSessions as $newSession) {
+                $newDays = is_string($newSession->session_days) 
+                    ? json_decode($newSession->session_days, true) 
+                    : $newSession->session_days;
+                
+                if (!is_array($newDays)) $newDays = [];
+                
+                // Normalize days to lowercase
+                $newDays = array_map('strtolower', $newDays);
+
+                foreach ($enrolledSessions as $enrolledSession) {
+                    // Skip if it's the same session
+                    if ($enrolledSession->session_id === $newSession->session_id) {
+                        continue;
+                    }
+
+                    $enrolledDays = is_string($enrolledSession->session_days)
+                        ? json_decode($enrolledSession->session_days, true)
+                        : $enrolledSession->session_days;
+                    
+                    if (!is_array($enrolledDays)) $enrolledDays = [];
+                    
+                    // Normalize days to lowercase
+                    $enrolledDays = array_map('strtolower', $enrolledDays);
+
+                    // Check if days overlap
+                    $overlappingDays = array_intersect($newDays, $enrolledDays);
+                    
+                    if (!empty($overlappingDays)) {
+                        // Check if times overlap
+                        if ($this->timesOverlap(
+                            $newSession->start_time,
+                            $newSession->end_time,
+                            $enrolledSession->start_time,
+                            $enrolledSession->end_time
+                        )) {
+                            $conflicts[] = [
+                                'student_id' => $studentId,
+                                'student_name' => $studentName,
+                                'new_subject' => $newSession->subject->subject_name ?? 'Unknown',
+                                'new_time' => $newSession->start_time . ' - ' . $newSession->end_time,
+                                'new_days' => ucwords(implode(', ', $newDays)),
+                                'conflicting_subject' => $enrolledSession->subject->subject_name ?? 'Unknown',
+                                'conflicting_time' => $enrolledSession->start_time . ' - ' . $enrolledSession->end_time,
+                                'conflicting_days' => ucwords(implode(', ', $enrolledDays)),
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        return $conflicts;
+    }
+
+    /**
+     * Check if two time ranges overlap
+     */
+    private function timesOverlap($start1, $end1, $start2, $end2)
+    {
+        $start1 = strtotime($start1);
+        $end1 = strtotime($end1);
+        $start2 = strtotime($start2);
+        $end2 = strtotime($end2);
+
+        // Two ranges overlap if one starts before the other ends
+        return ($start1 < $end2) && ($end1 > $start2);
     }
 
     /**
