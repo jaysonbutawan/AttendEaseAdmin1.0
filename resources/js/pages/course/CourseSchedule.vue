@@ -69,12 +69,14 @@ const roomOptions = computed(() =>
     })),
 );
 
-const DAYS_OF_WEEK: string[] = [
-    'Monday',
-    'Tuesday',
-    'Wednesday',
-    'Thursday',
-    'Friday',
+const DAYS_OF_WEEK: { name: string; short: string }[] = [
+    { name: 'Monday', short: 'Mon' },
+    { name: 'Tuesday', short: 'Tue' },
+    { name: 'Wednesday', short: 'Wed' },
+    { name: 'Thursday', short: 'Thu' },
+    { name: 'Friday', short: 'Fri' },
+    { name: 'Saturday', short: 'Sat' },
+    { name: 'Sunday', short: 'Sun' },
 ];
 
 const Button = defineComponent({
@@ -518,36 +520,41 @@ const handleCancel = () => {
             <!-- Row 2: 3 columns -->
             <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <!-- Day of Week -->
-                <div class="space-y-2">
-                    <label
-                        class="flex items-center text-sm font-semibold text-gray-700 dark:text-gray-300"
-                    >
-                        <Calendar class="mr-2 h-4 w-4 text-blue-500" />
-                        Day of the Week (select up to 3)
-                    </label>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <label
-                            v-for="day in DAYS_OF_WEEK"
-                            :key="day"
-                            class="flex items-center gap-2 rounded border bg-white px-3 py-2 text-sm hover:bg-gray-50"
-                        >
-                            <input
-                                type="checkbox"
-                                :checked="form.dayOfWeek.includes(day)"
-                                @change="toggleDay(day)"
-                            />
-
-                            <span>{{ day }}</span>
+               <div class="space-y-3 lg:col-span-3">
+                        <label class="flex items-center text-sm font-semibold text-gray-700">
+                            <Calendar class="mr-2 h-4 w-4 text-blue-500" />
+                            Days of the Week
+                            <span class="ml-1 text-red-500">*</span>
+                            <span class="ml-2 text-xs text-gray-500 font-normal">(Select up to 3 days)</span>
                         </label>
+
+                        <div class="flex flex-wrap gap-3">
+                            <button
+                                v-for="day in DAYS_OF_WEEK"
+                                :key="day.name"
+                                type="button"
+                                @click="toggleDay(day.name)"
+                                :class="[
+                                    'relative px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300 overflow-hidden',
+                                    form.dayOfWeek.includes(day.name)
+                                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105'
+                                        : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                                ]"
+                            >
+                                <span class="relative z-10">{{ day.short }}</span>
+                                <div 
+                                    v-if="form.dayOfWeek.includes(day.name)"
+                                    class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+                                ></div>
+                            </button>
+                        </div>
+                        <Transition name="fade">
+                            <p v-if="errors.dayOfWeek" class="text-sm text-red-600 flex items-center gap-1">
+                                <AlertCircle class="h-3 w-3" />
+                                {{ errors.dayOfWeek }}
+                            </p>
+                        </Transition>
                     </div>
-                    <p
-                        v-if="errors.dayOfWeek"
-                        class="mt-2 text-sm text-red-600"
-                    >
-                        {{ errors.dayOfWeek }}
-                    </p>
-                </div>
 
                 <!-- Start Time -->
                 <div class="space-y-2">
