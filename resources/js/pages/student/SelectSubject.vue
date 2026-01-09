@@ -376,7 +376,13 @@ const selectedSessionIds = computed(() => {
 });
 
 const selectedStudentIds = computed(() => {
-    return studentsData.value.filter((s) => s.selected).map((s) => parseInt(s.id));
+    return studentsData.value
+        .filter((s) => s.selected)
+        .map((s) => {
+            const id = parseInt(s.id, 10);
+            return id;
+        })
+        .filter((id) => !isNaN(id) && id > 0);
 });
 
 const isSubmitting = ref(false);
@@ -398,6 +404,8 @@ const submitAssignments = async () => {
     };
 
     console.log('Submitting payload:', payload);
+    console.log('Student IDs types:', selectedStudentIds.value.map(id => typeof id));
+    console.log('Session IDs types:', selectedSessionIds.value.map(id => typeof id));
 
     isSubmitting.value = true;
 
