@@ -58,7 +58,7 @@ const selectedUsers = ref<Array<string | number>>([]);
 
 // Handle search
 const handleSearch = () => {
-    router.get('/management/users', {
+    router.get('/usermanagement', {
         search: searchQuery.value,
         role: selectedRole.value,
 		status: selectedStatus.value,
@@ -79,7 +79,7 @@ const clearFilters = () => {
     searchQuery.value = '';
     selectedRole.value = '';
 	selectedStatus.value = '';
-    router.get('/management/users', {}, {
+    router.get('/usermanagement', {}, {
         preserveState: true,
         preserveScroll: true,
     });
@@ -87,7 +87,7 @@ const clearFilters = () => {
 
 // Pagination
 const goToPage = (page: number) => {
-    router.get('/management/users', {
+    router.get('/usermanagement', {
         page,
         search: searchQuery.value,
         role: selectedRole.value,

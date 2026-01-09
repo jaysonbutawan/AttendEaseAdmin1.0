@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClassSessionController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\SubjectController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\RoomController;
 use App\Models\User;
 use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\ClassSession;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManagementUserController;
@@ -61,54 +63,148 @@ Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');
 
-// use App\Http\Controllers\ClassSessionController
+Route::get('/sessions', function () {
+    $sessions = ClassSession::with(['subject', 'teacher', 'room', 'students'])
+        ->get()
+        ->map(function ($session) {
+            // Count attendance statuses
+            $attendanceStats = DB::table('attendance')
+                ->where('session_id', $session->session_id)
+                ->select(
+                    DB::raw('SUM(CASE WHEN status = "present" THEN 1 ELSE 0 END) as present'),
+                    DB::raw('SUM(CASE WHEN status = "late" THEN 1 ELSE 0 END) as late'),
+                    DB::raw('SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) as absent'),
+                    DB::raw('SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending')
+                )
+                ->first();
 
-// Route::get('/sessions', [ClassSessionController::class, 'index'])
-//     ->middleware(['auth', 'verified'])
-//     ->name('sessions');
+            $teacherName = $session->teacher 
+                ? trim($session->teacher->firstname . ' ' . $session->teacher->lastname)
+                : 'N/A';
+
+            return [
+                'id' => $session->session_id,
+                'subject' => $session->subject?->subject_name ?? 'N/A',
+                'code' => 'S-' . str_pad($session->session_id, 4, '0', STR_PAD_LEFT),
+                'teacher' => $teacherName,
+                'room' => $session->room?->room_name ?? 'N/A',
+                'status' => $session->session_status ?? 'pending',
+                'startTime' => $session->start_time ? \Carbon\Carbon::parse($session->start_time)->format('g:i A') : null,
+                'durationText' => $session->start_time && $session->end_time 
+                    ? \Carbon\Carbon::parse($session->start_time)->diffForHumans(\Carbon\Carbon::parse($session->end_time), true)
+                    : null,
+                'present' => (int) ($attendanceStats->present ?? 0),
+                'late' => (int) ($attendanceStats->late ?? 0),
+                'absent' => (int) ($attendanceStats->absent ?? 0),
+                'pending' => (int) ($attendanceStats->pending ?? 0),
+                'isLive' => $session->session_status === 'active',
+            ];
+        });
+
+    $activeCount = $sessions->where('status', 'active')->count();
+    $studentsTracked = DB::table('attendance')->distinct('student_id')->count();
+    
+    // Calculate average attendance rate
+    $totalAttendance = DB::table('attendance')->count();
+    $presentCount = DB::table('attendance')->where('status', 'present')->count();
+    $avgAttendanceRate = $totalAttendance > 0 ? round(($presentCount / $totalAttendance) * 100, 1) : 0;
+    
+    $flaggedIssues = DB::table('attendance')->where('status', 'absent')->count();
+
+    return Inertia::render('session/Session', [
+        'activeCount' => $activeCount,
+        'studentsTracked' => $studentsTracked,
+        'avgAttendanceRate' => $avgAttendanceRate,
+        'flaggedIssues' => $flaggedIssues,
+        'sessions' => $sessions,
+    ]);
+})->name('sessions');
 
 Route::get('/usermanagement', function () {
     $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];
+    $searchTerm = request('search');
+    $roleFilter = request('role');
+    $statusFilter = request('status');
 
-    $teachers = Teacher::query()->get()->map(function ($t) use ($palette) {
-        $name = trim(($t->firstname ?? '') . ' ' . ($t->lastname ?? '')) ?: ($t->email ?? 'Teacher');
-        $initials = collect(explode(' ', $name))
-            ->filter()
-            ->map(fn($part) => strtoupper(substr($part, 0, 1)))
-            ->take(2)
-            ->implode('') ?: 'T';
-        $color = $palette[crc32($t->teacher_id) % count($palette)];
-        return [
-            'id' => $t->teacher_id,
-            'name' => $name,
-            'email' => $t->email,
-            'role' => 'teacher',
-            'assigned_to' => null,
-            'last_activity' => optional($t->created_at)->toIso8601String(),
-            'initials' => $initials,
-            'avatar_color' => $color,
-        ];
-    });
+    // Query teachers with filters
+    $teachersQuery = Teacher::query();
+    
+    if ($searchTerm) {
+        $teachersQuery->where(function ($q) use ($searchTerm) {
+            $q->where('teacher_id', 'like', '%' . $searchTerm . '%')
+              ->orWhere('email', 'like', '%' . $searchTerm . '%')
+              ->orWhere('firstname', 'like', '%' . $searchTerm . '%')
+              ->orWhere('lastname', 'like', '%' . $searchTerm . '%');
+        });
+    }
+    
+    if ($statusFilter) {
+        $teachersQuery->where('approval_status', $statusFilter);
+    }
+    
+    $teachers = (!$roleFilter || $roleFilter === 'teacher') 
+        ? $teachersQuery->get()->map(function ($t) use ($palette) {
+            $name = trim(($t->firstname ?? '') . ' ' . ($t->lastname ?? '')) ?: ($t->email ?? 'Teacher');
+            $initials = collect(explode(' ', $name))
+                ->filter()
+                ->map(fn($part) => strtoupper(substr($part, 0, 1)))
+                ->take(2)
+                ->implode('') ?: 'T';
+            $color = $palette[crc32($t->teacher_id) % count($palette)];
+            return [
+                'id' => $t->teacher_id,
+                'name' => $name,
+                'email' => $t->email,
+                'role' => 'teacher',
+                'assigned_to' => null,
+                'last_activity' => optional($t->created_at)->toIso8601String(),
+                'initials' => $initials,
+                'avatar_color' => $color,
+                'approval_status' => $t->approval_status ?? 'pending',
+                'approved_at' => $t->approved_at,
+            ];
+        })
+        : collect([]);
 
-    $students = Student::query()->get()->map(function ($s) use ($palette) {
-        $name = trim(($s->firstname ?? '') . ' ' . ($s->lastname ?? '')) ?: ($s->email ?? 'Student');
-        $initials = collect(explode(' ', $name))
-            ->filter()
-            ->map(fn($part) => strtoupper(substr($part, 0, 1)))
-            ->take(2)
-            ->implode('') ?: 'S';
-        $color = $palette[crc32($s->student_id) % count($palette)];
-        return [
-            'id' => $s->student_id,
-            'name' => $name,
-            'email' => $s->email,
-            'role' => 'student',
-            'assigned_to' => $s->course_id ?? null,
-            'last_activity' => optional($s->created_at)->toIso8601String(),
-            'initials' => $initials,
-            'avatar_color' => $color,
-        ];
-    });
+    // Query students with filters
+    $studentsQuery = Student::query();
+    
+    if ($searchTerm) {
+        $studentsQuery->where(function ($q) use ($searchTerm) {
+            $q->where('student_id', 'like', '%' . $searchTerm . '%')
+              ->orWhere('email', 'like', '%' . $searchTerm . '%')
+              ->orWhere('firstname', 'like', '%' . $searchTerm . '%')
+              ->orWhere('lastname', 'like', '%' . $searchTerm . '%');
+        });
+    }
+    
+    if ($statusFilter) {
+        $studentsQuery->where('approval_status', $statusFilter);
+    }
+    
+    $students = (!$roleFilter || $roleFilter === 'student')
+        ? $studentsQuery->get()->map(function ($s) use ($palette) {
+            $name = trim(($s->firstname ?? '') . ' ' . ($s->lastname ?? '')) ?: ($s->email ?? 'Student');
+            $initials = collect(explode(' ', $name))
+                ->filter()
+                ->map(fn($part) => strtoupper(substr($part, 0, 1)))
+                ->take(2)
+                ->implode('') ?: 'S';
+            $color = $palette[crc32($s->student_id) % count($palette)];
+            return [
+                'id' => $s->student_id,
+                'name' => $name,
+                'email' => $s->email,
+                'role' => 'student',
+                'assigned_to' => $s->course_id ?? null,
+                'last_activity' => optional($s->created_at)->toIso8601String(),
+                'initials' => $initials,
+                'avatar_color' => $color,
+                'approval_status' => $s->approval_status ?? 'pending',
+                'approved_at' => $s->approved_at,
+            ];
+        })
+        : collect([]);
 
     $combined = $teachers->merge($students)->values();
 
@@ -134,6 +230,7 @@ Route::get('/usermanagement', function () {
         'filters' => [
             'search' => request('search'),
             'role' => request('role'),
+            'status' => request('status'),
             'view' => request('view', 'cards'),
         ],
     ]);
