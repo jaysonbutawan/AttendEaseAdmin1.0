@@ -63,7 +63,6 @@ export class RoomManager {
     async deleteRoom(roomId: number) {
         await this.apiService.deleteRoom(roomId);
 
-        // Remove polygon if polygon manager is available
         if (this.polygonManager) {
             this.polygonManager.removePolygon(roomId);
         }
