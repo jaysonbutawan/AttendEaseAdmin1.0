@@ -7,71 +7,13 @@ import { Filter, Grid3x3, List, Search, Users } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 const PRIMARY_COLOR_RGB = '79, 57, 246';
 
-const teachersData: Teacher[] = [
-    {
-        id: 1,
-        name: 'Dr. Helena Vance',
-        email: 'helena.vance@schooldomain.edu',
-        department: 'Science',
-        assignedSubjects: [
-            { id: 101, name: 'Physics' },
-            { id: 102, name: 'Chemistry' },
-            { id: 103, name: 'Advanced Science' },
-        ],
-    },
-    {
-        id: 2,
-        name: 'Lia Torres',
-        email: 'lia.torres@schooldomain.edu',
-        department: 'Mathematics',
-        assignedSubjects: [
-            { id: 201, name: 'Algebra' },
-            { id: 202, name: 'Geometry' },
-            { id: 203, name: 'Calculus' },
-        ],
-    },
-    {
-        id: 3,
-        name: 'John Doe',
-        email: 'john.doe@schooldomain.edu',
-        department: 'English',
-        assignedSubjects: [
-            { id: 301, name: 'Literature' },
-            { id: 302, name: 'Writing' },
-            { id: 303, name: 'Creative Writing' },
-        ],
-    },
-    {
-        id: 4,
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@schooldomain.edu',
-        department: 'Science',
-        assignedSubjects: [
-            { id: 401, name: 'Biology' },
-            { id: 402, name: 'Environmental Science' },
-        ],
-    },
-    {
-        id: 5,
-        name: 'Michael Chen',
-        email: 'michael.chen@schooldomain.edu',
-        department: 'Computer Science',
-        assignedSubjects: [
-            { id: 501, name: 'Programming' },
-            { id: 502, name: 'Data Structures' },
-        ],
-    },
-    {
-        id: 6,
-        name: 'Emma Wilson',
-        email: 'emma.wilson@schooldomain.edu',
-        department: 'Mathematics',
-        assignedSubjects: [
-            { id: 601, name: 'Statistics' },
-            { id: 602, name: 'Trigonometry' },
-        ],
-    },
-];
+// Receive teachers data from backend
+interface Props {
+    teachers: Teacher[];
+}
+
+const props = defineProps<Props>();
+const teachersData = ref<Teacher[]>(props.teachers);
 
 const search = ref('');
 const viewMode = ref<'table' | 'cards'>('table');
@@ -80,12 +22,12 @@ const showFilterDropdown = ref(false);
 
 // Get unique departments
 const departments = computed(() => {
-    const depts = new Set(teachersData.map((t) => t.department));
+    const depts = new Set(teachersData.value.map((t) => t.department));
     return ['all', ...Array.from(depts)];
 });
 
 const filteredTeachers = computed(() => {
-    let result = teachersData;
+    let result = teachersData.value;
 
     // Filter by search term
     if (search.value.trim()) {
