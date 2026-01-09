@@ -128,19 +128,37 @@ class TeacherController extends Controller
             'email' => 'nullable|email',
             'contact_number' => 'nullable|string|max:20',
             'status' => 'nullable|string|max:50',
+            'approval_status' => 'nullable|in:pending,approved,rejected',
         ]);
 
         $teacher = Teacher::where('teacher_id', $id)->first();
         if (!$teacher) {
-            return response()->json(['message' => 'Teacher not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher not found'
+            ], 404);
         }
 
         foreach ($data as $key => $value) {
-            $teacher->{$key} = $value;
+            if ($value !== null) {
+                $teacher->{$key} = $value;
+            }
         }
         $teacher->save();
 
-        return response()->json(['message' => 'Teacher updated', 'teacher_id' => $teacher->teacher_id]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Teacher updated successfully',
+            'teacher' => [
+                'teacher_id' => $teacher->teacher_id,
+                'firstname' => $teacher->firstname,
+                'lastname' => $teacher->lastname,
+                'email' => $teacher->email,
+                'contact_number' => $teacher->contact_number,
+                'status' => $teacher->status,
+                'approval_status' => $teacher->approval_status,
+            ]
+        ]);
     }
 
     /**
@@ -150,10 +168,19 @@ class TeacherController extends Controller
     {
         $teacher = Teacher::where('teacher_id', $id)->first();
         if (!$teacher) {
-            return response()->json(['message' => 'Teacher not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Teacher not found'
+            ], 404);
         }
+        
         $teacher->delete();
-        return response()->json(['message' => 'Teacher deleted', 'teacher_id' => $id]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Teacher deleted successfully',
+            'teacher_id' => $id
+        ]);
     }
 
     /**
