@@ -34,7 +34,15 @@ Route::get('/students', function () {
 })->name('students');
 
 Route::get('/teachers', function () {
-    return Inertia::render('teacher/Teacher');
+    $teachers = Teacher::with(['classSessions.subject'])
+        ->get()
+        ->map(function ($teacher) {
+            return $teacher->getProfileData();
+        });
+
+    return Inertia::render('teacher/Teacher', [
+        'teachers' => $teachers,
+    ]);
 })->name('teachers');
 
 Route::get('/rooms', function () {

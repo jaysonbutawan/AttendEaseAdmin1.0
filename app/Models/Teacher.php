@@ -62,7 +62,7 @@ class Teacher extends Model
 
     /**
      * Get teacher profile data with assigned subjects
-     * Returns: name, email, department (if exists), assigned subjects
+     * Returns: name, email, department (derived from subjects), assigned subjects
      */
     public function getProfileData()
     {
@@ -70,6 +70,7 @@ class Teacher extends Model
             ->with('subject')
             ->get()
             ->pluck('subject')
+            ->filter()
             ->unique('subject_id')
             ->values()
             ->map(function ($subject) {
@@ -79,12 +80,45 @@ class Teacher extends Model
                 ];
             });
 
+        // Derive department from subjects or mark as 'Not Assigned'
+        $department = 'Not Assigned';
+        if ($subjects->isNotEmpty()) {
+            // Get the first subject name as department indicator
+            $firstSubject = $subjects->first()['name'];
+            // You can add logic here to map subjects to departments
+            // For now, we'll use a simple mapping
+            $departmentMap = [
+                'Physics' => 'Science',
+                'Chemistry' => 'Science',
+                'Biology' => 'Science',
+                'Advanced Science' => 'Science',
+                'Environmental Science' => 'Science',
+                'Algebra' => 'Mathematics',
+                'Geometry' => 'Mathematics',
+                'Calculus' => 'Mathematics',
+                'Statistics' => 'Mathematics',
+                'Trigonometry' => 'Mathematics',
+                'Literature' => 'English',
+                'Writing' => 'English',
+                'Creative Writing' => 'English',
+                'Programming' => 'Computer Science',
+                'Data Structures' => 'Computer Science',
+            ];
+            
+            foreach ($subjects as $subject) {
+                if (isset($departmentMap[$subject['name']])) {
+                    $department = $departmentMap[$subject['name']];
+                    break;
+                }
+            }
+        }
+
         return [
             'id' => $this->teacher_id,
             'name' => trim($this->firstname . ' ' . $this->lastname),
             'email' => $this->email,
-            'department' => $this->department ?? 'Not Assigned', // Add department field if it exists
-            'assignedSubjects' => $subjects,
+            'department' => $department,
+            'assignedSubjects' => $subjects->toArray(),
         ];
     }
 }
