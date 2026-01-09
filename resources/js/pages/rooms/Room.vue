@@ -1,51 +1,42 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { loadGoogleMaps } from '@/services/googleMaps';
-import axios from 'axios';
 import { onMounted, ref } from 'vue';
+import { useRoomState } from '@/composables/useRoomState';
+import { RoomManager } from '@/services/RoomManager';
+import { MapInitializer } from '@/services/MapInitializer';
 
-interface Room {
-    id: number;
-    name: string;
-    capacity: string | number;
-    color: string;
-}
+// State Management
+const roomState = useRoomState();
+const {
+    selectedArea,
+    hoveredRoomId,
+    hoveredRoomName,
+    isEditMode,
+    editingRoomId,
+    showRoomPrompt,
+    isSaving,
+    newRoom,
+    addRoom,
+    updateRoomInList,
+    removeRoomFromList,
+    setHoveredRoom,
+    setEditMode,
+    setNewRoom,
+    resetNewRoom,
+} = roomState;
 
-interface Area {
-    name: string;
-    polygonColor: string;
-    rooms: Room[];
-}
+// Service Instances
+const mapInitializer = new MapInitializer();
+let roomManager: RoomManager;
+let polygonManager: any = null;
 
-const selectedArea = ref<Area>({
-    name: 'East Wing',
-    polygonColor: '#3b82f6',
-    rooms: [],
-});
+const mapEl = ref<HTMLDivElement | null>(null);
 
-const isEditMode = ref(false);
-const editingRoomId = ref<number | null>(null);
+// ============ Room Management Functions ============
 
-const editingRoom = ref<Room>({ ...selectedArea.value.rooms[0] });
-const saveChanges = () =>
-    console.log('Saving room details:', editingRoom.value);
-
-const showRoomPrompt = ref(false);
-const isSaving = ref(false);
-
-const newRoom = ref({
-    name: '',
-    capacity: 0 as number | string,
-    color: 'blue',
-});
-
-const editRoom = (room: Room) => {
-    isEditMode.value = true;
-    editingRoomId.value = room.id;
-
-    newRoom.value.name = room.name;
-    newRoom.value.capacity = room.capacity;
-    newRoom.value.color = room.color;
+const editRoom = (room: any) => {
+    setEditMode(room.id, true);
+    setNewRoom(room.name, room.capacity, room.color);
     showRoomPrompt.value = true;
 };
 
@@ -58,40 +49,20 @@ const updateRoom = async () => {
 
     isSaving.value = true;
     try {
-        const payload = {
-            room_name: newRoom.value.name,
+        const updatedRoom = await roomManager.updateRoom(editingRoomId.value, {
+            name: newRoom.value.name,
             capacity: newRoom.value.capacity,
             color: newRoom.value.color,
-        };
+        });
 
-        const res = await axios.put(
-            `/room_polygon/${editingRoomId.value}`,
-            payload,
-        );
-
-        // update list
-        const idx = selectedArea.value.rooms.findIndex(
-            (r) => r.id === editingRoomId.value,
-        );
-        if (idx !== -1) {
-            selectedArea.value.rooms[idx] = {
-                ...selectedArea.value.rooms[idx],
-                name: res.data.room.room_name,
-                capacity: res.data.room.capacity,
-                color: res.data.room.color,
-            };
-        }
-        const poly = roomPolygons[editingRoomId.value];
-        if (poly) {
-            poly.setOptions({
-                fillColor: res.data.room.color,
-                strokeColor: res.data.room.color,
-            });
-        }
+        updateRoomInList(editingRoomId.value, {
+            name: updatedRoom.name,
+            capacity: updatedRoom.capacity,
+            color: updatedRoom.color,
+        });
 
         showRoomPrompt.value = false;
-        isEditMode.value = false;
-        editingRoomId.value = null;
+        setEditMode(null, false);
     } catch (err) {
         console.error(err);
         alert('Failed to update room.');
@@ -105,21 +76,12 @@ const deleteRoom = async (roomId: number) => {
     if (!ok) return;
 
     try {
-        await axios.delete(`/room_polygon/${roomId}`);
-
-        selectedArea.value.rooms = selectedArea.value.rooms.filter(
-            (r) => r.id !== roomId,
-        );
-
-        if (roomPolygons[roomId]) {
-            roomPolygons[roomId].setMap(null);
-            delete roomPolygons[roomId];
-        }
+        await roomManager.deleteRoom(roomId);
+        removeRoomFromList(roomId);
 
         if (editingRoomId.value === roomId) {
             showRoomPrompt.value = false;
-            isEditMode.value = false;
-            editingRoomId.value = null;
+            setEditMode(null, false);
         }
     } catch (err) {
         console.error(err);
@@ -127,93 +89,64 @@ const deleteRoom = async (roomId: number) => {
     }
 };
 
-const mapEl = ref<HTMLDivElement | null>(null);
-let map: google.maps.Map | null = null;
-let drawingManager: google.maps.drawing.DrawingManager | null = null;
-let activePolygon: google.maps.Polygon | null = null;
-
-let googleRef: any = null;
-const roomPolygons: Record<number, google.maps.Polygon> = {};
+// ============ Polygon Management Functions ============
 
 const enableDrawPolygon = () => {
-    if (!drawingManager) return;
-    drawingManager.setDrawingMode(google.maps.drawing.OverlayType.POLYGON);
+    polygonManager?.enableDrawMode();
 };
 
 const enableMoveMap = () => {
-    if (!drawingManager) return;
-    drawingManager.setDrawingMode(null);
+    polygonManager?.disableDrawMode();
 };
 
 const clearPolygon = () => {
-    if (activePolygon) {
-        activePolygon.setMap(null);
-        activePolygon = null;
-    }
-};
-
-const getActivePolygonPath = () => {
-    if (!activePolygon) return null;
-
-    return activePolygon
-        .getPath()
-        .getArray()
-        .map((p, idx) => ({
-            latitude: p.lat(),
-            longitude: p.lng(),
-            point_order: idx + 1,
-        }));
+    polygonManager?.clearActivePolygon();
 };
 
 const openRoomPrompt = () => {
-    newRoom.value.name = '';
+    setNewRoom('', 0, '#3b82f6');
     showRoomPrompt.value = true;
 };
 
 const cancelRoomPrompt = (removePolygon = true) => {
     showRoomPrompt.value = false;
+    setEditMode(null, false);
     if (removePolygon) clearPolygon();
 };
 
 const saveRoomWithPolygon = async () => {
-    const polygon = getActivePolygonPath();
-    if (!polygon || polygon.length < 3) {
-        alert('Draw a valid polygon first (at least 3 points).');
+    if (isEditMode.value) {
+        await updateRoom();
         return;
     }
-    if (!newRoom.value.name.trim()) {
-        alert('Enter room name first.');
+
+    const polygon = polygonManager?.getActivePolygonPath();
+    const validation = roomManager.validateRoomData(newRoom.value.name, polygon);
+
+    if (!validation.valid) {
+        alert(validation.error);
         return;
     }
 
     isSaving.value = true;
     try {
-        const payload = {
-            room_name: newRoom.value.name,
-            capacity: newRoom.value.capacity,
-            color: newRoom.value.color,
+        const result = await roomManager.createRoom(
+            {
+                name: newRoom.value.name,
+                capacity: newRoom.value.capacity,
+                color: newRoom.value.color,
+            },
             polygon,
-        };
+        );
 
-        const res = await axios.post('/room_polygon', payload);
+        addRoom(result.room);
 
-        selectedArea.value.rooms.push({
-            id: res.data.room.room_id,
-            name: res.data.room.room_name,
-            capacity: res.data.room.capacity ?? newRoom.value.capacity,
-            color: res.data.room.color ?? newRoom.value.color,
-        });
-
-        drawRoomPolygon({
-            room_id: res.data.room.room_id,
-            room_name: res.data.room.room_name,
-            color: res.data.room.color || newRoom.value.color,
-            polygon,
-        });
+        // Draw the new room on the map
+        polygonManager?.drawRoomPolygon(result.apiRoom, handleRoomHover, handleRoomHoverEnd, handleRoomClick);
 
         showRoomPrompt.value = false;
         clearPolygon();
-        newRoom.value.name = '';
+        resetNewRoom();
     } catch (err) {
         console.error(err);
         alert('Failed to save. Check API / validation.');
@@ -222,315 +155,306 @@ const saveRoomWithPolygon = async () => {
     }
 };
 
-const randomHexColor = () => {
-    const letters = '0123456789ABCDEF';
-    let c = '#';
-    for (let i = 0; i < 6; i++) c += letters[Math.floor(Math.random() * 16)];
-    return c;
+// ============ Event Handlers ============
+
+const handleRoomHover = (roomId: number, roomName: string) => {
+    setHoveredRoom(roomId, roomName);
 };
 
-const loadRoomsAndDraw = async () => {
-    try {
-        const res = await axios.get('/room_polygon');
-        const rooms = res.data.rooms ?? [];
-
-        selectedArea.value.rooms = rooms.map((r: any) => ({
-            id: r.room_id,
-            name: r.room_name,
-            type: 'Room',
-            capacity: 'N/A',
-            color: r.color ?? 'blue',
-        }));
-
-        rooms.forEach((r: any) => drawRoomPolygon(r));
-    } catch (err) {
-        console.error('loadRoomsAndDraw failed:', err);
-    }
+const handleRoomHoverEnd = () => {
+    setHoveredRoom(null, '');
 };
 
-const drawRoomPolygon = (room: any) => {
-    if (!map || !googleRef) return;
-    if (!room.polygon || room.polygon.length < 3) return;
-
-    const path = room.polygon.map((p: any) => ({
-        lat: Number(p.latitude),
-        lng: Number(p.longitude),
-    }));
-
-    const color =
-        room.color && String(room.color).startsWith('#')
-            ? room.color
-            : randomHexColor();
-
-    if (roomPolygons[room.room_id]) {
-        roomPolygons[room.room_id].setMap(null);
-    }
-
-    const poly = new googleRef.maps.Polygon({
-        paths: path,
-        fillColor: color,
-        fillOpacity: 0.35,
-        strokeColor: color,
-        strokeWeight: 2,
-        clickable: true,
-    });
-
-    poly.setMap(map);
-    roomPolygons[room.room_id] = poly;
-
-    poly.addListener('click', () => alert(room.room_name));
+const handleRoomClick = (room: any) => {
+    const foundRoom = selectedArea.value.rooms.find((r) => r.id === room.room_id);
+    if (foundRoom) editRoom(foundRoom);
 };
+
+// ============ Initialization ============
 
 onMounted(async () => {
-    const google = await loadGoogleMaps();
-    googleRef = google;
+    try {
+        // Initialize Map and Polygon Manager
+        const { polygonManager: pm, googleRef } = await mapInitializer.initialize(
+            mapEl.value!,
+            selectedArea.value.polygonColor,
+        );
 
-    map = new google.maps.Map(mapEl.value!, {
-        center: {     lat: 7.457697110755575,
-        lng: 125.7923471118688},
-        zoom: 18,
-        mapTypeId: 'satellite',
-        disableDefaultUI: false,
-    });
+        polygonManager = pm;
+        roomManager = new RoomManager(polygonManager);
 
-    drawingManager = new google.maps.drawing.DrawingManager({
-        drawingMode: null,
-        drawingControl: false,
-        polygonOptions: {
-            fillColor: selectedArea.value.polygonColor,
-            fillOpacity: 0.35,
-            strokeColor: selectedArea.value.polygonColor,
-            strokeWeight: 2,
-            editable: true,
-            draggable: false,
-        },
-    });
+        // Load rooms from API and draw them
+        await roomManager.loadAndDrawRooms(
+            (rooms) => {
+                selectedArea.value.rooms = rooms;
+            },
+            (room) => {
+                polygonManager.drawRoomPolygon(
+                    room,
+                    handleRoomHover,
+                    handleRoomHoverEnd,
+                    handleRoomClick,
+                );
+            },
+        );
 
-    drawingManager.setMap(map);
-
-    await loadRoomsAndDraw();
-
-    google.maps.event.addListener(
-        drawingManager,
-        'overlaycomplete',
-        (e: any) => {
-            if (e.type !== google.maps.drawing.OverlayType.POLYGON) return;
-            if (activePolygon) activePolygon.setMap(null);
-
-            activePolygon = e.overlay as google.maps.Polygon;
-            drawingManager?.setDrawingMode(null);
-            openRoomPrompt();
-        },
-    );
+        // Listen for polygon drawing completion
+        googleRef.maps.event.addListener(
+            mapInitializer.getPolygonManager()?.['drawingManager'],
+            'overlaycomplete',
+            (e: any) => {
+                if (e.type !== googleRef.maps.drawing.OverlayType.POLYGON) return;
+                polygonManager?.setActivePolygon(e.overlay);
+                polygonManager?.disableDrawMode();
+                openRoomPrompt();
+            },
+        );
+    } catch (err) {
+        console.error('Failed to initialize map:', err);
+    }
 });
 </script>
 
 <template>
     <AppLayout>
-        <div class="flex h-screen flex-col bg-gray-100 font-sans text-gray-700">
-            <div
-                class="flex items-center gap-4 border-b bg-white p-2 shadow-sm"
-            >
-                <button
-                    @click="enableDrawPolygon"
-                    class="flex flex-col items-center rounded px-3 py-1 hover:bg-gray-100"
-                >
-                    <span class="text-xs">Draw Polygon</span>
-                </button>
-
-                <button
-                    @click="enableMoveMap"
-                    class="flex flex-col items-center rounded px-3 py-1 hover:bg-gray-100"
-                >
-                    <span class="text-xs">Move Map</span>
-                </button>
-
-                <button
-                    @click="saveRoomWithPolygon"
-                    class="rounded border border-blue-600 px-4 py-1 text-xs font-semibold text-blue-600"
-                >
-                    Save All
-                </button>
-            </div>
-
-            <div class="flex flex-1 overflow-hidden">
-                <div class="relative flex-1 overflow-hidden bg-white p-8">
-                    <div
-                        class="pointer-events-none absolute inset-0 opacity-10"
-                        style="
-                            background-image: radial-gradient(
-                                #000 1px,
-                                transparent 1px
-                            );
-                            background-size: 20px 20px;
-                        "
-                    ></div>
-
-                    <div
-                        class="relative h-full w-full overflow-hidden rounded-lg border-2 border-dashed border-gray-200"
-                    >
-                        <div ref="mapEl" class="h-full w-full"></div>
+        <div class="flex h-screen flex-col bg-gradient-to-br from-gray-50 to-gray-100 font-sans text-gray-700">
+            <!-- Modern Toolbar -->
+            <div class="flex items-center justify-between gap-4 border-b bg-white/80 backdrop-blur-lg p-4 shadow-sm">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-gray-900">Room Mapper</h1>
+                        <p class="text-xs text-gray-500">Interactive floor planning</p>
                     </div>
                 </div>
 
-                <div
-                    class="flex w-80 flex-col gap-4 overflow-y-auto border-l bg-gray-50 p-4"
-                >
-                    <div
-                        class="flex-1 rounded-xl border bg-white p-4 shadow-sm"
+                <div class="flex items-center gap-2">
+                    <button
+                        @click="enableDrawPolygon"
+                        class="group relative flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2.5 text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105"
                     >
-                        <div class="space-y-3 bg-amber-100 rounded-lg">
-                            <div
-                                v-for="room in selectedArea.rooms"
-                                :key="room.id"
-                                class="flex items-center justify-between rounded-lg border border-transparent p-2 hover:border-gray-200 hover:bg-gray-50"
-                            >
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        :class="`flex h-8 w-8 items-center justify-center rounded-full text-white bg-${room.color}-500 text-xs`"
-                                    >
-                                        {{ room.name[0] }}
-                                    </div>
-                                    <div>
-                                        <p
-                                            class="text-sm leading-tight font-bold"
-                                        >
-                                            {{ room.name }}
-                                        </p>
-                                    </div>
+                        <svg class="w-4 h-4 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Draw Room</span>
+                    </button>
+
+                    <button
+                        @click="enableMoveMap"
+                        class="group relative flex items-center gap-2 rounded-xl bg-white border-2 border-gray-200 px-4 py-2.5 text-gray-700 transition-all duration-300 hover:border-indigo-300 hover:bg-indigo-50 hover:scale-105"
+                    >
+                        <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"></path>
+                        </svg>
+                        <span class="text-sm font-semibold">Move Map</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Map Container -->
+                <div class="relative flex-1 overflow-hidden p-6">
+                    <div class="h-full w-full overflow-hidden rounded-2xl shadow-2xl border-2 border-white/50 backdrop-blur-sm">
+                        <div ref="mapEl" class="h-full w-full"></div>
+                        
+                        <!-- Hover Indicator -->
+                        <Transition name="slideIn">
+                            <div v-if="hoveredRoomName" class="absolute top-4 left-4 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-gray-200 px-6 py-4 flex items-center gap-3 animate-bounce-subtle">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
                                 </div>
-
-                                <div class="flex items-center gap-1">
-                                    <button
-                                        @click="editRoom(room)"
-                                        class="rounded p-1.5 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600"
-                                        title="Edit Room"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <path
-                                                d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"
-                                            />
-                                            <path d="m15 5 4 4" />
-                                        </svg>
-                                    </button>
-
-                                    <button
-                                        @click="deleteRoom(room.id)"
-                                        class="rounded p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                                        title="Delete Room"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                        >
-                                            <path d="M3 6h18" />
-                                            <path
-                                                d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"
-                                            />
-                                            <path
-                                                d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
-                                            />
-                                            <line
-                                                x1="10"
-                                                x2="10"
-                                                y1="11"
-                                                y2="17"
-                                            />
-                                            <line
-                                                x1="14"
-                                                x2="14"
-                                                y1="11"
-                                                y2="17"
-                                            />
-                                        </svg>
-                                    </button>
+                                <div>
+                                    <p class="text-xs text-gray-500 font-medium">Currently Hovering</p>
+                                    <p class="text-lg font-bold text-gray-900">{{ hoveredRoomName }}</p>
                                 </div>
                             </div>
+                        </Transition>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="w-96 overflow-hidden border-l bg-white/50 backdrop-blur-sm">
+                    <div class="h-full overflow-y-auto p-6">
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 mb-2">Room List</h2>
+                            <p class="text-sm text-gray-500">Manage and organize your rooms</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <TransitionGroup name="list">
+                                <div
+                                    v-for="room in selectedArea.rooms"
+                                    :key="room.id"
+                                    :class="[
+                                        'group relative rounded-2xl border-2 p-4 transition-all duration-300 cursor-pointer overflow-hidden',
+                                        hoveredRoomId === room.id 
+                                            ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/20 scale-105' 
+                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                                    ]"
+                                >
+                                    <!-- Gradient Background -->
+                                    <div 
+                                        class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                                        :style="{ background: `linear-gradient(135deg, ${room.color}15, ${room.color}05)` }"
+                                    ></div>
+
+                                    <div class="relative flex items-center justify-between">
+                                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                                            <div
+                                                class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-white shadow-lg font-bold text-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+                                                :style="{ background: `linear-gradient(135deg, ${room.color}, ${room.color}dd)` }"
+                                            >
+                                                {{ room.name[0] }}
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-base font-bold text-gray-900 truncate">
+                                                    {{ room.name }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    Capacity: {{ room.capacity }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-1">
+                                            <button
+                                                @click.stop="editRoom(room)"
+                                                class="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-blue-100 hover:text-blue-600 hover:scale-110"
+                                                title="Edit Room"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </button>
+
+                                            <button
+                                                @click.stop="deleteRoom(room.id)"
+                                                class="rounded-xl p-2 text-gray-400 transition-all duration-200 hover:bg-red-100 hover:text-red-600 hover:scale-110"
+                                                title="Delete Room"
+                                            >
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </TransitionGroup>
                         </div>
 
                         <button
-                            class="mt-6 w-full rounded-lg border-2 border-dashed border-blue-300 py-2 text-sm font-bold text-blue-500 hover:bg-blue-50"
+                            @click="enableDrawPolygon"
+                            class="mt-6 w-full group rounded-2xl border-3 border-dashed border-blue-300 bg-blue-50/50 py-4 text-sm font-bold text-blue-600 transition-all duration-300 hover:bg-blue-100 hover:border-blue-500 hover:shadow-lg hover:scale-105"
                         >
-                            + Add New Room
+                            <div class="flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                <span>Add New Room</span>
+                            </div>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Modal -->
         <Transition name="fadeScale">
             <div
                 v-if="showRoomPrompt"
-                class="fixed inset-0 z-50 flex items-center justify-center"
+                class="fixed inset-0 z-50 flex items-center justify-center p-4"
             >
                 <div
-                    class="absolute inset-0 bg-black/40"
+                    class="absolute inset-0 bg-black/50 backdrop-blur-sm"
                     @click="cancelRoomPrompt(true)"
                 ></div>
 
-                <div
-                    class="relative w-[420px] max-w-[90%] rounded-2xl border bg-white p-5 shadow-xl"
-                >
-                    <div class="flex items-start justify-between">
+                <div class="relative w-full max-w-md rounded-3xl border-2 border-white/50 bg-white p-8 shadow-2xl">
+                    <div class="flex items-start justify-between mb-6">
                         <div>
-                            <h3 class="text-lg font-bold">New Room</h3>
-                            <p class="mt-1 text-xs text-gray-500">
-                                Enter room name then click save.
+                            <h3 class="text-2xl font-bold text-gray-900">
+                                {{ isEditMode ? 'Edit Room' : 'New Room' }}
+                            </h3>
+                            <p class="mt-2 text-sm text-gray-500">
+                                {{ isEditMode ? 'Update room information' : 'Enter room details to save' }}
                             </p>
                         </div>
 
                         <button
-                            class="text-gray-400 hover:text-gray-700"
+                            class="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
                             @click="cancelRoomPrompt(true)"
                         >
-                            ✕
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                         </button>
                     </div>
 
-                    <div class="mt-4 space-y-3">
+                    <div class="space-y-4">
                         <div>
-                            <label class="text-xs font-semibold text-gray-500"
-                                >Room Name</label
-                            >
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Room Name
+                            </label>
                             <input
                                 v-model="newRoom.name"
                                 type="text"
-                                class="mt-1 w-full rounded border p-2 text-sm"
+                                class="w-full rounded-xl border-2 border-gray-200 p-3 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                                 placeholder="e.g. Room 101"
                                 autofocus
                             />
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Capacity
+                            </label>
+                            <input
+                                v-model="newRoom.capacity"
+                                type="number"
+                                class="w-full rounded-xl border-2 border-gray-200 p-3 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                placeholder="e.g. 30"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Room Color
+                            </label>
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="newRoom.color"
+                                    type="color"
+                                    class="h-12 w-20 rounded-xl border-2 border-gray-200 cursor-pointer"
+                                />
+                                <input
+                                    v-model="newRoom.color"
+                                    type="text"
+                                    class="flex-1 rounded-xl border-2 border-gray-200 p-3 text-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                    placeholder="#3b82f6"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="mt-5 flex gap-2">
+                    <div class="mt-8 flex gap-3">
                         <button
                             @click="saveRoomWithPolygon"
                             :disabled="isSaving"
-                            class="flex-1 rounded bg-blue-500 py-2 text-sm font-bold text-white shadow-md disabled:opacity-60"
+                            class="flex-1 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 disabled:opacity-60 disabled:cursor-not-allowed hover:scale-105"
                         >
-                            {{ isSaving ? 'Saving...' : 'Save' }}
+                            {{ isSaving ? 'Saving...' : (isEditMode ? 'Update' : 'Save') }}
                         </button>
 
                         <button
                             @click="cancelRoomPrompt(true)"
-                            class="rounded bg-gray-100 px-4 py-2 text-sm font-semibold"
+                            class="rounded-xl bg-gray-100 px-6 py-3 text-sm font-semibold text-gray-700 transition-all duration-300 hover:bg-gray-200 hover:scale-105"
                         >
                             Cancel
                         </button>
@@ -542,20 +466,77 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+/* Fade Scale Animation */
 .fadeScale-enter-active,
 .fadeScale-leave-active {
-    transition:
-        opacity 180ms ease,
-        transform 180ms ease;
+    transition: opacity 300ms ease, transform 300ms ease;
 }
 .fadeScale-enter-from,
 .fadeScale-leave-to {
     opacity: 0;
-    transform: scale(0.96) translateY(6px);
+    transform: scale(0.95) translateY(10px);
 }
-.fadeScale-enter-to,
-.fadeScale-leave-from {
-    opacity: 1;
-    transform: scale(1) translateY(0);
+
+/* Slide In Animation */
+.slideIn-enter-active,
+.slideIn-leave-active {
+    transition: all 300ms ease;
+}
+.slideIn-enter-from {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+.slideIn-leave-to {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+/* List Animation */
+.list-enter-active,
+.list-leave-active {
+    transition: all 300ms ease;
+}
+.list-enter-from {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(20px);
+}
+.list-move {
+    transition: transform 300ms ease;
+}
+
+/* Subtle Bounce */
+@keyframes bounce-subtle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+.animate-bounce-subtle {
+    animation: bounce-subtle 2s ease-in-out infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #3b82f6, #6366f1);
+    border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #2563eb, #4f46e5);
 }
 </style>
