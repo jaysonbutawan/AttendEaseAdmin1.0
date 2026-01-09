@@ -6,6 +6,7 @@ use App\Models\ClassSession;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ClassSessionController extends Controller
 {
@@ -160,16 +161,18 @@ class ClassSessionController extends Controller
      */
     public function getSessionStudents($sessionId)
     {
-        $session = ClassSession::findOrFail($sessionId);
+        ClassSession::findOrFail($sessionId);
 
-        $students = $session->students()
+        $students = DB::table('student_class_sessions as scs')
+            ->join('students as s', 's.student_id', '=', 'scs.student_id')
+            ->where('scs.session_id', $sessionId)
             ->select(
-                'students.student_id',
-                'students.firstname',
-                'students.lastname',
-                'students.email',
-                'student_class_sessions.enrollment_status',
-                'student_class_sessions.enrolled_at'
+                's.student_id',
+                's.firstname',
+                's.lastname',
+                's.email',
+                'scs.enrollment_status',
+                'scs.enrolled_at'
             )
             ->get()
             ->map(function ($student) {
@@ -179,7 +182,7 @@ class ClassSessionController extends Controller
                     'lastname' => $student->lastname,
                     'email' => $student->email,
                     'enrollment_status' => $student->enrollment_status ?? 'enrolled',
-                    'enrolled_at' => $student->enrolled_at ?? $student->created_at,
+                    'enrolled_at' => $student->enrolled_at,
                 ];
             });
 
