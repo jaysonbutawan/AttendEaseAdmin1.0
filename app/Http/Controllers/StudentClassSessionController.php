@@ -5,9 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\ClassSession;
+use App\Models\Student;
 
 class StudentClassSessionController extends Controller
 {
+    /**
+     * Assign multiple students to multiple class sessions.
+     * This creates a many-to-many relationship.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -18,25 +23,69 @@ class StudentClassSessionController extends Controller
             'student_ids.*' => ['string', 'exists:students,student_id'],
         ]);
 
-        DB::transaction(function () use ($data) {
+        $enrollmentData = [];
+        $newEnrollments = 0;
+        $existingEnrollments = 0;
+
+        DB::transaction(function () use ($data, &$enrollmentData, &$newEnrollments, &$existingEnrollments) {
+            // Prepare the pivot data for each student
+            $pivotData = collect($data['student_ids'])->mapWithKeys(function ($studentId) {
+                return [
+                    $studentId => [
+                        'enrollment_status' => 'enrolled',
+                        'enrolled_at' => now(),
+                    ]
+                ];
+            })->toArray();
+
+            // Assign students to each session
             foreach ($data['session_ids'] as $sessionId) {
-                $session = ClassSession::find($sessionId);
-                $session->students()->syncWithoutDetaching(
-                    collect($data['student_ids'])->mapWithKeys(function ($studentId) {
-                        return [
-                            $studentId => [
-                                'enrollment_status' => 'enrolled',
-                                'enrolled_at' => now(),
-                            ]
-                        ];
-                    })->toArray()
-                );
+                $session = ClassSession::with('subject')->find($sessionId);
+                
+                if (!$session) {
+                    continue;
+                }
+
+                // Get existing enrollments for this session
+                $existingStudentIds = $session->students()->pluck('student_id')->toArray();
+                
+                // Sync without detaching (preserves existing enrollments)
+                $session->students()->syncWithoutDetaching($pivotData);
+                
+                // Count new vs existing
+                foreach ($data['student_ids'] as $studentId) {
+                    if (in_array($studentId, $existingStudentIds)) {
+                        $existingEnrollments++;
+                    } else {
+                        $newEnrollments++;
+                    }
+                }
+
+                $enrollmentData[] = [
+                    'session_id' => $sessionId,
+                    'subject' => $session->subject->subject_name ?? 'Unknown',
+                    'students_count' => count($data['student_ids']),
+                ];
             }
         });
 
         return response()->json([
             'success' => true,
-            'message' => 'Students assigned to sessions successfully'
+            'message' => sprintf(
+                'Successfully assigned %d students to %d session(s). New enrollments: %d, Already enrolled: %d',
+                count($data['student_ids']),
+                count($data['session_ids']),
+                $newEnrollments,
+                $existingEnrollments
+            ),
+            'data' => [
+                'total_sessions' => count($data['session_ids']),
+                'total_students' => count($data['student_ids']),
+                'new_enrollments' => $newEnrollments,
+                'existing_enrollments' => $existingEnrollments,
+                'enrollments' => $enrollmentData,
+            ]
         ]);
     }
 }
+

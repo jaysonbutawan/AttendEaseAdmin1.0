@@ -409,7 +409,21 @@ const submitAssignments = async () => {
     try {
         const response = await axios.post('/assign-students-to-sessions', payload);
         console.log('Success:', response.data);
-        alert('Students assigned to sessions successfully!');
+        
+        // Show detailed success message
+        if (response.data.data) {
+            const data = response.data.data;
+            const message = response.data.message + 
+                `\n\nDetails:\n` +
+                `- Sessions: ${data.total_sessions}\n` +
+                `- Students: ${data.total_students}\n` +
+                `- New Enrollments: ${data.new_enrollments}\n` +
+                (data.existing_enrollments > 0 ? `- Already Enrolled: ${data.existing_enrollments}` : '');
+            
+            alert(message);
+        } else {
+            alert('Students assigned to sessions successfully!');
+        }
         
         // Reset selections after successful submission
         subjects.value.forEach(subject => {
@@ -422,7 +436,7 @@ const submitAssignments = async () => {
     } catch (error: any) {
         console.error('Failed to save assignments:', error);
         const errorMessage = error.response?.data?.message || 'Failed to save assignments. Please try again.';
-        alert(errorMessage);
+        alert('Error: ' + errorMessage);
     } finally {
         isSubmitting.value = false;
     }
