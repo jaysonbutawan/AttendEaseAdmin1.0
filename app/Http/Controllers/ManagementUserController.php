@@ -22,7 +22,7 @@ class ManagementUserController extends Controller
                     'email' => $user->email,
                     'contact_number' => $user->contact_number,
                     'approval_status' => $user->approval_status,
-                    'appproved_at' => $user->approved_at,
+                    'approved_at' => $user->approved_at,
                 ],
             ]);
         }
@@ -39,7 +39,7 @@ class ManagementUserController extends Controller
                     'contact_number' => $user->contact_number,
                     'course_id' => $user->course_id,
                     'approval_status' => $user->approval_status,
-                    'appproved_at' => $user->approved_at,
+                    'approved_at' => $user->approved_at,
                 ],
             ]);
         }

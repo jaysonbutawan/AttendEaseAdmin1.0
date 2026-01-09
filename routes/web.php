@@ -87,6 +87,8 @@ Route::get('/usermanagement', function () {
             'last_activity' => optional($t->created_at)->toIso8601String(),
             'initials' => $initials,
             'avatar_color' => $color,
+            'approval_status' => $t->approval_status ?? 'pending',
+            'approved_at' => optional($t->approved_at)->toIso8601String(),
         ];
     });
 
@@ -107,10 +109,36 @@ Route::get('/usermanagement', function () {
             'last_activity' => optional($s->created_at)->toIso8601String(),
             'initials' => $initials,
             'avatar_color' => $color,
+            'approval_status' => $s->approval_status ?? 'pending',
+            'approved_at' => optional($s->approved_at)->toIso8601String(),
         ];
     });
 
     $combined = $teachers->merge($students)->values();
+
+    // Apply filters
+    $searchQuery = request('search');
+    $roleFilter = request('role');
+    $statusFilter = request('status');
+
+    if ($searchQuery) {
+        $combined = $combined->filter(function ($user) use ($searchQuery) {
+            $search = strtolower($searchQuery);
+            return str_contains(strtolower($user['name']), $search) ||
+                   str_contains(strtolower($user['email']), $search) ||
+                   str_contains(strtolower($user['id']), $search);
+        });
+    }
+
+    if ($roleFilter) {
+        $combined = $combined->filter(fn($user) => $user['role'] === $roleFilter);
+    }
+
+    if ($statusFilter) {
+        $combined = $combined->filter(fn($user) => ($user['approval_status'] ?? 'pending') === $statusFilter);
+    }
+
+    $combined = $combined->values();
 
     // Simple pagination for combined collection
     $page = (int) request('page', 1);
@@ -134,6 +162,7 @@ Route::get('/usermanagement', function () {
         'filters' => [
             'search' => request('search'),
             'role' => request('role'),
+            'status' => request('status'),
             'view' => request('view', 'cards'),
         ],
     ]);
@@ -152,6 +181,12 @@ Route::put('/api/teachers/{id}', [TeacherController::class, 'updateById'])->name
 Route::put('/api/students/{id}', [StudentController::class, 'updateById'])->name('students.update_by_id');
 Route::delete('/api/teachers/{id}', [TeacherController::class, 'deleteById'])->name('teachers.delete_by_id');
 Route::delete('/api/students/{id}', [StudentController::class, 'deleteById'])->name('students.delete_by_id');
+
+// Approve/Reject endpoints
+Route::post('/api/teachers/{id}/approve', [TeacherController::class, 'approve'])->name('teachers.approve');
+Route::post('/api/teachers/{id}/reject', [TeacherController::class, 'reject'])->name('teachers.reject');
+Route::post('/api/students/{id}/approve', [StudentController::class, 'approve'])->name('students.approve');
+Route::post('/api/students/{id}/reject', [StudentController::class, 'reject'])->name('students.reject');
 
 Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
