@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clock, GraduationCap, MapPin, Pencil, ArrowRight, X } from 'lucide-vue-next'
+import { Clock, GraduationCap, MapPin, Pencil, ArrowRight, X, UserPlus, Trash2 } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 
@@ -23,11 +23,24 @@ type EnrolledStudent = {
   enrolled_at: string
 }
 
+type AvailableStudent = {
+  student_id: string
+  firstname: string
+  lastname: string
+  email: string
+  full_name: string
+}
+
 const sessions = ref<ClassSession[]>([])
 const selectedSession = ref<ClassSession | null>(null)
 const enrolledStudents = ref<EnrolledStudent[]>([])
+const availableStudents = ref<AvailableStudent[]>([])
+const selectedStudents = ref<string[]>([])
 const showModal = ref(false)
+const showEnrollModal = ref(false)
 const loadingStudents = ref(false)
+const loadingAvailable = ref(false)
+const enrolling = ref(false)
 
 onMounted(async () => {
   const { data } = await axios.get('/class_sessions')
@@ -62,6 +75,79 @@ const closeModal = () => {
   showModal.value = false
   selectedSession.value = null
   enrolledStudents.value = []
+}
+
+const openEnrollModal = async () => {
+  if (!selectedSession.value) return
+  
+  showEnrollModal.value = true
+  loadingAvailable.value = true
+  selectedStudents.value = []
+  
+  try {
+    const { data } = await axios.get(`/class_sessions/${selectedSession.value.session_id}/available-students`)
+    availableStudents.value = data.students || []
+  } catch (error) {
+    console.error('Failed to fetch available students:', error)
+    availableStudents.value = []
+  } finally {
+    loadingAvailable.value = false
+  }
+}
+
+const closeEnrollModal = () => {
+  showEnrollModal.value = false
+  selectedStudents.value = []
+  availableStudents.value = []
+}
+
+const toggleStudentSelection = (studentId: string) => {
+  const index = selectedStudents.value.indexOf(studentId)
+  if (index > -1) {
+    selectedStudents.value.splice(index, 1)
+  } else {
+    selectedStudents.value.push(studentId)
+  }
+}
+
+const enrollSelectedStudents = async () => {
+  if (!selectedSession.value || selectedStudents.value.length === 0) return
+  
+  enrolling.value = true
+  
+  try {
+    await axios.post('/assign-students-to-sessions', {
+      session_ids: [selectedSession.value.session_id],
+      student_ids: selectedStudents.value
+    })
+    
+    // Refresh enrolled students list
+    const { data } = await axios.get(`/class_sessions/${selectedSession.value.session_id}/students`)
+    enrolledStudents.value = data.students || []
+    
+    closeEnrollModal()
+  } catch (error) {
+    console.error('Failed to enroll students:', error)
+    alert('Failed to enroll students. Please try again.')
+  } finally {
+    enrolling.value = false
+  }
+}
+
+const removeStudent = async (studentId: string) => {
+  if (!selectedSession.value) return
+  
+  if (!confirm('Are you sure you want to remove this student from the session?')) return
+  
+  try {
+    await axios.delete(`/class_sessions/${selectedSession.value.session_id}/students/${studentId}`)
+    
+    // Refresh enrolled students list
+    enrolledStudents.value = enrolledStudents.value.filter(s => s.student_id !== studentId)
+  } catch (error) {
+    console.error('Failed to remove student:', error)
+    alert('Failed to remove student. Please try again.')
+  }
 }
 
 const formatDays = (days: string[] | string) => {
@@ -267,9 +353,18 @@ const formatDate = (dateString: string) => {
             <div>
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold text-gray-900">Students</h3>
-                <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
-                  {{ enrolledStudents.length }}
-                </span>
+                <div class="flex items-center gap-3">
+                  <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
+                    {{ enrolledStudents.length }}
+                  </span>
+                  <button
+                    @click="openEnrollModal"
+                    class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-semibold"
+                  >
+                    <UserPlus class="w-4 h-4" />
+                    Add Students
+                  </button>
+                </div>
               </div>
 
               <div v-if="loadingStudents" class="flex items-center justify-center py-8">
@@ -288,7 +383,7 @@ const formatDate = (dateString: string) => {
                 <div 
                   v-for="student in enrolledStudents"
                   :key="student.student_id"
-                  class="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition"
+                  class="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition group"
                 >
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
@@ -305,13 +400,22 @@ const formatDate = (dateString: string) => {
                       </div>
                       <p class="text-sm text-gray-600 ml-13">{{ student.email }}</p>
                     </div>
-                    <div class="flex flex-col items-end gap-2">
-                      <span :class="getEnrollmentStatusClass(student.enrollment_status)">
-                        {{ student.enrollment_status || 'Enrolled' }}
-                      </span>
-                      <p class="text-xs text-gray-500">
-                        {{ formatDate(student.enrolled_at) }}
-                      </p>
+                    <div class="flex items-center gap-3">
+                      <div class="flex flex-col items-end gap-2">
+                        <span :class="getEnrollmentStatusClass(student.enrollment_status)">
+                          {{ student.enrollment_status || 'Enrolled' }}
+                        </span>
+                        <p class="text-xs text-gray-500">
+                          {{ formatDate(student.enrolled_at) }}
+                        </p>
+                      </div>
+                      <button
+                        @click="removeStudent(student.student_id)"
+                        class="opacity-0 group-hover:opacity-100 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Remove student"
+                      >
+                        <Trash2 class="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -326,6 +430,119 @@ const formatDate = (dateString: string) => {
               class="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition"
             >
               Close
+            </button>
+          </div>
+        </div>
+      </transition>
+    </div>
+  </transition>
+
+  <!-- Enroll Students Modal -->
+  <transition name="fade">
+    <div 
+      v-if="showEnrollModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click="closeEnrollModal"
+    >
+      <transition name="slide-up">
+        <div 
+          v-if="showEnrollModal"
+          class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+          @click.stop
+        >
+          <!-- Enroll Modal Header -->
+          <div class="bg-gradient-to-r from-green-600 to-green-700 px-8 py-6 flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-white">Add Students</h2>
+              <p class="text-green-100 text-sm mt-1">{{ selectedSession?.subject_name }}</p>
+            </div>
+            <button 
+              @click="closeEnrollModal"
+              class="p-2 hover:bg-green-500 rounded-lg transition"
+            >
+              <X class="w-6 h-6 text-white" />
+            </button>
+          </div>
+
+          <!-- Enroll Modal Body -->
+          <div class="overflow-y-auto flex-1 p-8">
+            <div v-if="loadingAvailable" class="flex items-center justify-center py-8">
+              <div class="animate-spin">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+              </div>
+            </div>
+
+            <div v-else-if="availableStudents.length === 0" class="text-center py-8">
+              <p class="text-gray-500">No available students to enroll</p>
+            </div>
+
+            <div v-else>
+              <p class="text-sm text-gray-600 mb-4">
+                Select students to add to this session ({{ selectedStudents.length }} selected)
+              </p>
+              
+              <div class="space-y-2">
+                <div 
+                  v-for="student in availableStudents"
+                  :key="student.student_id"
+                  @click="toggleStudentSelection(student.student_id)"
+                  :class="[
+                    'p-4 border-2 rounded-lg cursor-pointer transition',
+                    selectedStudents.includes(student.student_id)
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-green-300'
+                  ]"
+                >
+                  <div class="flex items-center gap-3">
+                    <div 
+                      :class="[
+                        'w-5 h-5 rounded border-2 flex items-center justify-center transition',
+                        selectedStudents.includes(student.student_id)
+                          ? 'border-green-600 bg-green-600'
+                          : 'border-gray-300'
+                      ]"
+                    >
+                      <svg 
+                        v-if="selectedStudents.includes(student.student_id)"
+                        class="w-3 h-3 text-white" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    </div>
+                    <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      {{ student.firstname.charAt(0) }}{{ student.lastname.charAt(0) }}
+                    </div>
+                    <div class="flex-1">
+                      <p class="font-semibold text-gray-900">{{ student.full_name }}</p>
+                      <p class="text-xs text-gray-500">{{ student.student_id }} • {{ student.email }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Enroll Modal Footer -->
+          <div class="border-t border-gray-200 px-8 py-4 flex justify-end gap-3 bg-gray-50">
+            <button 
+              @click="closeEnrollModal"
+              class="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition"
+            >
+              Cancel
+            </button>
+            <button 
+              @click="enrollSelectedStudents"
+              :disabled="selectedStudents.length === 0 || enrolling"
+              class="px-6 py-2.5 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <UserPlus v-if="!enrolling" class="w-4 h-4" />
+              <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ enrolling ? 'Enrolling...' : `Enroll ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}` }}
             </button>
           </div>
         </div>

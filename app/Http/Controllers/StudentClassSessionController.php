@@ -10,6 +10,37 @@ use App\Models\Student;
 class StudentClassSessionController extends Controller
 {
     /**
+     * Get all students not enrolled in a specific session
+     */
+    public function getAvailableStudents($sessionId)
+    {
+        ClassSession::findOrFail($sessionId);
+
+        $enrolledStudentIds = DB::table('student_class_sessions')
+            ->where('session_id', $sessionId)
+            ->pluck('student_class_sessions.student_id');
+
+        $availableStudents = Student::whereNotIn('students.student_id', $enrolledStudentIds)
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->get()
+            ->map(function ($student) {
+                return [
+                    'student_id' => $student->student_id,
+                    'firstname' => $student->firstname,
+                    'lastname' => $student->lastname,
+                    'email' => $student->email,
+                    'full_name' => trim($student->firstname . ' ' . $student->lastname),
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'students' => $availableStudents,
+        ]);
+    }
+
+    /**
      * Assign multiple students to multiple class sessions.
      * This creates a many-to-many relationship.
      */
@@ -47,7 +78,10 @@ class StudentClassSessionController extends Controller
                 }
 
                 // Get existing enrollments for this session
-                $existingStudentIds = $session->students()->pluck('student_id')->toArray();
+                $existingStudentIds = DB::table('student_class_sessions')
+                    ->where('session_id', $sessionId)
+                    ->pluck('student_class_sessions.student_id')
+                    ->toArray();
                 
                 // Sync without detaching (preserves existing enrollments)
                 $session->students()->syncWithoutDetaching($pivotData);
@@ -86,6 +120,35 @@ class StudentClassSessionController extends Controller
                 'enrollments' => $enrollmentData,
             ]
         ]);
+    }
+
+    /**
+     * Remove a student from a class session
+     */
+    public function destroy($sessionId, $studentId)
+    {
+        $session = ClassSession::findOrFail($sessionId);
+        $student = Student::findOrFail($studentId);
+
+        $deleted = DB::table('student_class_sessions')
+            ->where('session_id', $sessionId)
+            ->where('student_id', $studentId)
+            ->delete();
+
+        if ($deleted) {
+            return response()->json([
+                'success' => true,
+                'message' => sprintf(
+                    'Student %s removed from session successfully',
+                    trim($student->firstname . ' ' . $student->lastname)
+                ),
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Student was not enrolled in this session',
+        ], 404);
     }
 }
 
