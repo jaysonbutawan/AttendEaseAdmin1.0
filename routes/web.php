@@ -78,7 +78,7 @@ Route::get('/sessions', function () {
                 )
                 ->first();
 
-            $teacherName = $session->teacher 
+            $teacherName = $session->teacher
                 ? trim($session->teacher->firstname . ' ' . $session->teacher->lastname)
                 : 'N/A';
 
@@ -90,7 +90,7 @@ Route::get('/sessions', function () {
                 'room' => $session->room?->room_name ?? 'N/A',
                 'status' => $session->session_status ?? 'pending',
                 'startTime' => $session->start_time ? \Carbon\Carbon::parse($session->start_time)->format('g:i A') : null,
-                'durationText' => $session->start_time && $session->end_time 
+                'durationText' => $session->start_time && $session->end_time
                     ? \Carbon\Carbon::parse($session->start_time)->diffForHumans(\Carbon\Carbon::parse($session->end_time), true)
                     : null,
                 'present' => (int) ($attendanceStats->present ?? 0),
@@ -103,12 +103,12 @@ Route::get('/sessions', function () {
 
     $activeCount = $sessions->where('status', 'active')->count();
     $studentsTracked = DB::table('attendance')->distinct('student_id')->count();
-    
+
     // Calculate average attendance rate
     $totalAttendance = DB::table('attendance')->count();
     $presentCount = DB::table('attendance')->where('status', 'present')->count();
     $avgAttendanceRate = $totalAttendance > 0 ? round(($presentCount / $totalAttendance) * 100, 1) : 0;
-    
+
     $flaggedIssues = DB::table('attendance')->where('status', 'absent')->count();
 
     return Inertia::render('session/Session', [
@@ -140,6 +140,8 @@ Route::get('/usermanagement', function () {
             'last_activity' => optional($t->created_at)->toIso8601String(),
             'initials' => $initials,
             'avatar_color' => $color,
+            'approval_status' => $t->approval_status,
+            'approved_at' => $t->approved_at,
         ];
     });
 
@@ -160,6 +162,8 @@ Route::get('/usermanagement', function () {
             'last_activity' => optional($s->created_at)->toIso8601String(),
             'initials' => $initials,
             'avatar_color' => $color,
+            'approval_status' => $s->approval_status,
+            'approved_at' => $s->approved_at,
         ];
     });
 
@@ -174,8 +178,8 @@ Route::get('/usermanagement', function () {
         $combined = $combined->filter(function ($user) use ($searchQuery) {
             $search = strtolower($searchQuery);
             return str_contains(strtolower($user['name']), $search) ||
-                   str_contains(strtolower($user['email']), $search) ||
-                   str_contains(strtolower($user['id']), $search);
+                str_contains(strtolower($user['email']), $search) ||
+                str_contains(strtolower($user['id']), $search);
         });
     }
 
@@ -262,7 +266,9 @@ Route::prefix('api')->group(function () {
 
 //assign subjects to students route
 Route::get('/subjects-with-sessions', [SubjectController::class, 'indexWithSessions']);
-Route::post('/assign-students-to-sessions', [StudentClassSessionController::class, 'store']
+Route::post(
+    '/assign-students-to-sessions',
+    [StudentClassSessionController::class, 'store']
 );
 
 //course routes
