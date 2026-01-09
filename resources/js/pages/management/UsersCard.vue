@@ -137,16 +137,6 @@ const isOnline = computed(() => {
             </div>
           </div>
         </div>
-
-        <!-- Checkbox with Animation -->
-        <div class="relative">
-          <input 
-            type="checkbox" 
-            :checked="isSelected"
-            @change="emit('toggle-selection', user.id)"
-            class="w-5 h-5 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer hover:border-blue-400"
-          >
-        </div>
       </div>
 
       <!-- Email Section -->
