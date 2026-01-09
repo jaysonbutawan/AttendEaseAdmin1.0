@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import TeacherCard from '@/components/TeacherCard.vue';
 import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Grid3x3, List, Search, Users } from 'lucide-vue-next';
@@ -11,8 +12,6 @@ const teachersData: Teacher[] = [
         id: 1,
         name: 'Dr. Helena Vance',
         email: 'helena.vance@schooldomain.edu',
-        initials: 'HV',
-        status: 'Active',
         department: 'Science',
         assignedSubjects: [
             { id: 101, name: 'Physics' },
@@ -24,8 +23,6 @@ const teachersData: Teacher[] = [
         id: 2,
         name: 'Lia Torres',
         email: 'lia.torres@schooldomain.edu',
-        initials: 'LT',
-        status: 'Active',
         department: 'Mathematics',
         assignedSubjects: [
             { id: 201, name: 'Algebra' },
@@ -37,11 +34,9 @@ const teachersData: Teacher[] = [
         id: 3,
         name: 'John Doe',
         email: 'john.doe@schooldomain.edu',
-        initials: 'JD',
-        status: 'On Leave',
         department: 'English',
         assignedSubjects: [
-            { id: 301, name: 'Literatural' },
+            { id: 301, name: 'Literature' },
             { id: 302, name: 'Writing' },
             { id: 303, name: 'Creative Writing' },
         ],
@@ -50,78 +45,85 @@ const teachersData: Teacher[] = [
         id: 4,
         name: 'Sarah Johnson',
         email: 'sarah.johnson@schooldomain.edu',
-        initials: 'SJ',
-        status: 'Active',
         department: 'Science',
         assignedSubjects: [
             { id: 401, name: 'Biology' },
             { id: 402, name: 'Environmental Science' },
         ],
     },
+    {
+        id: 5,
+        name: 'Michael Chen',
+        email: 'michael.chen@schooldomain.edu',
+        department: 'Computer Science',
+        assignedSubjects: [
+            { id: 501, name: 'Programming' },
+            { id: 502, name: 'Data Structures' },
+        ],
+    },
+    {
+        id: 6,
+        name: 'Emma Wilson',
+        email: 'emma.wilson@schooldomain.edu',
+        department: 'Mathematics',
+        assignedSubjects: [
+            { id: 601, name: 'Statistics' },
+            { id: 602, name: 'Trigonometry' },
+        ],
+    },
 ];
 
 const search = ref('');
 const viewMode = ref<'table' | 'cards'>('table');
-const selectedTeachers = ref<number[]>([]);
+const selectedDepartment = ref<string>('all');
+const showFilterDropdown = ref(false);
 
-const filteredTeachers = computed(() => {
-    if (!search.value.trim()) return teachersData;
-    const term = search.value.toLowerCase();
-    return teachersData.filter(
-        (teacher) =>
-            teacher.name.toLowerCase().includes(term) ||
-            teacher.email.toLowerCase().includes(term) ||
-            teacher.department.toLowerCase().includes(term),
-    );
+// Get unique departments
+const departments = computed(() => {
+    const depts = new Set(teachersData.map((t) => t.department));
+    return ['all', ...Array.from(depts)];
 });
 
-const allTeachersSelected = computed(() => {
-    return (
-        filteredTeachers.value.length > 0 &&
-        selectedTeachers.value.length === filteredTeachers.value.length
-    );
+const filteredTeachers = computed(() => {
+    let result = teachersData;
+
+    // Filter by search term
+    if (search.value.trim()) {
+        const term = search.value.toLowerCase();
+        result = result.filter(
+            (teacher) =>
+                teacher.name.toLowerCase().includes(term) ||
+                teacher.email.toLowerCase().includes(term) ||
+                teacher.department.toLowerCase().includes(term) ||
+                teacher.assignedSubjects.some((subject) =>
+                    subject.name.toLowerCase().includes(term),
+                ),
+        );
+    }
+
+    // Filter by department
+    if (selectedDepartment.value !== 'all') {
+        result = result.filter(
+            (teacher) => teacher.department === selectedDepartment.value,
+        );
+    }
+
+    return result;
 });
 
 const toggleViewMode = (mode: 'table' | 'cards') => {
     viewMode.value = mode;
 };
 
-const toggleTeacherSelection = (teacherId: number) => {
-    const index = selectedTeachers.value.indexOf(teacherId);
-    if (index > -1) {
-        selectedTeachers.value.splice(index, 1);
-    } else {
-        selectedTeachers.value.push(teacherId);
-    }
+const selectDepartment = (dept: string) => {
+    selectedDepartment.value = dept;
+    showFilterDropdown.value = false;
 };
 
-const toggleAllTeachers = () => {
-    if (selectedTeachers.value.length === filteredTeachers.value.length) {
-        selectedTeachers.value = [];
-    } else {
-        selectedTeachers.value = filteredTeachers.value.map((t) => t.id);
-    }
-};
-
-const getDepartmentClass = (department: string) => {
-    const classes = {
-        Science:
-            'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400',
-        Mathematics:
-            'bg-indigo-100 text-indigo-800 dark:bg-indigo-800/20 dark:text-indigo-400',
-        English:
-            'bg-pink-100 text-pink-800 dark:bg-pink-800/20 dark:text-pink-400',
-    };
-    return (
-        classes[department as keyof typeof classes] ||
-        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-    );
-};
-
-const getStatusClass = (status: string) => {
-    return status === 'Active'
-        ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400'
-        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400';
+const clearFilters = () => {
+    selectedDepartment.value = 'all';
+    search.value = '';
+    showFilterDropdown.value = false;
 };
 </script>
 
@@ -191,16 +193,70 @@ const getStatusClass = (status: string) => {
                     </div>
 
                     <!-- Filter Button -->
-                    <button
-                        class="flex items-center space-x-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition duration-150"
-                        :style="{
-                            borderColor: `rgba(${PRIMARY_COLOR_RGB}, 0.6)`,
-                            color: `rgb(${PRIMARY_COLOR_RGB})`,
-                        }"
-                    >
-                        <Filter class="h-4 w-4" />
-                        <span>Filter</span>
-                    </button>
+                    <div class="relative">
+                        <button
+                            @click="showFilterDropdown = !showFilterDropdown"
+                            class="flex items-center space-x-2 rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition duration-150"
+                            :style="{
+                                borderColor: `rgba(${PRIMARY_COLOR_RGB}, 0.6)`,
+                                color: `rgb(${PRIMARY_COLOR_RGB})`,
+                            }"
+                        >
+                            <Filter class="h-4 w-4" />
+                            <span>Filter</span>
+                            <span
+                                v-if="selectedDepartment !== 'all'"
+                                class="ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-xs dark:bg-indigo-900"
+                            >
+                                1
+                            </span>
+                        </button>
+
+                        <!-- Filter Dropdown -->
+                        <div
+                            v-if="showFilterDropdown"
+                            class="absolute right-0 z-10 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700"
+                        >
+                            <div class="p-2">
+                                <div
+                                    class="mb-2 px-3 py-2 text-xs font-semibold text-gray-500 uppercase dark:text-gray-400"
+                                >
+                                    Department
+                                </div>
+                                <button
+                                    v-for="dept in departments"
+                                    :key="dept"
+                                    @click="selectDepartment(dept)"
+                                    class="flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition hover:bg-gray-100 dark:hover:bg-gray-600"
+                                    :class="
+                                        selectedDepartment === dept
+                                            ? 'bg-gray-100 font-medium dark:bg-gray-600'
+                                            : ''
+                                    "
+                                >
+                                    <span class="capitalize">{{
+                                        dept === 'all' ? 'All Departments' : dept
+                                    }}</span>
+                                    <span
+                                        v-if="selectedDepartment === dept"
+                                        class="text-indigo-600 dark:text-indigo-400"
+                                    >
+                                        ✓
+                                    </span>
+                                </button>
+                            </div>
+                            <div
+                                class="border-t border-gray-200 p-2 dark:border-gray-600"
+                            >
+                                <button
+                                    @click="clearFilters"
+                                    class="w-full rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-600"
+                                >
+                                    Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -211,14 +267,6 @@ const getStatusClass = (status: string) => {
                 >
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left">
-                                <input
-                                    type="checkbox"
-                                    :checked="allTeachersSelected"
-                                    @change="toggleAllTeachers"
-                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-                                />
-                            </th>
                             <th
                                 scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
@@ -239,12 +287,6 @@ const getStatusClass = (status: string) => {
                             </th>
                             <th
                                 scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
-                            >
-                                STATUS
-                            </th>
-                            <th
-                                scope="col"
                                 class="px-6 py-3 text-right text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-300"
                             >
                                 ACTIONS
@@ -254,102 +296,16 @@ const getStatusClass = (status: string) => {
                     <tbody
                         class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800"
                     >
-                        <tr
+                        <TeacherCard
                             v-for="teacher in filteredTeachers"
                             :key="teacher.id"
-                            class="transition hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                        >
-                            <td class="px-6 py-4">
-                                <input
-                                    type="checkbox"
-                                    :checked="
-                                        selectedTeachers.includes(teacher.id)
-                                    "
-                                    @change="toggleTeacherSelection(teacher.id)"
-                                    class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-                                />
-                            </td>
-                            <!-- Teacher Name -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center space-x-3">
-                                    <div
-                                        class="flex size-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                                        :style="{
-                                            backgroundColor: `rgba(${PRIMARY_COLOR_RGB}, 0.8)`,
-                                        }"
-                                    >
-                                        {{ teacher.initials }}
-                                    </div>
-                                    <div>
-                                        <div
-                                            class="text-sm font-medium text-gray-900 dark:text-white"
-                                        >
-                                            {{ teacher.name }}
-                                        </div>
-                                        <div
-                                            class="text-xs text-gray-500 dark:text-gray-400"
-                                        >
-                                            {{ teacher.email }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                            <!-- Department -->
-                            <td
-                                class="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400"
-                            >
-                                <span
-                                    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                                    :class="
-                                        getDepartmentClass(teacher.department)
-                                    "
-                                >
-                                    {{ teacher.department }}
-                                </span>
-                            </td>
-                            <!-- Assigned Subjects -->
-                            <td class="px-6 py-4">
-                                <div class="flex flex-wrap gap-2">
-                                    <span
-                                        v-for="subject in teacher.assignedSubjects"
-                                        :key="subject.id"
-                                        class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200"
-                                    >
-                                        {{ subject.name }}
-                                    </span>
-                                </div>
-                            </td>
-                            <!-- Status -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span
-                                    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                                    :class="getStatusClass(teacher.status)"
-                                >
-                                    {{ teacher.status }}
-                                </span>
-                            </td>
-                            <!-- Actions -->
-                            <td
-                                class="px-6 py-4 text-right text-sm font-medium whitespace-nowrap"
-                            >
-                                <div class="flex justify-end space-x-3">
-                                    <button
-                                        class="flex items-center space-x-1 text-indigo-600 transition hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                                    >
-                                        <span>Edit</span>
-                                    </button>
-                                    <button
-                                        class="flex items-center space-x-1 text-red-600 transition hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                    >
-                                        <span>Delete</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                            :teacher="teacher"
+                            :view-mode="viewMode"
+                        />
 
                         <!-- Empty State -->
                         <tr v-if="filteredTeachers.length === 0">
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="4" class="px-6 py-12 text-center">
                                 <div class="text-gray-500 dark:text-gray-400">
                                     <Users
                                         class="mx-auto mb-3 h-12 w-12 text-gray-400"
@@ -358,7 +314,7 @@ const getStatusClass = (status: string) => {
                                         No teachers found
                                     </p>
                                     <p class="mt-1 text-xs">
-                                        Try adjusting your search
+                                        Try adjusting your search or filters
                                     </p>
                                 </div>
                             </td>
@@ -372,100 +328,12 @@ const getStatusClass = (status: string) => {
                 v-if="viewMode === 'cards'"
                 class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
-                <div
+                <TeacherCard
                     v-for="teacher in filteredTeachers"
                     :key="teacher.id"
-                    class="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-lg dark:border-gray-600 dark:bg-gray-700"
-                >
-                    <!-- Card Header -->
-                    <div class="mb-4 flex items-start justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div
-                                class="flex size-12 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                                :style="{
-                                    backgroundColor: `rgba(${PRIMARY_COLOR_RGB}, 0.8)`,
-                                }"
-                            >
-                                {{ teacher.initials }}
-                            </div>
-                            <div>
-                                <h3
-                                    class="text-sm font-semibold text-gray-900 dark:text-white"
-                                >
-                                    {{ teacher.name }}
-                                </h3>
-                                <p
-                                    class="text-xs text-gray-500 dark:text-gray-400"
-                                >
-                                    ID: #{{ teacher.id }}
-                                </p>
-                            </div>
-                        </div>
-                        <input
-                            type="checkbox"
-                            :checked="selectedTeachers.includes(teacher.id)"
-                            @change="toggleTeacherSelection(teacher.id)"
-                            class="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-                        />
-                    </div>
-
-                    <!-- Email -->
-                    <div class="mb-4">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ teacher.email }}
-                        </p>
-                    </div>
-
-                    <!-- Department & Status -->
-                    <div class="mb-4 flex items-center justify-between">
-                        <span
-                            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                            :class="getDepartmentClass(teacher.department)"
-                        >
-                            {{ teacher.department }}
-                        </span>
-                        <span
-                            class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                            :class="getStatusClass(teacher.status)"
-                        >
-                            {{ teacher.status }}
-                        </span>
-                    </div>
-
-                    <!-- Assigned Subjects -->
-                    <div class="mb-4">
-                        <p
-                            class="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300"
-                        >
-                            Assigned Subjects:
-                        </p>
-                        <div class="flex flex-wrap gap-2">
-                            <span
-                                v-for="subject in teacher.assignedSubjects"
-                                :key="subject.id"
-                                class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-600 dark:text-gray-200"
-                            >
-                                {{ subject.name }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div
-                        class="flex gap-2 border-t border-gray-200 pt-4 dark:border-gray-600"
-                    >
-                        <button
-                            class="flex-1 rounded-lg border border-indigo-200 px-4 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
-                        >
-                            Edit
-                        </button>
-                        <button
-                            class="flex-1 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
-                        >
-                            Delete
-                        </button>
-                    </div>
-                </div>
+                    :teacher="teacher"
+                    :view-mode="viewMode"
+                />
 
                 <!-- Empty State for Cards -->
                 <div v-if="filteredTeachers.length === 0" class="col-span-full">
@@ -474,7 +342,9 @@ const getStatusClass = (status: string) => {
                     >
                         <Users class="mx-auto mb-4 h-16 w-16 text-gray-400" />
                         <p class="text-lg font-medium">No teachers found</p>
-                        <p class="mt-2 text-sm">Try adjusting your search</p>
+                        <p class="mt-2 text-sm">
+                            Try adjusting your search or filters
+                        </p>
                     </div>
                 </div>
             </div>

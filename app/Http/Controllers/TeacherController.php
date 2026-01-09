@@ -185,4 +185,21 @@ class TeacherController extends Controller
         $teacher->save();
         return response()->json(['message' => 'Teacher rejected', 'teacher_id' => $id]);
     }
+
+    /**
+     * Get all teachers with their profile data (name, email, department, assigned subjects).
+     */
+    public function getTeachersWithProfile()
+    {
+        $teachers = Teacher::with(['classSessions.subject'])
+            ->get()
+            ->map(function ($teacher) {
+                return $teacher->getProfileData();
+            });
+
+        return response()->json([
+            'success' => true,
+            'teachers' => $teachers,
+        ]);
+    }
 }
