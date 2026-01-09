@@ -125,10 +125,27 @@ const enrollSelectedStudents = async () => {
     const { data } = await axios.get(`/class_sessions/${selectedSession.value.session_id}/students`)
     enrolledStudents.value = data.students || []
     
+    alert('Students enrolled successfully!')
     closeEnrollModal()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to enroll students:', error)
-    alert('Failed to enroll students. Please try again.')
+    
+    // Check if it's a schedule conflict error
+    if (error?.response?.status === 422 && error?.response?.data?.conflicts) {
+      const conflicts = error.response.data.conflicts
+      let message = '⚠️ Schedule Conflicts Detected!\n\n'
+      
+      conflicts.forEach((conflict: any, index: number) => {
+        message += `${index + 1}. ${conflict.student_name}:\n`
+        message += `   Trying to assign: ${conflict.new_subject} (${conflict.new_days}, ${conflict.new_time})\n`
+        message += `   Already enrolled: ${conflict.conflicting_subject} (${conflict.conflicting_days}, ${conflict.conflicting_time})\n\n`
+      })
+      
+      message += 'Please resolve these conflicts before enrolling.'
+      alert(message)
+    } else {
+      alert('Failed to enroll students. Please try again.')
+    }
   } finally {
     enrolling.value = false
   }
