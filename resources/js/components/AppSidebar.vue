@@ -59,17 +59,17 @@ const isActive = (href: string) =>
     currentUrl.value === href || currentUrl.value.startsWith(`${href}/`);
 
 const linkClasses = (href: string, disabled = false) => {
-    const base = 'flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap';
+    const base = 'group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 overflow-hidden';
 
     if (disabled) {
-        return `${base} text-gray-400 cursor-not-allowed bg-transparent`;
+        return `${base} text-gray-400 cursor-not-allowed`;
     }
 
     if (isActive(href)) {
-        return `${base} text-white bg-blue-600 hover:bg-blue-700`;
+        return `${base} text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/30`;
     }
 
-    return `${base} text-gray-700 hover:bg-gray-100`;
+    return `${base} text-gray-700 hover:text-indigo-700`;
 };
 
 const userInitials = computed(() => {
@@ -95,9 +95,9 @@ const logout = () => router.post('/logout');
         class="bg-white shadow-md border-r border-gray-200"
     >
         <SidebarHeader class="px-4 pt-6 pb-4">
-            <Link :href="'/dashboard'" class="inline-flex items-center gap-3">
+            <Link :href="'/dashboard'" class="inline-flex items-center gap-3 group">
                 <div
-                    class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0"
+                    class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-lg"
                 >
                     <svg
                         class="w-6 h-6 text-white"
@@ -113,19 +113,19 @@ const logout = () => router.post('/logout');
                         />
                     </svg>
                 </div>
-                <div class="hidden lg:block min-w-0">
+                <div class="min-w-0 flex-1">
                     <p class="text-sm font-bold text-gray-900 truncate">AttendEase</p>
                     <p class="text-xs text-gray-500 truncate">Attendance System</p>
                 </div>
             </Link>
         </SidebarHeader>
 
-        <SidebarContent class="px-2 pb-6 space-y-6">
-            <div v-for="section in navSections" :key="section.title" class="space-y-3">
+        <SidebarContent class="px-3 pb-6 space-y-6">
+            <div v-for="section in navSections" :key="section.title" class="space-y-2">
                 <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     {{ section.title }}
                 </h3>
-                <ul class="space-y-2 px-2">
+                <ul class="space-y-1">
                     <li v-for="item in section.items" :key="item.label">
                         <Link
                             v-if="!item.disabled"
@@ -133,22 +133,63 @@ const logout = () => router.post('/logout');
                             :class="linkClasses(item.href)"
                             :title="item.label"
                         >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Animated Background on Hover -->
+                            <div class="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
+                            
+                            <!-- Shimmer Effect -->
+                            <div class="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                            
+                            <!-- Icon -->
+                            <svg 
+                                class="w-5 h-5 flex-shrink-0 relative z-10 group-hover:scale-110 group-hover:rotate-3 transition-all duration-300" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"></path>
                             </svg>
-                            <span class="hidden lg:inline">{{ item.label }}</span>
+                            
+                            <!-- Label - Always visible, adjusts with screen size -->
+                            <span class="relative z-10 truncate text-xs sm:text-sm font-medium">
+                                {{ item.label }}
+                            </span>
+
+                            <!-- Active Indicator -->
+                            <div 
+                                v-if="isActive(item.href)"
+                                class="absolute right-2 w-1.5 h-1.5 bg-white rounded-full animate-pulse"
+                            ></div>
                         </Link>
+                        
                         <span
                             v-else
                             :class="linkClasses(item.href, true)"
                             aria-disabled="true"
                             role="link"
-                            :title="item.label"
+                            :title="`${item.label} (Coming Soon)`"
                         >
-                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <!-- Disabled Background -->
+                            <div class="absolute inset-0 bg-gray-100/50 rounded-xl"></div>
+                            
+                            <!-- Icon -->
+                            <svg 
+                                class="w-5 h-5 flex-shrink-0 relative z-10 opacity-50" 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon"></path>
                             </svg>
-                            <span class="hidden lg:inline">{{ item.label }}</span>
+                            
+                            <!-- Label -->
+                            <span class="relative z-10 truncate text-xs sm:text-sm">
+                                {{ item.label }}
+                            </span>
+                            
+                            <!-- Coming Soon Badge -->
+                            <span class="ml-auto text-[10px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded relative z-10">
+                                Soon
+                            </span>
                         </span>
                     </li>
                 </ul>
@@ -161,3 +202,47 @@ const logout = () => router.post('/logout');
     </Sidebar>
     <slot />
 </template>
+
+<style scoped>
+/* Smooth animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Ensure smooth transitions */
+* {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar for sidebar content */
+:deep(.sidebar-content) {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.3) transparent;
+}
+
+:deep(.sidebar-content::-webkit-scrollbar) {
+  width: 4px;
+}
+
+:deep(.sidebar-content::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+:deep(.sidebar-content::-webkit-scrollbar-thumb) {
+  background-color: rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+}
+
+:deep(.sidebar-content::-webkit-scrollbar-thumb:hover) {
+  background-color: rgba(99, 102, 241, 0.5);
+}
+</style>
