@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClassSessionController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use App\Http\Controllers\SubjectController;
@@ -12,6 +13,7 @@ use App\Http\Controllers\RoomController;
 use App\Models\User;
 use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\ClassSession;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManagementUserController;
@@ -61,11 +63,62 @@ Route::get('/subjects', function () {
     return Inertia::render('subject/Subject');
 })->name('subjects');
 
-// use App\Http\Controllers\ClassSessionController
+Route::get('/sessions', function () {
+    $sessions = ClassSession::with(['subject', 'teacher', 'room', 'students'])
+        ->get()
+        ->map(function ($session) {
+            // Count attendance statuses
+            $attendanceStats = DB::table('attendance')
+                ->where('session_id', $session->session_id)
+                ->select(
+                    DB::raw('SUM(CASE WHEN status = "present" THEN 1 ELSE 0 END) as present'),
+                    DB::raw('SUM(CASE WHEN status = "late" THEN 1 ELSE 0 END) as late'),
+                    DB::raw('SUM(CASE WHEN status = "absent" THEN 1 ELSE 0 END) as absent'),
+                    DB::raw('SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending')
+                )
+                ->first();
 
-// Route::get('/sessions', [ClassSessionController::class, 'index'])
-//     ->middleware(['auth', 'verified'])
-//     ->name('sessions');
+            $teacherName = $session->teacher 
+                ? trim($session->teacher->firstname . ' ' . $session->teacher->lastname)
+                : 'N/A';
+
+            return [
+                'id' => $session->session_id,
+                'subject' => $session->subject?->subject_name ?? 'N/A',
+                'code' => 'S-' . str_pad($session->session_id, 4, '0', STR_PAD_LEFT),
+                'teacher' => $teacherName,
+                'room' => $session->room?->room_name ?? 'N/A',
+                'status' => $session->session_status ?? 'pending',
+                'startTime' => $session->start_time ? \Carbon\Carbon::parse($session->start_time)->format('g:i A') : null,
+                'durationText' => $session->start_time && $session->end_time 
+                    ? \Carbon\Carbon::parse($session->start_time)->diffForHumans(\Carbon\Carbon::parse($session->end_time), true)
+                    : null,
+                'present' => (int) ($attendanceStats->present ?? 0),
+                'late' => (int) ($attendanceStats->late ?? 0),
+                'absent' => (int) ($attendanceStats->absent ?? 0),
+                'pending' => (int) ($attendanceStats->pending ?? 0),
+                'isLive' => $session->session_status === 'active',
+            ];
+        });
+
+    $activeCount = $sessions->where('status', 'active')->count();
+    $studentsTracked = DB::table('attendance')->distinct('student_id')->count();
+    
+    // Calculate average attendance rate
+    $totalAttendance = DB::table('attendance')->count();
+    $presentCount = DB::table('attendance')->where('status', 'present')->count();
+    $avgAttendanceRate = $totalAttendance > 0 ? round(($presentCount / $totalAttendance) * 100, 1) : 0;
+    
+    $flaggedIssues = DB::table('attendance')->where('status', 'absent')->count();
+
+    return Inertia::render('session/Session', [
+        'activeCount' => $activeCount,
+        'studentsTracked' => $studentsTracked,
+        'avgAttendanceRate' => $avgAttendanceRate,
+        'flaggedIssues' => $flaggedIssues,
+        'sessions' => $sessions,
+    ]);
+})->name('sessions');
 
 Route::get('/usermanagement', function () {
     $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];
@@ -87,8 +140,6 @@ Route::get('/usermanagement', function () {
             'last_activity' => optional($t->created_at)->toIso8601String(),
             'initials' => $initials,
             'avatar_color' => $color,
-            'approval_status' => $t->approval_status ?? 'pending',
-            'approved_at' => optional($t->approved_at)->toIso8601String(),
         ];
     });
 
@@ -109,8 +160,6 @@ Route::get('/usermanagement', function () {
             'last_activity' => optional($s->created_at)->toIso8601String(),
             'initials' => $initials,
             'avatar_color' => $color,
-            'approval_status' => $s->approval_status ?? 'pending',
-            'approved_at' => optional($s->approved_at)->toIso8601String(),
         ];
     });
 
