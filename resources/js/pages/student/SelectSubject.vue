@@ -377,12 +377,9 @@ const selectedSessionIds = computed(() => {
 
 const selectedStudentIds = computed(() => {
     return studentsData.value
-        .filter((s) => s.selected)
-        .map((s) => {
-            const id = parseInt(s.id, 10);
-            return id;
-        })
-        .filter((id) => !isNaN(id) && id > 0);
+        .filter((s) => s.selected && s.id)
+        .map((s) => String(s.id).trim())
+        .filter((id) => id.length > 0);
 });
 
 const isSubmitting = ref(false);

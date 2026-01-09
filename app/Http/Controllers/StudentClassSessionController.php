@@ -15,7 +15,7 @@ class StudentClassSessionController extends Controller
             'session_ids.*' => ['integer', 'exists:class_sessions,session_id'],
 
             'student_ids' => ['required', 'array', 'min:1'],
-            'student_ids.*' => ['integer', 'exists:students,student_id'],
+            'student_ids.*' => ['string', 'exists:students,student_id'],
         ]);
 
         DB::transaction(function () use ($data) {
