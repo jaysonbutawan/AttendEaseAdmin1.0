@@ -53,7 +53,6 @@ export class RoomManager {
         const payload = RoomDataMapper.mapToPayload(roomData);
         const response = await this.apiService.updateRoom(roomId, payload);
 
-        // Update polygon color if polygon manager is available
         if (this.polygonManager && response.room.color) {
             this.polygonManager.updatePolygonColor(roomId, response.room.color);
         }

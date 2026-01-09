@@ -32,7 +32,6 @@ let polygonManager: any = null;
 
 const mapEl = ref<HTMLDivElement | null>(null);
 
-// ============ Room Management Functions ============
 
 const editRoom = (room: any) => {
     setEditMode(room.id, true);
