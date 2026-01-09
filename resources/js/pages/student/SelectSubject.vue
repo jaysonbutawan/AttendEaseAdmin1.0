@@ -688,42 +688,7 @@ onMounted(() => {
                             </select>
                         </div>
 
-                        <!-- Auto-Assign Buttons -->
-                        <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
-                            <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Quick Actions
-                            </p>
-                            <div class="flex gap-2">
-                                <button
-                                    @click="autoAssignByDepartment"
-                                    :disabled="selectedSubjectsCount === 0"
-                                    :class="{
-                                        'bg-green-600 hover:bg-green-700 text-white': selectedSubjectsCount > 0,
-                                        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedSubjectsCount === 0,
-                                    }"
-                                    class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition duration-150"
-                                    :title="selectedSubjectsCount === 0 ? 'Select at least one subject first' : `Auto-assign ${matchingStudentsCount} matching students`"
-                                >
-                                    Auto-Assign by Dept
-                                    <span v-if="matchingStudentsCount > 0" class="ml-1 font-bold">({{ matchingStudentsCount }})</span>
-                                </button>
-                                <button
-                                    @click="clearAllStudentSelections"
-                                    :disabled="selectedStudentIds.length === 0"
-                                    :class="{
-                                        'bg-red-600 hover:bg-red-700 text-white': selectedStudentIds.length > 0,
-                                        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedStudentIds.length === 0,
-                                    }"
-                                    class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition duration-150"
-                                    title="Clear all student selections"
-                                >
-                                    Clear All
-                                </button>
-                            </div>
-                            <p v-if="selectedSubjectsCount > 0" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                                {{ selectedSubjectsCount }} subject(s) selected • {{ matchingStudentsCount }} matching student(s) from {{ getSelectedSubjectDepartments.length }} department(s)
-                            </p>
-                        </div>
+                        <!-- Quick actions removed -->
                     </div>
 
                     <div
