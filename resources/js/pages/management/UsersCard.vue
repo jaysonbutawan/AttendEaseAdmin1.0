@@ -98,13 +98,13 @@ const isOnline = computed(() => {
     <div class="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-purple-50/30 to-pink-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
     
     <!-- Animated Border Gradient -->
-    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style="padding: 1px; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+    style="padding: 1px; -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude;"></div>
 
     <div class="relative p-6">
       <!-- Header Section -->
       <div class="flex items-start justify-between mb-4">
         <div class="flex items-center gap-4 flex-1">
-          <!-- Avatar with Status -->
           <div class="relative">
             <div 
               class="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-lg font-bold shadow-lg transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
