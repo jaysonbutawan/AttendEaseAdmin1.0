@@ -538,7 +538,7 @@ onMounted(() => {
                                 type="text"
                                 v-model="studentSearchQuery"
                                 placeholder="Search by student name or ID..."
-                                class="w-full rounded-lg border border-gray-300 py-2 pr-4 pl-10 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            class="w-full rounded-lg border border-gray-200 py-3 pr-4 pl-10 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                             />
                         </div>
 
