@@ -81,4 +81,61 @@ public function destroy($id)
     });
 }
 
+public function update(Request $request, $id)
+{
+    $data = $request->validate([
+        'room_name' => ['required', 'string', 'max:255'],
+        'color'     => ['nullable', 'string', 'max:50'],
+        'update_polygon' => ['nullable', 'boolean'],
+        'polygon'   => ['nullable', 'array', 'min:3'],
+        'polygon.*.latitude' => ['required_with:polygon', 'numeric'],
+        'polygon.*.longitude' => ['required_with:polygon', 'numeric'],
+        'polygon.*.point_order' => ['required_with:polygon', 'integer', 'min:1'],
+    ]);
+
+    return DB::transaction(function () use ($id, $data) {
+        // Update room details
+        DB::table('rooms')
+            ->where('room_id', $id)
+            ->update([
+                'room_name' => $data['room_name'],
+                'color' => $data['color'] ?? null,
+                'updated_at' => now(),
+            ]);
+
+        // Update polygon only if requested and provided
+        if (isset($data['update_polygon']) && $data['update_polygon'] && isset($data['polygon'])) {
+            // Delete old polygon points
+            DB::table('room_polygons')->where('room_id', $id)->delete();
+
+            // Insert new polygon points
+            $points = array_map(function ($p) use ($id) {
+                return [
+                    'room_id' => $id,
+                    'latitude' => $p['latitude'],
+                    'longitude' => $p['longitude'],
+                    'point_order' => $p['point_order'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }, $data['polygon']);
+
+            DB::table('room_polygons')->insert($points);
+        }
+
+        $room = DB::table('rooms')->where('room_id', $id)->first();
+
+        // Fetch polygon points
+        $points = DB::table('room_polygons')
+            ->where('room_id', $id)
+            ->orderBy('point_order')
+            ->get(['latitude', 'longitude', 'point_order']);
+
+        return response()->json([
+            'room' => $room,
+            'polygon' => $points,
+        ]);
+    });
+}
+
 }
