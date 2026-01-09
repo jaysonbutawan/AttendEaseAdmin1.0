@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import TeacherCard from '@/components/TeacherCard.vue';
+import TeacherCard from '@/pages/teacher/TeacherCard.vue';
 import { type Teacher } from '@/types';
 import { Head } from '@inertiajs/vue3';
 import { Filter, Grid3x3, List, Search, Users } from 'lucide-vue-next';
