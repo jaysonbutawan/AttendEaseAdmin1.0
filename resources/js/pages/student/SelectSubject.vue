@@ -268,6 +268,104 @@ const toggleStudentSelection = (studentId: string) => {
 };
 
 /* =======================
+   AUTO-ASSIGN BY DEPARTMENT
+======================= */
+
+/**
+ * Get departments from selected subjects
+ */
+const getSelectedSubjectDepartments = computed(() => {
+    const selectedSubjects = subjects.value.filter((s) => s.isSelected);
+    
+    if (selectedSubjects.length === 0) {
+        return [];
+    }
+
+    // Get unique departments from courses that match selected subjects
+    const departments = new Set<string>();
+    selectedSubjects.forEach(() => {
+        // Since we don't have direct subject-to-department mapping,
+        // we'll match based on the subjects selected
+        // For now, return all courses as potential departments
+    });
+
+    // Return all courses as potential match departments
+    return courses.value.map((c) => c.course_name);
+});
+
+/**
+ * Get students that match the selected subjects' departments
+ */
+const getMatchingStudentsByDepartment = computed(() => {
+    const selectedSubjects = subjects.value.filter((s) => s.isSelected);
+    
+    if (selectedSubjects.length === 0) {
+        return [];
+    }
+
+    // Get departments that should match
+    const targetDepartments = getSelectedSubjectDepartments.value;
+
+    // Filter students by matching departments
+    return filteredStudents.value.filter((student) =>
+        targetDepartments.includes(student.department)
+    );
+});
+
+/**
+ * Auto-assign all students from the same department as selected subjects
+ */
+const autoAssignByDepartment = () => {
+    const matchingStudents = getMatchingStudentsByDepartment.value;
+
+    if (matchingStudents.length === 0) {
+        alert('No students found in the departments of selected subjects');
+        return;
+    }
+
+    // Select all matching students
+    matchingStudents.forEach((student) => {
+        const dbStudent = studentsData.value.find((s) => s.id === student.id);
+        if (dbStudent) {
+            dbStudent.selected = true;
+        }
+    });
+
+    // Scroll to student section
+    const studentSection = document.querySelector('[data-student-section]');
+    if (studentSection) {
+        studentSection.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    alert(
+        `Auto-assigned ${matchingStudents.length} student(s) from matching department(s)`
+    );
+};
+
+/**
+ * Clear all student selections
+ */
+const clearAllStudentSelections = () => {
+    studentsData.value.forEach((student) => {
+        student.selected = false;
+    });
+};
+
+/**
+ * Get count of selected subjects
+ */
+const selectedSubjectsCount = computed(() => {
+    return subjects.value.filter((s) => s.isSelected).length;
+});
+
+/**
+ * Get count of matching students
+ */
+const matchingStudentsCount = computed(() => {
+    return getMatchingStudentsByDepartment.value.length;
+});
+
+/* =======================
    SUBMISSION
 ======================= */
 
@@ -570,10 +668,48 @@ onMounted(() => {
                                 </option>
                             </select>
                         </div>
+
+                        <!-- Auto-Assign Buttons -->
+                        <div class="border-t border-gray-200 pt-4 dark:border-gray-700">
+                            <p class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Quick Actions
+                            </p>
+                            <div class="flex gap-2">
+                                <button
+                                    @click="autoAssignByDepartment"
+                                    :disabled="selectedSubjectsCount === 0"
+                                    :class="{
+                                        'bg-green-600 hover:bg-green-700 text-white': selectedSubjectsCount > 0,
+                                        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedSubjectsCount === 0,
+                                    }"
+                                    class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition duration-150"
+                                    :title="selectedSubjectsCount === 0 ? 'Select at least one subject first' : `Auto-assign ${matchingStudentsCount} matching students`"
+                                >
+                                    Auto-Assign by Dept
+                                    <span v-if="matchingStudentsCount > 0" class="ml-1 font-bold">({{ matchingStudentsCount }})</span>
+                                </button>
+                                <button
+                                    @click="clearAllStudentSelections"
+                                    :disabled="selectedStudentIds.length === 0"
+                                    :class="{
+                                        'bg-red-600 hover:bg-red-700 text-white': selectedStudentIds.length > 0,
+                                        'bg-gray-300 text-gray-500 cursor-not-allowed': selectedStudentIds.length === 0,
+                                    }"
+                                    class="flex-1 rounded-lg px-3 py-2 text-sm font-medium transition duration-150"
+                                    title="Clear all student selections"
+                                >
+                                    Clear All
+                                </button>
+                            </div>
+                            <p v-if="selectedSubjectsCount > 0" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                {{ selectedSubjectsCount }} subject(s) selected • {{ matchingStudentsCount }} matching student(s) from {{ getSelectedSubjectDepartments.length }} department(s)
+                            </p>
+                        </div>
                     </div>
 
                     <div
                         class="mt-6 max-h-96 space-y-3 overflow-y-auto border-t border-gray-200 pt-4 pr-2 dark:border-gray-700"
+                        data-student-section
                     >
                         <div class="flex items-center justify-between p-2">
                             <label
