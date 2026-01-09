@@ -302,7 +302,7 @@ const formatDate = (dateString: string) => {
   <transition name="fade">
     <div 
       v-if="showModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       @click="closeModal"
     >
       <transition name="slide-up">
@@ -441,7 +441,7 @@ const formatDate = (dateString: string) => {
   <transition name="fade">
     <div 
       v-if="showEnrollModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       @click="closeEnrollModal"
     >
       <transition name="slide-up">
