@@ -654,7 +654,7 @@ onMounted(async () => {
         <div
             id="subjectModal"
             v-show="showSubjectModal"
-            class="fixed inset-0 z-50 flex items-center justify-center px-4"
+            class="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center px-4"
             @click.self="closeSubjectModal"
         >
             <div

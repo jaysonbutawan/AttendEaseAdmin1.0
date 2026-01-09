@@ -293,6 +293,7 @@ const clearFilters = () => {
 
             <!-- Pagination -->
             <div
+                v-if="teachersData.length > 10"
                 class="mt-6 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400"
             >
                 <div>

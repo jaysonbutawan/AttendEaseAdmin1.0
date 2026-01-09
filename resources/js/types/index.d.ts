@@ -44,9 +44,12 @@ export interface AssignedSubject {
 }
 
 export interface Teacher {
-    id: number;
+    id: string;
     name: string;
     email: string;
     department: string;
     assignedSubjects: AssignedSubject[];
+    contact_number?: string;
+    status?: string;
+    approval_status?: 'pending' | 'approved' | 'rejected';
 }
