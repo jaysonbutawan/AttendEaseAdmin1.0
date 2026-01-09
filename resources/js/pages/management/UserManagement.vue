@@ -231,7 +231,6 @@ const formatLastActivity = (lastActivity?: string) => {
 	<AppLayout>
 		<Head title="User Management - AttendEase" />
 		
-		<!-- User Management Page -->
 		<div class="space-y-6 p-4 sm:p-6 lg:p-8">
 			<!-- Header -->
 			<div class="mb-8">
