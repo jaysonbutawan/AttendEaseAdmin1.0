@@ -154,4 +154,28 @@ class ClassSessionController extends Controller
             'sessions' => $data,
         ]);
     }
+
+    /**
+     * Get all students enrolled in a specific class session
+     */
+    public function getSessionStudents($sessionId)
+    {
+        $session = ClassSession::with('students')->findOrFail($sessionId);
+
+        $students = $session->students->map(function ($student) {
+            return [
+                'student_id' => $student->student_id,
+                'firstname' => $student->firstname,
+                'lastname' => $student->lastname,
+                'email' => $student->email,
+                'enrollment_status' => $student->pivot->enrollment_status ?? 'enrolled',
+                'enrolled_at' => $student->pivot->enrolled_at ?? $student->created_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'students' => $students,
+        ]);
+    }
 }

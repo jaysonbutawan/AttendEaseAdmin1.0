@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Clock, GraduationCap, MapPin, Pencil, ArrowRight } from 'lucide-vue-next'
+import { Clock, GraduationCap, MapPin, Pencil, ArrowRight, X } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 
@@ -14,7 +14,20 @@ type ClassSession = {
   session_status: string
 }
 
+type EnrolledStudent = {
+  student_id: string
+  firstname: string
+  lastname: string
+  email: string
+  enrollment_status: string
+  enrolled_at: string
+}
+
 const sessions = ref<ClassSession[]>([])
+const selectedSession = ref<ClassSession | null>(null)
+const enrolledStudents = ref<EnrolledStudent[]>([])
+const showModal = ref(false)
+const loadingStudents = ref(false)
 
 onMounted(async () => {
   const { data } = await axios.get('/class_sessions')
@@ -28,6 +41,28 @@ onMounted(async () => {
     }
   })
 })
+
+const openSessionDetails = async (session: ClassSession) => {
+  selectedSession.value = session
+  showModal.value = true
+  loadingStudents.value = true
+  
+  try {
+    const { data } = await axios.get(`/class_sessions/${session.session_id}/students`)
+    enrolledStudents.value = data.students || []
+  } catch (error) {
+    console.error('Failed to fetch students:', error)
+    enrolledStudents.value = []
+  } finally {
+    loadingStudents.value = false
+  }
+}
+
+const closeModal = () => {
+  showModal.value = false
+  selectedSession.value = null
+  enrolledStudents.value = []
+}
 
 const formatDays = (days: string[] | string) => {
   let parsed: string[] = [];
@@ -78,6 +113,28 @@ const formatTime = (startTime: string, endTime: string) => {
   return `${formatPHTime(startTime)} - ${formatPHTime(endTime)}`;
 };
 
+const getEnrollmentStatusClass = (status: string) => {
+  const baseClass = 'inline-flex items-center px-3 py-1 rounded-full text-xs font-medium';
+  switch (status?.toLowerCase()) {
+    case 'enrolled':
+      return `${baseClass} bg-green-100 text-green-800`;
+    case 'pending':
+      return `${baseClass} bg-yellow-100 text-yellow-800`;
+    case 'dropped':
+      return `${baseClass} bg-red-100 text-red-800`;
+    default:
+      return `${baseClass} bg-gray-100 text-gray-800`;
+  }
+};
+
+const formatDate = (dateString: string) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+};
 </script>
 
 <template>
@@ -139,7 +196,10 @@ const formatTime = (startTime: string, endTime: string) => {
             <Pencil class="w-4 h-4" />
             Edit
           </button>
-          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition duration-300 hover:scale-105">
+          <button 
+            @click="openSessionDetails(session)"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition duration-300 hover:scale-105"
+          >
             View Details
             <ArrowRight class="w-4 h-4" />
           </button>
@@ -151,10 +211,154 @@ const formatTime = (startTime: string, endTime: string) => {
       No class sessions available
     </div>
   </div>
+
+  <!-- Modal Overlay -->
+  <transition name="fade">
+    <div 
+      v-if="showModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click="closeModal"
+    >
+      <transition name="slide-up">
+        <div 
+          v-if="showModal"
+          class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
+          @click.stop
+        >
+          <!-- Modal Header -->
+          <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-8 py-6 flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-white">{{ selectedSession?.subject_name }}</h2>
+              <p class="text-indigo-100 text-sm mt-1">Enrolled Students</p>
+            </div>
+            <button 
+              @click="closeModal"
+              class="p-2 hover:bg-indigo-500 rounded-lg transition"
+            >
+              <X class="w-6 h-6 text-white" />
+            </button>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="overflow-y-auto flex-1 p-8">
+            <!-- Session Info -->
+            <div v-if="selectedSession" class="mb-8 p-6 bg-gray-50 rounded-xl">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p class="text-xs text-gray-500 font-semibold uppercase">Teacher</p>
+                  <p class="text-sm font-bold text-gray-900 mt-1">{{ selectedSession.teacher_name }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-semibold uppercase">Room</p>
+                  <p class="text-sm font-bold text-gray-900 mt-1">{{ selectedSession.room_name }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-semibold uppercase">Time</p>
+                  <p class="text-sm font-bold text-gray-900 mt-1">{{ formatTime(selectedSession.start_time, selectedSession.end_time) }}</p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500 font-semibold uppercase">Days</p>
+                  <p class="text-sm font-bold text-gray-900 mt-1">{{ formatDays(selectedSession.session_days) }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Students List -->
+            <div>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Students</h3>
+                <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">
+                  {{ enrolledStudents.length }}
+                </span>
+              </div>
+
+              <div v-if="loadingStudents" class="flex items-center justify-center py-8">
+                <div class="animate-spin">
+                  <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <div v-else-if="enrolledStudents.length === 0" class="text-center py-8">
+                <p class="text-gray-500">No students enrolled in this session</p>
+              </div>
+
+              <div v-else class="space-y-3">
+                <div 
+                  v-for="student in enrolledStudents"
+                  :key="student.student_id"
+                  class="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <div class="flex items-center gap-3 mb-2">
+                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {{ student.firstname.charAt(0) }}{{ student.lastname.charAt(0) }}
+                        </div>
+                        <div>
+                          <p class="font-semibold text-gray-900">
+                            {{ student.firstname }} {{ student.lastname }}
+                          </p>
+                          <p class="text-xs text-gray-500">{{ student.student_id }}</p>
+                        </div>
+                      </div>
+                      <p class="text-sm text-gray-600 ml-13">{{ student.email }}</p>
+                    </div>
+                    <div class="flex flex-col items-end gap-2">
+                      <span :class="getEnrollmentStatusClass(student.enrollment_status)">
+                        {{ student.enrollment_status || 'Enrolled' }}
+                      </span>
+                      <p class="text-xs text-gray-500">
+                        {{ formatDate(student.enrolled_at) }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="border-t border-gray-200 px-8 py-4 flex justify-end gap-3 bg-gray-50">
+            <button 
+              @click="closeModal"
+              class="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </transition>
+    </div>
+  </transition>
 </template>
 
 <style scoped>
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Fade transition for overlay */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide up transition for modal */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-up-enter-from,
+.slide-up-leave-to {
+  transform: translateY(30px);
+  opacity: 0;
 }
 </style>
