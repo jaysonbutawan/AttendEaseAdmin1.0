@@ -160,18 +160,28 @@ class ClassSessionController extends Controller
      */
     public function getSessionStudents($sessionId)
     {
-        $session = ClassSession::with('students')->findOrFail($sessionId);
+        $session = ClassSession::findOrFail($sessionId);
 
-        $students = $session->students->map(function ($student) {
-            return [
-                'student_id' => $student->student_id,
-                'firstname' => $student->firstname,
-                'lastname' => $student->lastname,
-                'email' => $student->email,
-                'enrollment_status' => $student->pivot->enrollment_status ?? 'enrolled',
-                'enrolled_at' => $student->pivot->enrolled_at ?? $student->created_at,
-            ];
-        });
+        $students = $session->students()
+            ->select(
+                'students.student_id',
+                'students.firstname',
+                'students.lastname',
+                'students.email',
+                'student_class_sessions.enrollment_status',
+                'student_class_sessions.enrolled_at'
+            )
+            ->get()
+            ->map(function ($student) {
+                return [
+                    'student_id' => $student->student_id,
+                    'firstname' => $student->firstname,
+                    'lastname' => $student->lastname,
+                    'email' => $student->email,
+                    'enrollment_status' => $student->enrollment_status ?? 'enrolled',
+                    'enrolled_at' => $student->enrolled_at ?? $student->created_at,
+                ];
+            });
 
         return response()->json([
             'success' => true,
