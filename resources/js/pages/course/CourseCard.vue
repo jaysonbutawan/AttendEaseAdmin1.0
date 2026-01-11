@@ -93,6 +93,7 @@ const openEnrollModal = async () => {
   } finally {
     loadingAvailable.value = false
   }
+  
 }
 
 const closeEnrollModal = () => {
