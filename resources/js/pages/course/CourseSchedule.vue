@@ -278,18 +278,12 @@ onMounted(async () => {
     }
 });
 
-const MAX_DAYS = 3;
 
 const toggleDay = (day: string) => {
     const days = form.value.dayOfWeek;
 
     if (days.includes(day)) {
         form.value.dayOfWeek = days.filter((d) => d !== day);
-        return;
-    }
-
-    if (days.length >= MAX_DAYS) {
-        statusMessage.value = `You can select up to ${MAX_DAYS} days only.`;
         return;
     }
 
