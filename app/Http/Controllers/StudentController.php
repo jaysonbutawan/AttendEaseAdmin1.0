@@ -152,43 +152,51 @@ public function index()
         return response()->json(['message' => 'Student updated', 'student_id' => $student->student_id]);
     }
 
-    public function deleteById(string $id)
+    public function deleteById(string $id, Request $request)
     {
         $student = Student::where('student_id', $id)->first();
         if (!$student) {
-            return response()->json(['message' => 'Student not found'], 404);
+            return redirect()->back()->with('error', 'Student not found');
         }
-        $student->delete();
-        return response()->json(['message' => 'Student deleted', 'student_id' => $id]);
+        
+        try {
+            $student->delete();
+            return redirect()->back()->with('success', 'Student deleted successfully');
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (strpos($e->getMessage(), 'foreign key constraint fails') !== false) {
+                return redirect()->back()->with('error', 'Cannot delete this student because they have enrollment records. Please remove all enrollments first.');
+            }
+            return redirect()->back()->with('error', 'Error deleting student: ' . $e->getMessage());
+        }
     }
 
     /**
      * Approve a student by student_id.
      */
-    public function approve(string $id)
+    public function approve(string $id, Request $request)
     {
         $student = Student::where('student_id', $id)->first();
         if (!$student) {
-            return response()->json(['message' => 'Student not found'], 404);
+            return redirect()->back()->with('error', 'Student not found');
         }
         $student->approval_status = 'approved';
         $student->approved_at = now();
         $student->save();
-        return response()->json(['message' => 'Student approved', 'student_id' => $id]);
+        return redirect()->back()->with('success', 'Student approved successfully');
     }
 
     /**
      * Reject a student by student_id.
      */
-    public function reject(string $id)
+    public function reject(string $id, Request $request)
     {
         $student = Student::where('student_id', $id)->first();
         if (!$student) {
-            return response()->json(['message' => 'Student not found'], 404);
+            return redirect()->back()->with('error', 'Student not found');
         }
         $student->approval_status = 'rejected';
         // Leave approved_at as-is or null; we do not modify it on reject
         $student->save();
-        return response()->json(['message' => 'Student rejected', 'student_id' => $id]);
+        return redirect()->back()->with('success', 'Student rejected successfully');
     }
 }

@@ -1,8 +1,8 @@
 
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
 import UsersCard from './UsersCard.vue';
 
 interface User {
@@ -40,12 +40,33 @@ interface UserManagementProps {
 }
 
 const props = defineProps<UserManagementProps>();
+const page = usePage();
+
+// Alert state
+const alertMessage = ref('');
+const alertType = ref<'success' | 'error'>('success');
+const showAlert = ref(false);
 
 // Search and filter states
 const searchQuery = ref(props.filters?.search ?? '');
 const selectedRole = ref(props.filters?.role ?? '');
 const selectedStatus = ref(props.filters?.status ?? '');
 const viewMode = ref<'table' | 'cards'>(props.filters?.view ?? 'cards');
+
+// Watch for flash messages
+watch(() => page.props.flash, (flash: any) => {
+    if (flash?.success) {
+        alertMessage.value = flash.success;
+        alertType.value = 'success';
+        showAlert.value = true;
+        setTimeout(() => showAlert.value = false, 3000);
+    } else if (flash?.error) {
+        alertMessage.value = flash.error;
+        alertType.value = 'error';
+        showAlert.value = true;
+        setTimeout(() => showAlert.value = false, 4000);
+    }
+}, { deep: true });
 
 // Statistics
 const totalUsers = computed(() => props.totalUsers ?? 0);
@@ -149,7 +170,10 @@ const viewUser = (payload: { id: string | number; role: 'teacher' | 'student' | 
 const deleteUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
 	const { id, role } = payload;
 	if (role === 'admin') {
-		alert('Admin account cannot be deleted.');
+		alertMessage.value = 'Admin account cannot be deleted.';
+		alertType.value = 'error';
+		showAlert.value = true;
+		setTimeout(() => showAlert.value = false, 3000);
 		return;
 	}
 	if (confirm('Are you sure you want to delete this record?')) {
@@ -162,7 +186,10 @@ const deleteUser = (payload: { id: string | number; role: 'teacher' | 'student' 
 const approveUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
 	const { id, role } = payload;
 	if (role === 'admin') {
-		alert('Admin accounts are managed in Settings.');
+		alertMessage.value = 'Admin accounts are managed in Settings.';
+		alertType.value = 'error';
+		showAlert.value = true;
+		setTimeout(() => showAlert.value = false, 3000);
 		return;
 	}
 	const endpoint = role === 'teacher' ? `/api/teachers/${id}/approve` : `/api/students/${id}/approve`;
@@ -173,7 +200,10 @@ const approveUser = (payload: { id: string | number; role: 'teacher' | 'student'
 const rejectUser = (payload: { id: string | number; role: 'teacher' | 'student' | 'admin' }) => {
 	const { id, role } = payload;
 	if (role === 'admin') {
-		alert('Admin accounts are managed in Settings.');
+		alertMessage.value = 'Admin accounts are managed in Settings.';
+		alertType.value = 'error';
+		showAlert.value = true;
+		setTimeout(() => showAlert.value = false, 3000);
 		return;
 	}
 	if (!confirm('Reject this user?')) return;
@@ -232,6 +262,71 @@ const formatLastActivity = (lastActivity?: string) => {
 		<Head title="User Management - AttendEase" />
 		
 		<div class="space-y-6 p-4 sm:p-6 lg:p-8">
+			<!-- Flash Message Alert -->
+			<transition 
+				enter-active-class="transition ease-out duration-200"
+				enter-from-class="opacity-0 translate-y-2"
+				enter-to-class="opacity-100 translate-y-0"
+				leave-active-class="transition ease-in duration-150"
+				leave-from-class="opacity-100 translate-y-0"
+				leave-to-class="opacity-0 translate-y-2"
+			>
+				<div 
+					v-if="showAlert"
+					:class="alertType === 'success' 
+						? 'bg-green-50 border border-green-200' 
+						: 'bg-red-50 border border-red-200'"
+					class="rounded-lg p-4 mb-4 flex items-start gap-3"
+				>
+					<div 
+						:class="alertType === 'success' 
+							? 'text-green-600' 
+							: 'text-red-600'"
+						class="flex-shrink-0"
+					>
+						<svg 
+							v-if="alertType === 'success'"
+							class="w-5 h-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+						</svg>
+						<svg 
+							v-else
+							class="w-5 h-5"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</div>
+					<div class="flex-1">
+						<p 
+							:class="alertType === 'success' 
+								? 'text-green-800' 
+								: 'text-red-800'"
+							class="text-sm font-medium"
+						>
+							{{ alertMessage }}
+						</p>
+					</div>
+					<button
+						@click="showAlert = false"
+						:class="alertType === 'success' 
+							? 'text-green-600 hover:bg-green-100' 
+							: 'text-red-600 hover:bg-red-100'"
+						class="flex-shrink-0 p-1 rounded transition"
+					>
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				</div>
+			</transition>
+
 			<!-- Header -->
 			<div class="mb-8">
 		<h1 class="text-3xl font-bold text-gray-800">User Management</h1>

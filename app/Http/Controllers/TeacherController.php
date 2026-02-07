@@ -164,53 +164,52 @@ class TeacherController extends Controller
     /**
      * Delete a teacher by teacher_id.
      */
-    public function deleteById(string $id)
+    public function deleteById(string $id, Request $request)
     {
         $teacher = Teacher::where('teacher_id', $id)->first();
         if (!$teacher) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Teacher not found'
-            ], 404);
+            return redirect()->back()->with('error', 'Teacher not found');
         }
         
-        $teacher->delete();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Teacher deleted successfully',
-            'teacher_id' => $id
-        ]);
+        try {
+            $teacher->delete();
+            return redirect()->back()->with('success', 'Teacher deleted successfully');
+        } catch (\Illuminate\Database\QueryException $e) {
+            if (strpos($e->getMessage(), 'foreign key constraint fails') !== false) {
+                return redirect()->back()->with('error', 'Cannot delete this teacher because they have assigned class sessions. Please remove them from all sessions first.');
+            }
+            return redirect()->back()->with('error', 'Error deleting teacher: ' . $e->getMessage());
+        }
     }
 
     /**
      * Approve a teacher by teacher_id.
      */
-    public function approve(string $id)
+    public function approve(string $id, Request $request)
     {
         $teacher = Teacher::where('teacher_id', $id)->first();
         if (!$teacher) {
-            return response()->json(['message' => 'Teacher not found'], 404);
+            return redirect()->back()->with('error', 'Teacher not found');
         }
         $teacher->approval_status = 'approved';
         $teacher->approved_at = now();
         $teacher->save();
-        return response()->json(['message' => 'Teacher approved', 'teacher_id' => $id]);
+        return redirect()->back()->with('success', 'Teacher approved successfully');
     }
 
     /**
      * Reject a teacher by teacher_id.
      */
-    public function reject(string $id)
+    public function reject(string $id, Request $request)
     {
         $teacher = Teacher::where('teacher_id', $id)->first();
         if (!$teacher) {
-            return response()->json(['message' => 'Teacher not found'], 404);
+            return redirect()->back()->with('error', 'Teacher not found');
         }
         $teacher->approval_status = 'rejected';
         // Do not modify approved_at on reject
         $teacher->save();
-        return response()->json(['message' => 'Teacher rejected', 'teacher_id' => $id]);
+        return redirect()->back()->with('success', 'Teacher rejected successfully');
     }
 
     /**
