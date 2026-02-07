@@ -50,6 +50,30 @@ class TeacherSeeder extends Seeder
                 'email' => 'david.martinez@school.edu',
                 'contact_number' => '555-0105',
             ],
+            [
+                'teacher_id' => 'TCH006',
+                'firebase_uid' => 'firebase_tch006',
+                'firstname' => 'Jennifer',
+                'lastname' => 'Taylor',
+                'email' => 'jennifer.taylor@school.edu',
+                'contact_number' => '555-0106',
+            ],
+            [
+                'teacher_id' => 'TCH007',
+                'firebase_uid' => 'firebase_tch007',
+                'firstname' => 'Robert',
+                'lastname' => 'Anderson',
+                'email' => 'robert.anderson@school.edu',
+                'contact_number' => '555-0107',
+            ],
+            [
+                'teacher_id' => 'TCH008',
+                'firebase_uid' => 'firebase_tch008',
+                'firstname' => 'Lisa',
+                'lastname' => 'Thomas',
+                'email' => 'lisa.thomas@school.edu',
+                'contact_number' => '555-0108',
+            ],
         ];
 
         foreach ($teachers as $teacher) {

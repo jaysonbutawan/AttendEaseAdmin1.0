@@ -65,6 +65,33 @@ class ClassSessionSeeder extends Seeder
                 'session_days' => json_encode(['friday']),
                 'session_status' => 'active',
             ],
+            [
+                'subject_id' => $subjects->get('Data Structures', $subjects->first()),
+                'teacher_id' => $teachers->get(2),
+                'room_id' => $rooms->get(3),
+                'start_time' => '08:00:00',
+                'end_time' => '09:30:00',
+                'session_days' => json_encode(['tuesday', 'thursday']),
+                'session_status' => 'active',
+            ],
+            [
+                'subject_id' => $subjects->get('English Literature', $subjects->first()),
+                'teacher_id' => $teachers->get(3),
+                'room_id' => $rooms->get(2),
+                'start_time' => '11:00:00',
+                'end_time' => '12:30:00',
+                'session_days' => json_encode(['monday', 'wednesday', 'friday']),
+                'session_status' => 'active',
+            ],
+            [
+                'subject_id' => $subjects->get('Chemistry Fundamentals', $subjects->first()),
+                'teacher_id' => $teachers->get(4),
+                'room_id' => $rooms->get(1),
+                'start_time' => '13:00:00',
+                'end_time' => '14:30:00',
+                'session_days' => json_encode(['tuesday', 'thursday']),
+                'session_status' => 'active',
+            ],
         ];
 
         $created = 0;

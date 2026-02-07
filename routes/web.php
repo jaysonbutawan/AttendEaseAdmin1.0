@@ -120,6 +120,10 @@ Route::get('/sessions', function () {
     ]);
 })->name('sessions');
 
+Route::get('/attendance', function () {
+    return Inertia::render('monitoring/AttendanceMonitoring');
+})->name('attendance');
+
 Route::get('/usermanagement', function () {
     $palette = ['#6366f1', '#2563eb', '#059669', '#f59e0b', '#10b981', '#ef4444'];
 

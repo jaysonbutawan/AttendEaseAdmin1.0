@@ -19,26 +19,18 @@ class StudentClassSessionSeeder extends Seeder
 
         $enrollments = [];
         
-        // Enroll first 5 students in first 3 sessions
-        for ($i = 0; $i < min(3, count($sessions)); $i++) {
-            for ($j = 0; $j < min(5, count($students)); $j++) {
+        // Enroll students across all sessions with varied distribution
+        foreach ($sessions as $sessionIndex => $sessionId) {
+            // Vary the number of students per session (between 8-15)
+            $numStudents = rand(8, min(15, count($students)));
+            $enrolledStudents = array_rand(array_flip($students), $numStudents);
+            
+            foreach ($enrolledStudents as $studentId) {
                 $enrollments[] = [
-                    'session_id' => $sessions[$i],
-                    'student_id' => $students[$j],
+                    'session_id' => $sessionId,
+                    'student_id' => $studentId,
                     'enrollment_status' => 'enrolled',
-                    'enrolled_at' => now(),
-                ];
-            }
-        }
-
-        // Enroll students 5-8 in session 4 (if exists)
-        if (count($sessions) >= 4) {
-            for ($j = 5; $j < min(8, count($students)); $j++) {
-                $enrollments[] = [
-                    'session_id' => $sessions[3],
-                    'student_id' => $students[$j],
-                    'enrollment_status' => 'enrolled',
-                    'enrolled_at' => now(),
+                    'enrolled_at' => now()->subDays(rand(1, 30)),
                 ];
             }
         }

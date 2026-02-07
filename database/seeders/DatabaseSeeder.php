@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             RoomSeeder::class,
             ClassSessionSeeder::class,
             StudentClassSessionSeeder::class,
+            AttendanceSeeder::class,
         ]);
 
         // Create admin user if needed
