@@ -289,6 +289,8 @@ Route::delete('/room_polygon/{id}', [RoomController::class, 'destroy']);
 Route::post('/class_sessions', [ClassSessionController::class, 'store'])->name('class_sessions.store');
 Route::get('/class_sessions', [ClassSessionController::class, 'getReadableSessions']);
 Route::get('/class_sessions/{id}/students', [ClassSessionController::class, 'getSessionStudents']);
+Route::put('/class_sessions/{id}', [ClassSessionController::class, 'update'])->name('class_sessions.update');
+Route::delete('/class_sessions/{id}', [ClassSessionController::class, 'destroy'])->name('class_sessions.destroy');
 
 // student enrollment routes
 Route::get('/class_sessions/{sessionId}/available-students', [StudentClassSessionController::class, 'getAvailableStudents']);

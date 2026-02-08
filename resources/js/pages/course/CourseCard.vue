@@ -1,17 +1,35 @@
 <script setup lang="ts">
-import { Clock, GraduationCap, MapPin, Pencil, ArrowRight, X, UserPlus, Trash2 } from 'lucide-vue-next'
+import { Clock, GraduationCap, MapPin, Pencil, ArrowRight, X, UserPlus, Trash2, Save } from 'lucide-vue-next'
 import { onMounted, ref } from 'vue'
 import axios from 'axios'
 
 type ClassSession = {
   session_id: number
+  subject_id?: number
   subject_name: string
+  teacher_id?: string
   teacher_name: string
+  room_id?: number
   room_name: string
   session_days: string[]
   start_time: string
   end_time: string
   session_status: string
+}
+
+type Teacher = {
+  teacher_id: string
+  name: string
+}
+
+type Room = {
+  room_id: number
+  room_name: string
+}
+
+type Subject = {
+  subject_id: number
+  subject_name: string
 }
 
 type EnrolledStudent = {
@@ -38,21 +56,68 @@ const availableStudents = ref<AvailableStudent[]>([])
 const selectedStudents = ref<string[]>([])
 const showModal = ref(false)
 const showEnrollModal = ref(false)
+const showEditModal = ref(false)
 const loadingStudents = ref(false)
 const loadingAvailable = ref(false)
 const enrolling = ref(false)
+const updating = ref(false)
+const deleting = ref(false)
+
+// Data for dropdowns
+const teachers = ref<Teacher[]>([])
+const rooms = ref<Room[]>([])
+const subjects = ref<Subject[]>([])
+
+// Edit form
+const editForm = ref({
+  session_id: 0,
+  subject_id: 0,
+  teacher_id: '',
+  room_id: 0,
+  session_days: [] as string[],
+  start_time: '',
+  end_time: '',
+  session_status: 'pending'
+})
+
+const DAYS_OPTIONS = [
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' },
+]
 
 onMounted(async () => {
+  // Load sessions
   const { data } = await axios.get('/class_sessions')
   sessions.value = data.sessions
 
-   sessions.value.forEach(session => {
-    if (session.teacher_name) {
-      console.log(
-        `Session ${session.session_id} → Teacher: ${session.teacher_name}`
-      )
-    }
-  })
+  // Load teachers
+  try {
+    const teachersRes = await axios.get('/teachers_controller')
+    teachers.value = teachersRes.data || []
+  } catch (error) {
+    console.error('Failed to load teachers:', error)
+  }
+
+  // Load rooms
+  try {
+    const roomsRes = await axios.get('/room_polygon')
+    rooms.value = roomsRes.data.rooms || []
+  } catch (error) {
+    console.error('Failed to load rooms:', error)
+  }
+
+  // Load subjects
+  try {
+    const subjectsRes = await axios.get('/subjects')
+    subjects.value = subjectsRes.data.subjects || []
+  } catch (error) {
+    console.error('Failed to load subjects:', error)
+  }
 })
 
 const openSessionDetails = async (session: ClassSession) => {
@@ -239,6 +304,119 @@ const formatDate = (dateString: string) => {
     day: 'numeric' 
   });
 };
+
+const openEditModal = (session: ClassSession) => {
+  selectedSession.value = session
+  
+  // Parse days if they're a JSON string
+  let parsedDays: string[] = []
+  try {
+    parsedDays = Array.isArray(session.session_days) 
+      ? session.session_days 
+      : JSON.parse(session.session_days)
+  } catch {
+    parsedDays = []
+  }
+  
+  editForm.value = {
+    session_id: session.session_id,
+    subject_id: session.subject_id || 0,
+    teacher_id: session.teacher_id || '',
+    room_id: session.room_id || 0,
+    session_days: parsedDays.map(d => d.toLowerCase()),
+    start_time: session.start_time,
+    end_time: session.end_time,
+    session_status: session.session_status || 'pending'
+  }
+  
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  selectedSession.value = null
+}
+
+const toggleEditDay = (day: string) => {
+  const index = editForm.value.session_days.indexOf(day)
+  if (index > -1) {
+    editForm.value.session_days.splice(index, 1)
+  } else {
+    editForm.value.session_days.push(day)
+  }
+}
+
+const updateSession = async () => {
+  if (updating.value) return
+  
+  // Validation
+  if (!editForm.value.subject_id || !editForm.value.teacher_id || !editForm.value.room_id) {
+    alert('Please fill in all required fields')
+    return
+  }
+  
+  if (editForm.value.session_days.length === 0) {
+    alert('Please select at least one day')
+    return
+  }
+  
+  if (!editForm.value.start_time || !editForm.value.end_time) {
+    alert('Please set start and end times')
+    return
+  }
+  
+  updating.value = true
+  
+  try {
+    const payload = {
+      subject_id: editForm.value.subject_id,
+      teacher_id: editForm.value.teacher_id,
+      room_id: editForm.value.room_id,
+      session_days: JSON.stringify(editForm.value.session_days),
+      start_time: editForm.value.start_time,
+      end_time: editForm.value.end_time,
+      session_status: editForm.value.session_status
+    }
+    
+    await axios.put(`/class_sessions/${editForm.value.session_id}`, payload)
+    
+    // Refresh sessions
+    const { data } = await axios.get('/class_sessions')
+    sessions.value = data.sessions
+    
+    alert('Session updated successfully!')
+    closeEditModal()
+  } catch (error: any) {
+    console.error('Failed to update session:', error)
+    alert(error?.response?.data?.message || 'Failed to update session. Please try again.')
+  } finally {
+    updating.value = false
+  }
+}
+
+const deleteSession = async (sessionId: number) => {
+  if (!confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+    return
+  }
+  
+  deleting.value = true
+  
+  try {
+    await axios.delete(`/class_sessions/${sessionId}`)
+    
+    // Refresh sessions
+    const { data } = await axios.get('/class_sessions')
+    sessions.value = data.sessions
+    
+    alert('Session deleted successfully!')
+    closeEditModal()
+  } catch (error: any) {
+    console.error('Failed to delete session:', error)
+    alert(error?.response?.data?.message || 'Failed to delete session. Please try again.')
+  } finally {
+    deleting.value = false
+  }
+}
 </script>
 
 <template>
@@ -296,7 +474,10 @@ const formatDate = (dateString: string) => {
 
       <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
         <div class="flex items-center gap-3 w-full md:w-auto">
-          <button class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border border-gray-100 rounded-full font-bold text-slate-800 hover:bg-gray-50 transition duration-300 hover:scale-105">
+          <button 
+            @click="openEditModal(session)"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3.5 border border-gray-100 rounded-full font-bold text-slate-800 hover:bg-gray-50 transition duration-300 hover:scale-105"
+          >
             <Pencil class="w-4 h-4" />
             Edit
           </button>
@@ -562,6 +743,187 @@ const formatDate = (dateString: string) => {
               <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               {{ enrolling ? 'Enrolling...' : `Enroll ${selectedStudents.length} Student${selectedStudents.length !== 1 ? 's' : ''}` }}
             </button>
+          </div>
+        </div>
+      </transition>
+    </div>
+  </transition>
+
+  <!-- Edit Session Modal -->
+  <transition name="fade">
+    <div 
+      v-if="showEditModal"
+      class="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      @click="closeEditModal"
+    >
+      <transition name="slide-up">
+        <div 
+          v-if="showEditModal"
+          class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+          @click.stop
+        >
+          <!-- Edit Modal Header -->
+          <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-6 flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-white">Edit Class Session</h2>
+              <p class="text-purple-100 text-sm mt-1">Update session details</p>
+            </div>
+            <button 
+              @click="closeEditModal"
+              class="p-2 hover:bg-purple-500 rounded-lg transition"
+            >
+              <X class="w-6 h-6 text-white" />
+            </button>
+          </div>
+
+          <!-- Edit Modal Body -->
+          <div class="overflow-y-auto flex-1 p-8">
+            <form @submit.prevent="updateSession" class="space-y-6">
+              <!-- Subject -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Subject *</label>
+                <select 
+                  v-model="editForm.subject_id"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  required
+                >
+                  <option value="0" disabled>Select a subject</option>
+                  <option 
+                    v-for="subject in subjects" 
+                    :key="subject.subject_id" 
+                    :value="subject.subject_id"
+                  >
+                    {{ subject.subject_name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Teacher -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Teacher *</label>
+                <select 
+                  v-model="editForm.teacher_id"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  required
+                >
+                  <option value="" disabled>Select a teacher</option>
+                  <option 
+                    v-for="teacher in teachers" 
+                    :key="teacher.teacher_id" 
+                    :value="teacher.teacher_id"
+                  >
+                    {{ teacher.name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Room -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Room *</label>
+                <select 
+                  v-model="editForm.room_id"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  required
+                >
+                  <option value="0" disabled>Select a room</option>
+                  <option 
+                    v-for="room in rooms" 
+                    :key="room.room_id" 
+                    :value="room.room_id"
+                  >
+                    {{ room.room_name }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Days -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Session Days *</label>
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    v-for="day in DAYS_OPTIONS"
+                    :key="day.value"
+                    type="button"
+                    @click="toggleEditDay(day.value)"
+                    :class="[
+                      'px-4 py-2 rounded-lg font-semibold transition',
+                      editForm.session_days.includes(day.value)
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ]"
+                  >
+                    {{ day.label }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Time -->
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Start Time *</label>
+                  <input 
+                    v-model="editForm.start_time"
+                    type="time"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">End Time *</label>
+                  <input 
+                    v-model="editForm.end_time"
+                    type="time"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Status -->
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                <select 
+                  v-model="editForm.session_status"
+                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+            </form>
+          </div>
+
+          <!-- Edit Modal Footer -->
+          <div class="border-t border-gray-200 px-8 py-4 flex justify-between bg-gray-50">
+            <button 
+              @click="deleteSession(editForm.session_id)"
+              :disabled="deleting"
+              class="px-6 py-2.5 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <Trash2 v-if="!deleting" class="w-4 h-4" />
+              <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              {{ deleting ? 'Deleting...' : 'Delete' }}
+            </button>
+            <div class="flex gap-3">
+              <button 
+                @click="closeEditModal"
+                type="button"
+                class="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+              <button 
+                @click="updateSession"
+                :disabled="updating"
+                class="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Save v-if="!updating" class="w-4 h-4" />
+                <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                {{ updating ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
           </div>
         </div>
       </transition>
